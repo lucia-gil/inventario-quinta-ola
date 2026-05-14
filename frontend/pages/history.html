@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historial | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main">
+
+    <!-- CABECERA -->
+    <div class="flex justify-between items-center flex-wrap gap-3">
+      <div>
+        <h1 class="page-title">Historial de Transacciones</h1>
+        <p class="page-subtitle">Registro de todas las solicitudes y movimientos anteriores.</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="/pages/analytics.html" class="btn-ghost-accent">
+          <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Análisis de Inventario
+        </a>
+        <a href="/pages/show-requestform.html" class="btn-page-primary">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nueva Transacción
+        </a>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="table-panel">
+      <div class="table-wrapper">
+        <table class="table">
+          <thead class="table-head">
+            <tr>
+              <th class="th">ID</th>
+              <th class="th">Solicitante</th>
+              <th class="th">Item</th>
+              <th class="th-center">Cantidad</th>
+              <th class="th-center">Tipo</th>
+              <th class="th">Fecha</th>
+              <th class="th-center">Estado</th>
+              <th class="th-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody" class="table-body">
+            <!-- filas inyectadas por JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel-footer">
+        <p class="panel-count-text" id="history-count">Mostrando 1 a 3 de 45 registros</p>
+        <div id="history-pagination"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbar({ active: 'history', name: 'Alvaro Gómez', role: 'Administrador' });
+
+    // ── Reemplazar con fetch('/api/history?page=1') ──
+    const historial = [
+      { id: 'TXN-0001', requester: 'Juan Pérez',    item: 'Cemento',       qty: 20, type: 'IN',  date: '2026-04-15', status: 'Aprobada' },
+      { id: 'TXN-0002', requester: 'María López',   item: 'Pintura Blanca',qty: 5,  type: 'OUT', date: '2026-04-14', status: 'Aprobada' },
+      { id: 'TXN-0003', requester: 'Carlos Ruiz',   item: 'Tubos PVC',     qty: 10, type: 'OUT', date: '2026-04-13', status: 'Rechazada' },
+    ];
+
+    QO.renderTransactionRows('history-tbody', historial);
+    document.getElementById('history-count').textContent =
+      `Mostrando 1 a ${historial.length} de 45 registros`;
+
+    QO.renderPagination('history-pagination', { current: 1, total: 15 });
+    lucide.createIcons();
+  </script>
+</body>
+</html>

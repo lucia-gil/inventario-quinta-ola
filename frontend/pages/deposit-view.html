@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entregas Pendientes | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Entregas Pendientes</h1>
+        <p class="page-subtitle">Solicitudes aprobadas listas para ser entregadas desde el depósito.</p>
+      </div>
+      <!-- El encargado NO tiene botón de nueva transacción — solo gestiona entregas -->
+      <div class="flex items-center gap-3 bg-blue-50 border border-blue-100
+                  text-blue-700 px-4 py-2 rounded-xl text-sm font-medium">
+        <i data-lucide="warehouse" class="w-4 h-4"></i>
+        Vista: Encargado de Depósito
+      </div>
+    </div>
+
+    <!-- STATS rápidas -->
+    <div id="deposit-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-6"></div>
+
+    <!-- TABLA — solo solicitudes APROBADAS -->
+    <div class="table-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-header-title">Solicitudes aprobadas por entregar</h2>
+          <p class="panel-header-sub">Solo aparecen aquí las que el aprobador ya autorizó.</p>
+        </div>
+        <div class="search-input-wrap max-w-xs">
+          <i data-lucide="search" class="input-icon-left"></i>
+          <input type="text" id="search-deposit" placeholder="Buscar solicitud..."
+            class="input-icon" oninput="filterDeposit()" />
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="table">
+          <thead class="table-head">
+            <tr>
+              <th class="th">ID</th>
+              <th class="th">Solicitante</th>
+              <th class="th">Material</th>
+              <th class="th-center">Cantidad</th>
+              <th class="th">Aprobado por</th>
+              <th class="th">Fecha aprobación</th>
+              <th class="th-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="deposit-tbody" class="table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="panel-footer">
+        <p class="panel-count-text" id="deposit-count">Cargando...</p>
+        <div id="deposit-pagination"></div>
+      </div>
+    </div>
+
+    <!-- HISTORIAL DE ENTREGAS HOY -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-header-title">Entregas realizadas hoy</h2>
+          <p class="panel-header-sub">Registro del día actual</p>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead class="table-head">
+            <tr>
+              <th class="th">ID</th>
+              <th class="th">Solicitante</th>
+              <th class="th">Material</th>
+              <th class="th-center">Cantidad</th>
+              <th class="th">Hora de entrega</th>
+              <th class="th">Responsable entrega</th>
+            </tr>
+          </thead>
+          <tbody id="delivered-tbody" class="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL de confirmación de entrega -->
+  <div id="modal-overlay"
+    class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 space-y-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-blue-50 rounded-xl">
+          <i data-lucide="package-check" class="w-6 h-6 text-blue-600"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900">Confirmar entrega</h3>
+      </div>
+      <p class="text-sm text-gray-600" id="modal-text">
+        ¿Confirmas que entregaste los materiales de esta solicitud?
+      </p>
+      <div>
+        <label class="form-label-tiny">Responsable de entrega</label>
+        <input type="text" id="modal-responsable" class="input-page mt-1"
+          placeholder="Tu nombre completo" value="Álvaro Gómez">
+      </div>
+      <div>
+        <label class="form-label-tiny">Notas adicionales (opcional)</label>
+        <textarea id="modal-notas" rows="2" class="textarea-page mt-1"
+          placeholder="Observaciones sobre la entrega..."></textarea>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeModal()" class="btn-ghost flex-1 justify-center">Cancelar</button>
+        <button id="modal-confirm"
+          class="flex-1 btn-page-primary justify-center">
+          <i data-lucide="check" class="w-4 h-4"></i> Confirmar entrega
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    // Vista solo para encargado de depósito — menuType default (sin admin ni superadmin)
+    QO.navbar({ active: 'transactions', name: 'Álvaro Gómez', role: 'Encargado de Depósito' });
+    QO.footer();
+
+    // CONECTAR: fetch('/api/requests?status=Aprobada', { headers: { Authorization: `Bearer ${token}` } })
+    let solicitudesPendientes = [
+      { id: 'TXN-0002', requester: 'María López',       material: 'Polera Quinta Ola (M)',      qty: '10 unid.',  approvedBy: 'Jean Piere Ipurre', approvedDate: '2026-04-14 · 3:20 PM' },
+      { id: 'TXN-0006', requester: 'Ana Torres',        material: 'Kit Manualidades Taller',    qty: '8 kits',    approvedBy: 'Jean Piere Ipurre', approvedDate: '2026-04-14 · 4:00 PM' },
+      { id: 'TXN-0007', requester: 'Luis Mendoza',      material: 'Donación Ropa Abrigo',       qty: '20 prendas', approvedBy: 'María López',       approvedDate: '2026-04-15 · 9:10 AM' },
+      { id: 'TXN-0008', requester: 'Jean Piere Ipurre', material: 'Kit Humanitario Grande',     qty: '5 kits',    approvedBy: 'María López',       approvedDate: '2026-04-15 · 10:00 AM' },
+    ];
+
+    // CONECTAR: fetch('/api/requests?status=Entregada&today=true')
+    const entregasHoy = [
+      { id: 'TXN-0001', requester: 'Jean Piere Ipurre', material: 'Polera Quinta Ola (M)', qty: '5 unid.', hora: '08:45 AM', responsable: 'Álvaro Gómez' },
+    ];
+
+    let currentIdToDeliver = null;
+
+    function renderPendientes(data) {
+      const tbody = document.getElementById('deposit-tbody');
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `
+          <tr><td colspan="7" class="py-14 text-center text-gray-400 text-sm">
+            <i data-lucide="check-circle" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+            No hay solicitudes pendientes de entrega.
+          </td></tr>`;
+        lucide.createIcons();
+        return;
+      }
+      tbody.innerHTML = data.map(s => `
+        <tr class="table-row">
+          <td class="td-id">${s.id}</td>
+          <td class="td">
+            <div class="user-cell">
+              ${QO.userAvatar(s.requester)}
+              <span class="text-gray-700 font-medium">${s.requester}</span>
+            </div>
+          </td>
+          <td class="td font-medium text-gray-800">${s.material}</td>
+          <td class="td-center text-gray-600">${s.qty}</td>
+          <td class="td">
+            <div class="user-cell">
+              ${QO.userAvatar(s.approvedBy)}
+              <span class="text-gray-600 text-xs">${s.approvedBy}</span>
+            </div>
+          </td>
+          <td class="td-light text-xs">${s.approvedDate}</td>
+          <td class="td-center">
+            <button onclick="openModal('${s.id}', '${s.material}', '${s.qty}')"
+              class="bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100
+                     px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                     flex items-center gap-1.5 mx-auto">
+              <i data-lucide="package-check" class="w-3.5 h-3.5"></i>
+              Marcar entregada
+            </button>
+          </td>
+        </tr>`).join('');
+      lucide.createIcons();
+    }
+
+    function renderEntregasHoy() {
+      const tbody = document.getElementById('delivered-tbody');
+      if (!entregasHoy.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-gray-400 text-sm">Sin entregas registradas hoy.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = entregasHoy.map(e => `
+        <tr class="table-row">
+          <td class="td-id">${e.id}</td>
+          <td class="td">
+            <div class="user-cell">${QO.userAvatar(e.requester)}<span class="text-gray-700">${e.requester}</span></div>
+          </td>
+          <td class="td font-medium text-gray-800">${e.material}</td>
+          <td class="td-center text-gray-600">${e.qty}</td>
+          <td class="td-light">${e.hora}</td>
+          <td class="td-muted">${e.responsable}</td>
+        </tr>`).join('');
+    }
+
+    function filterDeposit() {
+      const q = document.getElementById('search-deposit').value.toLowerCase();
+      const filtered = solicitudesPendientes.filter(s =>
+        s.id.toLowerCase().includes(q) ||
+        s.requester.toLowerCase().includes(q) ||
+        s.material.toLowerCase().includes(q)
+      );
+      renderPendientes(filtered);
+      document.getElementById('deposit-count').textContent =
+        `Mostrando ${filtered.length} de ${solicitudesPendientes.length} solicitudes`;
+    }
+
+    function openModal(id, material, qty) {
+      currentIdToDeliver = id;
+      document.getElementById('modal-text').textContent =
+        `¿Confirmas la entrega de "${material} (${qty})" correspondiente a la solicitud ${id}?`;
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.add('hidden');
+      currentIdToDeliver = null;
+    }
+
+    document.getElementById('modal-confirm').addEventListener('click', () => {
+      if (!currentIdToDeliver) return;
+      const responsable = document.getElementById('modal-responsable').value.trim();
+      if (!responsable) { alert('Escribe el nombre del responsable.'); return; }
+
+      // CONECTAR:
+      // await fetch(`/api/requests/${currentIdToDeliver}/deliver`, {
+      //   method: 'PATCH',
+      //   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      //   body: JSON.stringify({ responsable, notas: document.getElementById('modal-notas').value }),
+      // });
+
+      // Simulación: quitar de pendientes y agregar a entregas hoy
+      const entregada = solicitudesPendientes.find(s => s.id === currentIdToDeliver);
+      solicitudesPendientes = solicitudesPendientes.filter(s => s.id !== currentIdToDeliver);
+      if (entregada) {
+        entregasHoy.push({
+          id: entregada.id, requester: entregada.requester,
+          material: entregada.material, qty: entregada.qty,
+          hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
+          responsable,
+        });
+      }
+
+      closeModal();
+      renderPendientes(solicitudesPendientes);
+      renderEntregasHoy();
+      updateStats();
+      document.getElementById('deposit-count').textContent =
+        `${solicitudesPendientes.length} solicitudes pendientes`;
+      lucide.createIcons();
+    });
+
+    function updateStats() {
+      QO.renderStatCards('deposit-stats', [
+        { label: 'Pendientes de entrega', value: solicitudesPendientes.length, icon: 'clock',          colorClass: 'stat-icon-yellow' },
+        { label: 'Entregadas hoy',        value: entregasHoy.length,           icon: 'package-check',  colorClass: 'stat-icon-green'  },
+        { label: 'Total del mes',         value: 38,                           icon: 'bar-chart-2',    colorClass: 'stat-icon-blue'   },
+      ]);
+    }
+
+    // Inicializar
+    updateStats();
+    renderPendientes(solicitudesPendientes);
+    renderEntregasHoy();
+    document.getElementById('deposit-count').textContent =
+      `${solicitudesPendientes.length} solicitudes pendientes de entrega`;
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UI Kit - Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-10 space-y-10">
+
+    <!-- ================= BUTTONS ================= -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+
+        <h2 class="text-xl font-bold">Buttons</h2>
+
+        <div class="flex flex-wrap gap-3">
+
+            <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                Primary
+            </button>
+
+            <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                Success (IN)
+            </button>
+
+            <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                Danger (OUT)
+            </button>
+
+            <button class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                Secondary
+            </button>
+
+            <button class="px-4 py-2 border rounded hover:bg-gray-50">
+                Outline
+            </button>
+
+        </div>
+
+    </section>
+
+    <!-- ================= INPUTS ================= -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+
+        <h2 class="text-xl font-bold">Inputs</h2>
+
+        <div class="grid md:grid-cols-2 gap-4">
+
+            <input class="border p-2 rounded w-full" placeholder="Text input" />
+
+            <input class="border p-2 rounded w-full" type="number" placeholder="Quantity" />
+
+            <select class="border p-2 rounded w-full">
+                <option>Status</option>
+                <option>OK</option>
+                <option>Low Stock</option>
+            </select>
+
+            <input class="border p-2 rounded w-full" type="search" placeholder="Search..." />
+
+        </div>
+
+    </section>
+
+    <!-- ================= BADGES ================= -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+
+        <h2 class="text-xl font-bold">Status Badges</h2>
+
+        <div class="flex flex-wrap gap-3">
+
+            <span class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm">OK</span>
+            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-sm">Low Stock</span>
+            <span class="px-3 py-1 bg-red-100 text-red-700 rounded text-sm">Unavailable</span>
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm">Pending</span>
+            <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">Draft</span>
+
+        </div>
+
+    </section>
+
+    <!-- ================= CARDS ================= -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+
+        <h2 class="text-xl font-bold">Cards</h2>
+
+        <div class="grid md:grid-cols-3 gap-4">
+
+            <div class="p-4 bg-gray-50 rounded">
+                <h3 class="font-semibold">Item Card</h3>
+                <p class="text-sm text-gray-500">Keyboard • 12 units</p>
+            </div>
+
+            <div class="p-4 bg-gray-50 rounded">
+                <h3 class="font-semibold">Transaction Card</h3>
+                <p class="text-sm text-gray-500">OUT • Pending approval</p>
+            </div>
+
+            <div class="p-4 bg-gray-50 rounded">
+                <h3 class="font-semibold">User Card</h3>
+                <p class="text-sm text-gray-500">Admin • Active</p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ================= TABLE ================= -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+
+        <h2 class="text-xl font-bold">Table</h2>
+
+        <table class="w-full text-sm">
+
+            <thead class="text-left text-gray-500 border-b">
+                <tr>
+                    <th class="p-2">Name</th>
+                    <th class="p-2">Qty</th>
+                    <th class="p-2">Status</th>
+                    <th class="p-2">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr class="border-b">
+                    <td class="p-2">Keyboard</td>
+                    <td class="p-2">12</td>
+                    <td class="p-2 text-green-600">OK</td>
+                    <td class="p-2">
+                        <button class="text-blue-500">Edit</button>
+                    </td>
+                </tr>
+
+                <tr class="border-b">
+                    <td class="p-2">Mouse</td>
+                    <td class="p-2">3</td>
+                    <td class="p-2 text-yellow-600">Low</td>
+                    <td class="p-2">
+                        <button class="text-red-500">Delete</button>
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+    <!-- ================= ALERTS ================= -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+
+        <h2 class="text-xl font-bold">Alerts</h2>
+
+        <div class="p-3 bg-green-100 text-green-700 rounded">
+            Success: Transaction completed
+        </div>
+
+        <div class="p-3 bg-yellow-100 text-yellow-700 rounded">
+            Warning: Low stock detected
+        </div>
+
+        <div class="p-3 bg-red-100 text-red-700 rounded">
+            Error: Transaction rejected
+        </div>
+
+    </section>
+
+    <!-- ================= MODAL PREVIEW ================= -->
+    <section class="bg-white p-6 rounded shadow space-y-4">
+
+        <h2 class="text-xl font-bold">Modal (static preview)</h2>
+
+        <div class="border p-4 rounded bg-gray-50">
+
+            <h3 class="font-semibold mb-2">Confirm Action</h3>
+
+            <p class="text-sm text-gray-500 mb-4">
+                Are you sure you want to approve this transaction?
+            </p>
+
+            <div class="flex gap-2">
+                <button class="bg-green-500 text-white px-3 py-1 rounded">Confirm</button>
+                <button class="bg-gray-200 px-3 py-1 rounded">Cancel</button>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ================= ACTION BAR ================= -->
+    <section class="bg-white p-6 rounded shadow flex justify-between items-center">
+
+        <p class="text-sm text-gray-500">
+            Action bar example
+        </p>
+
+        <div class="flex gap-2">
+
+            <button class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+            <button class="bg-gray-200 px-4 py-2 rounded">Cancel</button>
+
+        </div>
+
+    </section>
+
+</body>
+
+</html>

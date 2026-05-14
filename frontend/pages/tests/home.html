@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white shadow-md flex flex-col p-5 space-y-6">
+
+        <h1 class="text-xl font-bold text-gray-800">
+            Inventory System
+        </h1>
+
+        <nav class="flex flex-col space-y-3 text-gray-700">
+
+            <a href="#" class="hover:bg-gray-100 p-2 rounded">Dashboard</a>
+            <a href="#" class="hover:bg-gray-100 p-2 rounded">Inventario</a>
+            <a href="#" class="hover:bg-gray-100 p-2 rounded">Transacciones</a>
+            <a href="#" class="hover:bg-gray-100 p-2 rounded">Historial</a>
+            <a href="#" class="hover:bg-gray-100 p-2 rounded">Análisis</a>
+
+            <hr class="my-2">
+
+            <a href="#" class="hover:bg-gray-100 p-2 rounded text-sm text-gray-500">
+                Admin Panel
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-8 space-y-6">
+
+        <!-- HEADER -->
+        <header class="flex justify-between items-center">
+            <h2 class="text-2xl font-semibold text-gray-800">
+                Dashboard
+            </h2>
+
+            <div class="text-sm text-gray-600">
+                Welcome, User
+            </div>
+        </header>
+
+        <!-- SUMMARY CARDS -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div class="bg-white p-5 rounded shadow">
+                <h3 class="text-gray-500">Total Items</h3>
+                <p class="text-2xl font-bold">120</p>
+            </div>
+
+            <div class="bg-white p-5 rounded shadow">
+                <h3 class="text-gray-500">Pending Transactions</h3>
+                <p class="text-2xl font-bold">8</p>
+            </div>
+
+            <div class="bg-white p-5 rounded shadow">
+                <h3 class="text-gray-500">Low Stock Items</h3>
+                <p class="text-2xl font-bold">5</p>
+            </div>
+
+        </section>
+
+        <!-- QUICK ACTIONS -->
+        <section class="bg-white p-6 rounded shadow space-y-4">
+
+            <h3 class="text-lg font-semibold text-gray-800">
+                Quick Actions
+            </h3>
+
+            <div class="flex flex-wrap gap-4">
+
+                <a href="#" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    New IN Transaction
+                </a>
+
+                <a href="#" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    New OUT Transaction
+                </a>
+
+                <a href="#" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">
+                    View Inventory
+                </a>
+
+            </div>
+
+        </section>
+
+        <!-- RECENT ACTIVITY -->
+        <section class="bg-white p-6 rounded shadow">
+
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                Recent Activity
+            </h3>
+
+            <ul class="space-y-3 text-sm text-gray-700">
+
+                <li>✔ Item "Keyboard" added to inventory</li>
+                <li>⏳ Transaction #102 pending approval</li>
+                <li>✔ Stock updated for "Mouse"</li>
+
+            </ul>
+
+        </section>
+
+    </main>
+
+</body>
+
+</html>

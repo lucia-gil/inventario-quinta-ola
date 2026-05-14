@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalle de Solicitud | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main-narrow">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="page-title">Detalle de Solicitud</h1>
+        <p class="page-subtitle" id="page-subtitle">Cargando...</p>
+      </div>
+      <button onclick="window.history.back()" class="btn-ghost">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Columna principal -->
+      <div class="md:col-span-2 space-y-6">
+
+        <!-- Datos generales -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-header-title flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="w-5 h-5 text-accent"></i>
+              Información de la Solicitud
+            </h2>
+            <span id="status-badge"></span>
+          </div>
+          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            <div>
+              <p class="form-label-tiny">ID Solicitud</p>
+              <p class="text-sm font-bold font-mono text-gray-800" id="sol-id">—</p>
+            </div>
+            <div>
+              <p class="form-label-tiny">Fecha y hora</p>
+              <p class="text-sm font-semibold text-gray-700" id="sol-fecha">—</p>
+            </div>
+            <div>
+              <p class="form-label-tiny">Solicitante</p>
+              <div class="flex items-center gap-2 mt-1" id="sol-solicitante-cell"></div>
+            </div>
+            <div>
+              <p class="form-label-tiny">Tipo de movimiento</p>
+              <p class="text-sm mt-1" id="sol-tipo">—</p>
+            </div>
+            <div class="md:col-span-2">
+              <p class="form-label-tiny">Propósito / Uso del material</p>
+              <p class="text-sm text-gray-700 mt-1 leading-relaxed bg-gray-50 rounded-xl p-3"
+                 id="sol-proposito">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Material -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-header-title flex items-center gap-2">
+              <i data-lucide="package" class="w-5 h-5 text-accent"></i>
+              Material Solicitado
+            </h2>
+          </div>
+          <div class="p-6 flex items-center gap-5">
+            <img id="sol-img" src="" alt=""
+              class="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
+              onerror="this.src='/img/placeholder.png'">
+            <div>
+              <p class="font-bold text-gray-900 text-base" id="sol-material">—</p>
+              <p class="text-sm text-gray-500 mt-1">
+                Cantidad solicitada: <span class="font-semibold text-gray-700" id="sol-cantidad">—</span>
+              </p>
+              <p class="text-sm text-gray-500">
+                Stock disponible: <span class="font-semibold" id="sol-stock">—</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-header-title flex items-center gap-2">
+              <i data-lucide="git-branch" class="w-5 h-5 text-accent"></i>
+              Historial de estados
+            </h2>
+          </div>
+          <div class="p-6 space-y-4" id="timeline"></div>
+        </div>
+
+      </div>
+
+      <!-- Columna lateral -->
+      <div class="space-y-6">
+
+        <!-- Acciones del aprobador -->
+        <div class="panel-form space-y-4" id="action-panel">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-5 h-5 text-accent"></i>
+            Acción del Aprobador
+          </h3>
+          <div>
+            <label class="form-label-tiny">Comentario</label>
+            <p class="text-[11px] text-gray-400 mb-1">Obligatorio al rechazar. Opcional al aprobar.</p>
+            <textarea id="comentario" rows="4" class="textarea-page"
+              placeholder="Escribe aquí el motivo de rechazo o una nota..."></textarea>
+          </div>
+          <button id="btn-approve" class="w-full btn-page-primary justify-center">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Aprobar
+          </button>
+          <button id="btn-reject"
+            class="w-full bg-red-50 border border-red-200 text-red-600
+                   hover:bg-red-100 px-4 py-2.5 rounded-xl font-semibold text-sm
+                   transition-all flex items-center justify-center gap-2">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Rechazar
+          </button>
+          <div id="action-error"
+            class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+          </div>
+        </div>
+
+        <!-- Info del solicitante -->
+        <div class="panel-form space-y-3">
+          <h3 class="font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="user" class="w-5 h-5 text-accent"></i>
+            Datos del Solicitante
+          </h3>
+          <div id="requester-info" class="space-y-2 text-sm text-gray-600"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbar({ active: 'transactions', name: 'Álvaro Gómez', role: 'Aprobador', menuType: 'admin' });
+    QO.footer();
+
+    // Leer ID desde URL: /pages/request-detail.html?id=TXN-0002
+    const params = new URLSearchParams(window.location.search);
+    const solId  = params.get('id') || 'TXN-0001';
+
+    // CONECTAR: fetch(`/api/requests/${solId}`, { headers: { Authorization: `Bearer ${token}` } })
+    const solicitud = {
+      id:        solId,
+      fecha:     '2026-04-15 · 10:42 AM',
+      status:    'Pendiente',
+      tipo:      'OUT',
+      proposito: 'Materiales para el taller de verano organizado por el equipo de proyectos comunitarios. Se usarán el sábado 19 de abril.',
+      requester: {
+        name: 'Jean Piere Ipurre', email: 'jp.ipurre@email.com',
+        dni: '72345678', role: 'Solicitante',
+      },
+      material: {
+        name: 'Kit Humanitario Grande',
+        img: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=80&h=80&fit=crop',
+        cantidad: 5, unidad: 'kits', stockActual: 30,
+      },
+      timeline: [
+        { estado: 'Pendiente', fecha: '2026-04-15 10:42', actor: 'Jean Piere Ipurre', nota: 'Solicitud creada.' },
+      ],
+    };
+
+    // Rellenar datos
+    document.getElementById('page-title').textContent    = `Solicitud ${solicitud.id}`;
+    document.getElementById('page-subtitle').textContent = `Creada el ${solicitud.fecha}`;
+    document.getElementById('sol-id').textContent        = solicitud.id;
+    document.getElementById('sol-fecha').textContent     = solicitud.fecha;
+    document.getElementById('sol-proposito').textContent = solicitud.proposito;
+    document.getElementById('sol-tipo').innerHTML        = QO.typeBadge(solicitud.tipo);
+    document.getElementById('status-badge').innerHTML    = QO.statusBadge(solicitud.status);
+    document.getElementById('sol-material').textContent  = solicitud.material.name;
+    document.getElementById('sol-cantidad').textContent  = `${solicitud.material.cantidad} ${solicitud.material.unidad}`;
+    document.getElementById('sol-stock').textContent     = `${solicitud.material.stockActual} ${solicitud.material.unidad}`;
+    document.getElementById('sol-img').src               = solicitud.material.img;
+
+    document.getElementById('sol-solicitante-cell').innerHTML =
+      QO.userAvatar(solicitud.requester.name) +
+      `<span class="text-sm font-semibold text-gray-800">${solicitud.requester.name}</span>`;
+
+    document.getElementById('requester-info').innerHTML = `
+      <p><span class="font-semibold text-gray-700">Nombre:</span> ${solicitud.requester.name}</p>
+      <p><span class="font-semibold text-gray-700">DNI:</span> <span class="font-mono">${solicitud.requester.dni}</span></p>
+      <p><span class="font-semibold text-gray-700">Correo:</span> ${solicitud.requester.email}</p>
+      <p><span class="font-semibold text-gray-700">Rol:</span> ${solicitud.requester.role}</p>`;
+
+    const tlColors = {
+      'Pendiente': 'bg-yellow-100 text-yellow-700',
+      'Aprobada':  'bg-green-100 text-green-700',
+      'Rechazada': 'bg-red-100 text-red-700',
+      'Entregada': 'bg-blue-100 text-blue-700',
+    };
+    document.getElementById('timeline').innerHTML = solicitud.timeline.map(t => `
+      <div class="flex gap-3 items-start">
+        <div class="w-2 h-2 rounded-full bg-accent mt-1.5 flex-shrink-0"></div>
+        <div>
+          <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${tlColors[t.estado] || 'bg-gray-100 text-gray-600'}">
+            ${t.estado}
+          </span>
+          <p class="text-xs text-gray-400 mt-0.5">${t.fecha} · ${t.actor}</p>
+          ${t.nota ? `<p class="text-sm text-gray-600 mt-1">${t.nota}</p>` : ''}
+        </div>
+      </div>`).join('');
+
+    // Si ya fue procesada, ocultar acciones
+    if (solicitud.status !== 'Pendiente') {
+      document.getElementById('action-panel').innerHTML = `
+        <div class="text-center py-6 text-gray-400">
+          <i data-lucide="lock" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
+          <p class="text-sm">Esta solicitud ya fue procesada.</p>
+        </div>`;
+    }
+
+    document.getElementById('btn-approve')?.addEventListener('click', () => {
+      const comentario = document.getElementById('comentario').value;
+      // CONECTAR: fetch(`/api/requests/${solId}/approve`, { method: 'PATCH', body: JSON.stringify({ comentario }) })
+      alert(`Solicitud ${solId} aprobada (simulación).`);
+    });
+
+    document.getElementById('btn-reject')?.addEventListener('click', () => {
+      const errEl      = document.getElementById('action-error');
+      const comentario = document.getElementById('comentario').value.trim();
+      errEl.classList.add('hidden');
+      if (!comentario) {
+        errEl.textContent = 'Debes escribir un motivo de rechazo.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      // CONECTAR: fetch(`/api/requests/${solId}/reject`, { method: 'PATCH', body: JSON.stringify({ comentario }) })
+      alert(`Solicitud ${solId} rechazada. Motivo: "${comentario}" (simulación).`);
+    });
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

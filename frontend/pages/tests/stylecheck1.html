@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calm UI System (Refined)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#0f1115] text-[#e5e7eb] p-10 space-y-14 font-sans">
+
+    <!-- HEADER -->
+    <header class="space-y-1">
+        <h1 class="text-2xl font-light tracking-wide text-[#f3f4f6]">
+            Calm UI System
+        </h1>
+        <p class="text-sm text-[#9ca3af]">
+            minimal workflow interface — refined contrast layer
+        </p>
+    </header>
+
+    <!-- BUTTONS -->
+    <section class="space-y-4">
+
+        <h2 class="text-xs uppercase tracking-widest text-[#6b7280]">
+            Buttons
+        </h2>
+
+        <div class="flex flex-wrap gap-3">
+
+            <button class="px-4 py-2 rounded-full bg-[#1c1f26] shadow-sm hover:bg-[#262a33] transition">
+                Primary
+            </button>
+
+            <button class="px-4 py-2 rounded-xl bg-[#163024] text-[#4ade80]">
+                Success
+            </button>
+
+            <button class="px-4 py-2 rounded-xl bg-[#2a1717] text-[#f87171]">
+                Danger
+            </button>
+
+            <button class="px-4 py-2 rounded-md bg-[#1c1f26] text-[#cbd5e1] border border-[#2a2f3a]">
+                Secondary
+            </button>
+
+        </div>
+
+    </section>
+
+    <!-- CARDS -->
+    <section class="space-y-4">
+
+        <h2 class="text-xs uppercase tracking-widest text-[#6b7280]">
+            Cards
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-5">
+
+            <div class="bg-[#151922] rounded-2xl p-5 shadow-[0_1px_12px_rgba(0,0,0,0.4)]">
+                <h3 class="text-[#f3f4f6] font-medium">Inventory</h3>
+                <p class="text-sm text-[#9ca3af] mt-1">stock overview layer</p>
+            </div>
+
+            <div class="bg-[#151922] rounded-xl p-5 shadow-sm border border-[#222633]">
+                <h3 class="text-[#f3f4f6] font-medium">Transactions</h3>
+                <p class="text-sm text-[#9ca3af] mt-1">workflow engine state</p>
+            </div>
+
+            <div class="bg-[#151922] rounded-[18px] p-5 shadow-sm">
+                <h3 class="text-[#f3f4f6] font-medium">Analytics</h3>
+                <p class="text-sm text-[#9ca3af] mt-1">system signals</p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- BADGES -->
+    <section class="space-y-4">
+
+        <h2 class="text-xs uppercase tracking-widest text-[#6b7280]">
+            Status
+        </h2>
+
+        <div class="flex flex-wrap gap-3 text-sm">
+
+            <span class="px-3 py-1 rounded-full bg-[#143221] text-[#4ade80]">
+                OK
+            </span>
+
+            <span class="px-3 py-1 rounded-full bg-[#2a2414] text-[#fbbf24]">
+                Low
+            </span>
+
+            <span class="px-3 py-1 rounded-full bg-[#2a1717] text-[#f87171]">
+                Unavailable
+            </span>
+
+            <span class="px-3 py-1 rounded-full bg-[#1c1f26] text-[#9ca3af] border border-[#2a2f3a]">
+                Pending
+            </span>
+
+        </div>
+
+    </section>
+
+    <!-- INPUTS -->
+    <section class="space-y-4">
+
+        <h2 class="text-xs uppercase tracking-widest text-[#6b7280]">
+            Inputs
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-4">
+
+            <input
+                class="w-full px-4 py-2 rounded-xl bg-[#151922] border border-[#222633] text-[#e5e7eb] focus:outline-none focus:border-[#3b82f6]"
+                placeholder="Search items..." />
+
+            <select class="w-full px-4 py-2 rounded-lg bg-[#151922] border border-[#222633]">
+                <option>Status</option>
+            </select>
+
+        </div>
+
+    </section>
+
+    <!-- TABLE -->
+    <section class="space-y-4">
+
+        <h2 class="text-xs uppercase tracking-widest text-[#6b7280]">
+            Table
+        </h2>
+
+        <div class="bg-[#151922] rounded-2xl overflow-hidden border border-[#222633]">
+
+            <table class="w-full text-sm">
+
+                <thead class="text-left text-[#9ca3af]">
+                    <tr>
+                        <th class="p-4">Item</th>
+                        <th class="p-4">Qty</th>
+                        <th class="p-4">Status</th>
+                    </tr>
+                </thead>
+
+                <tbody class="text-[#e5e7eb]">
+
+                    <tr class="border-t border-[#222633]">
+                        <td class="p-4">Keyboard</td>
+                        <td class="p-4">12</td>
+                        <td class="p-4 text-[#4ade80]">OK</td>
+                    </tr>
+
+                    <tr class="border-t border-[#222633]">
+                        <td class="p-4">Mouse</td>
+                        <td class="p-4">3</td>
+                        <td class="p-4 text-[#fbbf24]">Low</td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+    <!-- ACTION BAR -->
+    <section class="flex justify-between items-center bg-[#151922] rounded-2xl border border-[#222633] p-5">
+
+        <p class="text-sm text-[#9ca3af]">
+            system actions
+        </p>
+
+        <div class="flex gap-2">
+
+            <button class="px-4 py-2 rounded-full bg-[#1d4ed8] text-white">
+                Save
+            </button>
+
+            <button class="px-4 py-2 rounded-full bg-[#1c1f26] border border-[#2a2f3a]">
+                Cancel
+            </button>
+
+        </div>
+
+    </section>
+
+</body>
+
+</html>

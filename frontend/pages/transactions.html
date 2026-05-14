@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transacciones | Quinta Ola</title>
+    <link href="/src/style.css" rel="stylesheet" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+    <main class="page-main">
+        
+        <div class="flex justify-between items-center flex-wrap gap-3">
+            <div>
+                <h1 class="page-title">Transacciones</h1>
+                <p class="page-subtitle">Solicitudes de entrada y salida de stock</p>
+            </div>
+            <a href="/pages/show-requestform.html" class="btn-page-primary">
+                <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Nueva Transacción
+            </a>
+        </div>
+
+        <div class="table-panel">
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="th">ID</th>
+                            <th class="th">Solicitante</th>
+                            <th class="th">Item</th>
+                            <th class="th">Cantidad</th>
+                            <th class="th-center">Tipo</th>
+                            <th class="th">Fecha</th>
+                            <th class="th-center">Estado</th>
+                            <th class="th-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-tbody" class="table-body">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="panel-footer">
+                <p class="panel-count-text" id="transactions-count">Mostrando 1 a 3 de 24 transacciones</p>
+                <div id="transactions-pagination"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/src/ui.js"></script>
+    <script>
+        // 1. Inyectamos la navbar
+        QO.navbar({ active: 'transactions', name: 'Alvaro Gómez', role: 'Administrador' });
+
+        // 2. Datos de prueba (Reemplazarás esto con: fetch('/api/transacciones_en_curso'))
+        const transaccionesPendientes = [
+            { id: 'TXN-0001', requester: 'Juan Pérez',   item: 'Cemento',        qty: 20, type: 'IN',  date: '2026-04-15', status: 'Pendiente' },
+            { id: 'TXN-0002', requester: 'María López',  item: 'Pintura Blanca', qty: 5,  type: 'OUT', date: '2026-04-14', status: 'Esperando cambios' },
+            { id: 'TXN-0003', requester: 'Carlos Ruiz',  item: 'Tubos PVC',      qty: 10, type: 'OUT', date: '2026-04-13', status: 'Esperando cambios' }
+        ];
+
+        // 3. Renderizamos las filas en la tabla (¡QO hace toda la magia con las etiquetas de colores!)
+        QO.renderTransactionRows('transactions-tbody', transaccionesPendientes);
+
+        // 4. Inyectamos footer y cargamos los íconos
+        QO.footer();
+        QO.init();
+    </script>
+    <script type="module" src="/src/transaction.ts"></script>
+</body>
+</html>

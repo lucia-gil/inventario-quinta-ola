@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Añadir Material | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main-narrow">
+
+    <!-- CABECERA -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Añadir Nuevo Material</h1>
+        <p class="page-subtitle">Registra un nuevo material en el sistema de inventario.</p>
+      </div>
+      <button onclick="window.history.back()" class="btn-ghost">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
+      </button>
+    </div>
+
+    <!-- FORMULARIO -->
+    <div class="panel-form">
+      <form action="#" method="POST" class="space-y-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="nombre" class="form-label">Nombre del Material</label>
+            <input type="text" id="nombre" name="nombre" class="input-page"
+              placeholder="Ej. Kit de Ayuda Humanitaria">
+          </div>
+          <div>
+            <label for="tags" class="form-label">Etiquetas (Tags)</label>
+            <input type="text" id="tags" name="tags" class="input-page"
+              placeholder="Ej. Donaciones, Kits (separados por coma)">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label for="stock" class="form-label">Stock Inicial</label>
+            <input type="number" id="stock" name="stock" min="0"
+              class="input-page" placeholder="0">
+          </div>
+          <div>
+            <label for="unidad" class="form-label">Unidad</label>
+            <select id="unidad" name="unidad" class="select-page">
+              <option value="" disabled selected>Seleccionar...</option>
+              <option value="unidades">Unidades</option>
+              <option value="cajas">Cajas</option>
+              <option value="bolsas">Bolsas</option>
+              <option value="kits">Kits</option>
+              <option value="galones">Galones</option>
+              <option value="metros">Metros</option>
+            </select>
+          </div>
+          <div>
+            <label for="minimo" class="form-label">Stock Mínimo</label>
+            <input type="number" id="minimo" name="minimo" min="0"
+              class="input-page" placeholder="0">
+          </div>
+        </div>
+
+        <div>
+          <label for="imagen" class="form-label">URL de la Imagen</label>
+          <div class="relative">
+            <i data-lucide="image" class="input-icon-left"></i>
+            <input type="url" id="imagen" name="imagen" class="input-icon"
+              placeholder="https://ejemplo.com/imagen.jpg">
+          </div>
+        </div>
+
+        <div>
+          <label for="descripcion" class="form-label">Descripción (Opcional)</label>
+          <textarea id="descripcion" name="descripcion" rows="3"
+            class="textarea-page"
+            placeholder="Detalles adicionales sobre el material..."></textarea>
+        </div>
+
+        <hr class="border-gray-100">
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="window.history.back()"
+            class="btn-ghost">Cancelar</button>
+          <button type="submit" class="btn-page-primary">
+            <i data-lucide="save" class="w-4 h-4"></i> Guardar Material
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbar({ active: 'inventory', name: 'Alvaro Gómez', role: 'Administrador' });
+    lucide.createIcons();
+  </script>
+  <script type="module" src="/src/admin-item.ts"></script>
+</body>
+</html>

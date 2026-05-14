@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>¡Ups! Perdido en la Ola | 404</title>
+    <link href="/src/style.css" rel="stylesheet" />
+    <style>
+        /* Animación simple de ola */
+        .wave-container {
+            position: relative;
+            height: 150px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .wave {
+            position: absolute;
+            bottom: 0;
+            width: 200%;
+            height: 100%;
+            background: url('https://img.icons8.com/ios-filled/100/228be6/wave.png') repeat-x; /* Puedes cambiar por tu logo de ola */
+            background-size: 100px 100px;
+            animation: move-wave 5s linear infinite;
+        }
+        @keyframes move-wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+    </style>
+</head>
+<body class="bg-white min-h-screen flex flex-col items-center justify-center text-center p-6">
+    <div class="max-w-md">
+        <h1 class="text-9xl font-black text-accent opacity-20">404</h1>
+        <div class="wave-container -mt-20">
+            <div class="wave opacity-50"></div>
+        </div>
+        <h2 class="text-2xl font-bold text-secondary mt-8">¡Vaya! Te ha llevado la corriente.</h2>
+        <p class="text-gray-500 mt-4 mb-8">La página que buscas no está disponible o ha cambiado de lugar.</p>
+        <a href="/pages/home.html" class="bg-secondary text-white px-8 py-3 rounded-2xl font-bold hover:bg-accent transition-all inline-block">
+            Volver al Inicio
+        </a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Backend
+backend/target/
+backend/.idea/
+*.iml
+
+# Base de datos
+*.mwb.bak
+
+# Sistema
+.DS_Store
+Thumbs.db

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <!-- ============================================================
+       NAVBAR — generada automáticamente por ui.js
+       active: qué enlace queda resaltado
+  ============================================================ -->
+
+  <main class="page-main">
+
+    <!-- CABECERA -->
+    <div>
+      <h1 class="page-title">Bienvenido al Sistema de Inventario</h1>
+      <p class="page-subtitle">Resumen general de estado y actividad reciente de materiales.</p>
+    </div>
+
+    <!-- STAT CARDS — se renderizan desde JS con QO.renderStatCards() -->
+    <div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Las tarjetas se inyectan aquí automáticamente -->
+    </div>
+
+    <!-- TABLA DE ÚLTIMOS MOVIMIENTOS -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-header-title">Últimos movimientos</h2>
+          <p class="panel-header-sub">Actividad reciente del inventario</p>
+        </div>
+        <a href="/pages/history.html"
+          class="text-sm font-semibold text-accent hover:text-pink-600 transition flex items-center gap-1">
+          Ver todo <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="table">
+          <thead class="table-head">
+          <tr>
+            <th class="th">ID</th>
+            <th class="th">Solicitante</th>
+            <th class="th">Material</th>
+            <th class="th-center">Cantidad</th>
+            <th class="th-center">Tipo</th>
+            <th class="th">Fecha</th>
+            <th class="th-center">Estado</th>
+            <th class="th-center">Detalle</th>
+          </tr>
+        </thead>
+        
+          <tbody id="movements-tbody" class="table-body">
+            <!-- filas inyectadas por JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel-footer">
+        <p class="panel-count-text">
+          Mostrando <span class="font-medium text-gray-700" id="showing-count">0</span>
+          de <span class="font-medium text-gray-700" id="total-count">0</span> movimientos
+        </p>
+        <div id="dashboard-pagination"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER — generado automáticamente -->
+
+  <script src="/src/ui.js"></script>
+  <script>
+    // ── Configuración de esta página ──────────────────────────
+    QO.navbar({ active: 'dashboard', name: 'Alvaro Gómez', role: 'Administrador' });
+    QO.footer();
+
+    // ── Datos de ejemplo (reemplazar con fetch a tu API) ──────
+    QO.renderStatCards('stats-grid', [
+      { label: 'Total Materiales', value: 5,    icon: 'package',       colorClass: 'stat-icon-blue' },
+      { label: 'Bajo Stock',       value: 34,   icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
+      { label: 'Pendientes',       value: 3,    icon: 'clock',          colorClass: 'stat-icon-yellow' },
+      { label: 'Aprobadas',        value: 1134, icon: 'check-circle',   colorClass: 'stat-icon-green' },
+    ]);
+
+    // ── Tabla de movimientos ──────────────────────────────────
+    // Cuando conectes la BD, reemplaza este array con los datos
+    // que traiga tu fetch('/api/transactions?limit=3')
+    const movimientos = [
+      { id: 'TXN-0001', requester: 'Jean Piere Ipurre', item: 'Cemento Portland', qty: '20 bolsas', type: 'IN',  date: '2026-04-15', status: 'Pendiente' },
+      { id: 'TXN-0002', requester: 'María López',       item: 'Arena Gruesa',     qty: '10 m³',    type: 'OUT', date: '2026-04-14', status: 'Aprobado' },
+      { id: 'TXN-0003', requester: 'Carlos Ruiz',       item: 'Pintura Blanca',   qty: '5 galones', type: 'IN', date: '2026-04-13', status: 'Rechazado' },
+    ];
+
+    QO.renderTransactionRows('movements-tbody', movimientos);
+    document.getElementById('showing-count').textContent = movimientos.length;
+    document.getElementById('total-count').textContent = 12;
+
+    QO.renderPagination('dashboard-pagination', { current: 1, total: 4 });
+    lucide.createIcons();
+  </script>
+</body>
+</html>

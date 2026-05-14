@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <div class="flex h-screen">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-white border-r flex flex-col">
+
+            <!-- Logo -->
+            <div class="p-4 border-b">
+                <h1 class="text-lg font-bold text-gray-700">Quinta Ola</h1>
+                <p class="text-xs text-gray-400">Sistema de Inventario</p>
+            </div>
+
+            <!-- NAV -->
+            <nav class="flex-1 overflow-y-auto p-4 space-y-6">
+
+                <!-- GENERAL -->
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">General</p>
+
+                    <a href="/dashboard.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Panel Principal
+                    </a>
+
+                    <a href="/inventory.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Inventario
+                    </a>
+
+                    <a href="/transactions.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Realizar Transacción
+                    </a>
+
+                    <a href="/history.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Historial
+                    </a>
+
+                    <a href="/analytics.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Análisis
+                    </a>
+                </div>
+
+                <!-- ADMIN -->
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">Admin</p>
+
+                    <a href="/admin/requests.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Transaction Requests
+                    </a>
+
+                    <a href="/admin/users.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Manage Members
+                    </a>
+
+                    <a href="/admin/items.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Manage Items
+                    </a>
+                </div>
+
+                <!-- SUPERADMIN -->
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase mb-2">SuperAdmin</p>
+
+                    <a href="/superadmin/permissions.html"
+                        class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        Manage Privileges
+                    </a>
+                </div>
+
+            </nav>
+
+            <!-- PROFILE -->
+            <div class="p-4 border-t">
+                <a href="/profile.html" class="block px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                    Mi Perfil
+                </a>
+
+                <a href="/login.html" class="block px-3 py-2 rounded-lg text-red-500 hover:bg-red-50">
+                    Cerrar Sesión
+                </a>
+            </div>
+
+        </aside>
+
+        <!-- MAIN -->
+        <main class="flex-1 p-6 overflow-y-auto">
+
+            <!-- HEADER -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700">
+                    Page Title
+                </h2>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <p class="text-gray-500">Page content goes here...</p>
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+
+</html>

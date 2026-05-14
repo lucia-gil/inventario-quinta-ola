@@ -1,0 +1,555 @@
+/* ============================================================
+   QUINTA OLA — SISTEMA DE DISEÑO GLOBAL
+   style.css — Único archivo que gobierna TODAS las páginas
+   Versión 2.0 - Sistema de componentes reutilizables
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   BASE — Reset y estilos fundamentales
+   ============================================================ */
+@layer base {
+  body {
+    @apply bg-background text-textMain font-sans;
+  }
+  h1 { @apply text-2xl font-bold text-textMain; }
+  h2 { @apply text-xl font-semibold text-textMain; }
+  a  { @apply transition-colors duration-200; }
+}
+
+/* ============================================================
+   COMPONENTES — Todos los patrones del proyecto
+   ============================================================ */
+@layer components {
+
+  /* ----------------------------------------------------------
+     NAVBAR (nav fija en todas las páginas internas)
+     Uso: <nav class="navbar"> ... </nav>
+  ---------------------------------------------------------- */
+  .navbar {
+    @apply bg-white/90 backdrop-blur-md shadow-sm px-8 py-3
+           flex justify-between items-center
+           fixed top-0 left-0 w-full z-50;
+  }
+  .navbar-logo {
+    @apply h-14 w-auto object-contain;
+  }
+  .navbar-menu {
+    @apply hidden md:flex gap-6 text-sm items-center;
+  }
+
+  /* Enlace de navegación — estado inactivo */
+  .nav-link {
+    @apply relative text-secondary hover:text-accent transition font-medium;
+  }
+  /* Línea animada en hover (el <span> interno) */
+  .nav-link-line {
+    @apply absolute left-0 -bottom-1 w-0 h-[2px] bg-accent
+           transition-all duration-300;
+  }
+  /* Enlace activo — línea siempre visible */
+  .nav-link-active {
+    @apply relative text-accent font-semibold;
+  }
+  .nav-link-active-line {
+    @apply absolute left-0 -bottom-1 w-full h-[2px] bg-accent transition-all duration-300;
+  }
+
+  /* Avatar del usuario en la navbar */
+  .nav-avatar {
+    @apply h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center
+           text-accent hover:bg-accent hover:text-white
+           transition-colors shadow-sm border border-accent/20;
+  }
+  .nav-avatar-active {
+    @apply h-10 w-10 rounded-full bg-accent text-white flex items-center justify-center
+           shadow-md border border-accent/20;
+  }
+  .nav-user-info {
+    @apply text-right hidden lg:block;
+  }
+  .nav-user-name {
+    @apply text-sm font-semibold text-gray-700 leading-none;
+  }
+  .nav-user-role {
+    @apply text-[11px] text-gray-500 mt-1;
+  }
+  .nav-divider {
+    @apply ml-4 flex items-center gap-3 pl-4 border-l border-gray-200;
+  }
+
+  /* ----------------------------------------------------------
+     FOOTER (pie de página oscuro)
+     Uso: <footer class="footer"> ... </footer>
+  ---------------------------------------------------------- */
+  .footer {
+    @apply bg-gray-950 text-gray-400 border-t border-gray-800 pt-16 pb-8 mt-auto;
+  }
+  .footer-inner {
+    @apply max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 text-sm mb-12;
+  }
+  .footer-brand {
+    @apply md:col-span-2 space-y-5;
+  }
+  .footer-desc {
+    @apply max-w-sm leading-relaxed text-gray-400;
+  }
+  .footer-social-btn {
+    @apply hover:text-white transition-colors p-2 bg-gray-900 rounded-full
+           border border-gray-800;
+  }
+  .footer-social-btn-pink {
+    @apply footer-social-btn hover:bg-accent hover:border-accent;
+  }
+  .footer-social-btn-green {
+    @apply footer-social-btn hover:bg-green-500 hover:border-green-500;
+  }
+  .footer-col-title {
+    @apply text-white font-semibold uppercase tracking-wider text-xs;
+  }
+  .footer-link {
+    @apply hover:text-accent transition-colors block;
+  }
+  .footer-bottom {
+    @apply max-w-6xl mx-auto px-6 border-t border-gray-800 pt-8
+           flex flex-col md:flex-row justify-between items-center
+           gap-4 text-xs text-gray-500;
+  }
+
+  /* ----------------------------------------------------------
+     PAGE LAYOUT — Estructura principal de página
+  ---------------------------------------------------------- */
+  .page-body {
+    @apply bg-background text-textMain font-sans min-h-screen flex flex-col pt-20;
+  }
+  .page-main {
+    @apply flex-grow max-w-7xl mx-auto px-6 py-10 w-full space-y-8;
+  }
+  .page-main-narrow {
+    @apply flex-grow max-w-4xl mx-auto px-6 py-10 w-full space-y-6;
+  }
+
+  /* Cabecera de sección (título + subtítulo + botón acción) */
+  .page-header {
+    @apply flex justify-between items-center;
+  }
+  .page-title {
+    @apply text-3xl font-bold text-secondary;
+  }
+  .page-subtitle {
+    @apply text-sm text-gray-500 mt-1;
+  }
+
+  /* ----------------------------------------------------------
+     STAT CARDS (tarjetas de resumen / KPIs)
+     Uso: <div class="stat-card"> ... <div class="stat-card-icon bg-blue-50 text-blue-600">
+     Se replican con JS: renderStatCard(label, value, icon, colorClass)
+  ---------------------------------------------------------- */
+  .stat-card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6
+           flex justify-between items-center
+           hover:shadow-md transition-shadow;
+  }
+  .stat-card-label {
+    @apply text-sm font-medium text-gray-500;
+  }
+  .stat-card-value {
+    @apply text-3xl font-bold text-gray-900 mt-1;
+  }
+  .stat-card-icon {
+    @apply w-14 h-14 rounded-full flex items-center justify-center
+           transition-transform;
+  }
+
+  /* Variantes de color para el ícono del stat card */
+  .stat-icon-blue   { @apply bg-blue-50   text-blue-600; }
+  .stat-icon-orange { @apply bg-orange-50 text-orange-500; }
+  .stat-icon-yellow { @apply bg-yellow-50 text-yellow-600; }
+  .stat-icon-green  { @apply bg-green-50  text-green-600; }
+  .stat-icon-pink   { @apply bg-pink-50   text-accent; }
+  .stat-icon-purple { @apply bg-purple-50 text-secondary; }
+
+  /* ----------------------------------------------------------
+     QUICK ACCESS CARDS (accesos rápidos en home)
+     Uso: <a class="quick-card" href="..."> ... </a>
+  ---------------------------------------------------------- */
+  .quick-card {
+    @apply bg-white p-6 rounded-xl shadow-sm border border-gray-100
+           hover:shadow-lg transition-all relative overflow-hidden;
+  }
+  .quick-card-icon {
+    @apply w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center
+           text-secondary mb-4
+           transition-colors;
+  }
+  .quick-card-title {
+    @apply text-base font-semibold text-gray-900 mb-1;
+  }
+  .quick-card-desc {
+    @apply text-sm text-gray-500;
+  }
+  .quick-card-bg-icon {
+    @apply absolute top-0 right-0 p-4 opacity-5 transition-opacity;
+  }
+
+  /* ----------------------------------------------------------
+     PANEL / CARD — Contenedor blanco con borde
+     Uso: <div class="panel"> ... </div>
+  ---------------------------------------------------------- */
+  .panel {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+  .panel-header {
+    @apply px-6 py-5 border-b border-gray-100 flex justify-between items-center;
+  }
+  .panel-header-title {
+    @apply text-lg font-bold text-gray-900;
+  }
+  .panel-header-sub {
+    @apply text-sm text-gray-500;
+  }
+  .panel-footer {
+    @apply px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between;
+  }
+  .panel-count-text {
+    @apply text-xs text-gray-500;
+  }
+
+  /* Variante: card de formulario (sin overflow-hidden) */
+  .panel-form {
+    @apply bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100;
+  }
+
+  /* ----------------------------------------------------------
+     CHART CARD (tarjeta con gráfico)
+  ---------------------------------------------------------- */
+  .chart-card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col;
+  }
+  .chart-card-header {
+    @apply flex items-center justify-between mb-6;
+  }
+  .chart-card-title {
+    @apply text-lg font-bold text-gray-800;
+  }
+  .chart-icon-pink   { @apply p-2 bg-pink-50   text-accent rounded-lg; }
+  .chart-icon-blue   { @apply p-2 bg-blue-50   text-blue-600 rounded-lg; }
+  .chart-icon-green  { @apply p-2 bg-emerald-50 text-emerald-600 rounded-lg; }
+
+  /* ----------------------------------------------------------
+     CATALOG CARD (tarjetas del catálogo público)
+  ---------------------------------------------------------- */
+  .catalog-card {
+    @apply bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl
+           transition-all duration-300 border border-gray-100 flex flex-col;
+  }
+  .catalog-card-img {
+    @apply h-48 overflow-hidden relative bg-gray-100;
+  }
+  .catalog-card-img img {
+    @apply w-full h-full object-cover transition-transform duration-500;
+  }
+  .catalog-card-body {
+    @apply p-5 flex flex-col flex-grow;
+  }
+  .catalog-card-title {
+    @apply text-lg font-bold text-gray-900;
+  }
+  .catalog-card-sku {
+    @apply text-xs text-gray-500 mb-4 font-mono;
+  }
+  .catalog-card-btn {
+    @apply mt-auto w-full bg-accent/10 text-accent hover:bg-accent hover:text-white
+           py-2.5 rounded-lg font-semibold transition-colors
+           flex items-center justify-center gap-2;
+  }
+
+  /* ----------------------------------------------------------
+     BOTONES
+  ---------------------------------------------------------- */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-white hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply btn border-2 border-secondary text-secondary hover:bg-secondary hover:text-white;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-white hover:opacity-90;
+  }
+  .btn-warning {
+    @apply btn bg-warning text-textMain hover:opacity-90;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-white hover:bg-secondary;
+  }
+  .btn-secondary-alt {
+    @apply btn bg-secondary text-white hover:bg-accent;
+  }
+
+  /* Botón accent estilo página (más grande, redondeado) */
+  .btn-page-primary {
+    @apply bg-accent hover:bg-pink-600 text-white px-5 py-2.5
+           rounded-xl font-semibold text-sm transition-all shadow-sm
+           flex items-center gap-2;
+  }
+  /* Botón ghost / outline (volver, cancelar) */
+  .btn-ghost {
+    @apply bg-white border border-gray-200 text-gray-700
+           hover:bg-gray-50 px-4 py-2.5 rounded-xl text-sm font-semibold
+           transition-all shadow-sm flex items-center gap-2;
+  }
+  /* Botón ghost con hover de acento */
+  .btn-ghost-accent {
+    @apply bg-white border border-gray-200 text-gray-600
+           hover:text-accent hover:border-accent/50
+           px-4 py-2.5 rounded-xl font-semibold text-sm
+           transition-all shadow-sm flex items-center gap-2;
+  }
+  /* Botón de submit de formulario */
+  .btn-submit {
+    @apply w-full bg-accent text-white py-3 rounded-xl font-bold
+           hover:bg-pink-600 transition-all shadow-md shadow-accent/20
+           active:scale-[0.98];
+  }
+  /* Botón de logout */
+  .btn-logout {
+    @apply flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl
+           text-red-500 bg-red-50 hover:bg-red-100 transition-colors font-medium text-sm;
+  }
+
+  /* ----------------------------------------------------------
+     BADGES DE ESTADO
+  ---------------------------------------------------------- */
+  .badge {
+    @apply px-3 py-1 rounded-pill text-xs font-semibold inline-block;
+  }
+  .badge-success  { @apply badge bg-green-100  text-success; }
+  .badge-warning  { @apply badge bg-yellow-100 text-yellow-700; }
+  .badge-danger   { @apply badge bg-red-100    text-danger; }
+  .badge-info     { @apply badge bg-cyan-100   text-info; }
+
+  /* Badges inline en tablas (más compactos) */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold;
+  }
+  .status-approved  { @apply status-badge bg-green-100  text-green-700; }
+  .status-pending   { @apply status-badge bg-yellow-100 text-yellow-700; }
+  .status-rejected  { @apply status-badge bg-red-100    text-red-700; }
+  .status-delivered { @apply status-badge bg-blue-100   text-blue-700; }
+
+  /* Badge de tipo IN/OUT */
+  .type-in  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 uppercase; }
+  .type-out { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 uppercase; }
+
+  /* Badge de stock */
+  .stock-ok   { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100  text-green-700; }
+  .stock-low  { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700; }
+  .stock-none { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100    text-red-700; }
+
+  /* Badge de rol de usuario */
+  .role-admin   { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-50    text-red-600    border border-red-100; }
+  .role-manager { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50   text-blue-600   border border-blue-100; }
+  .role-viewer  { @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100  text-gray-600   border border-gray-200; }
+
+  /* ----------------------------------------------------------
+     TABLAS — Sistema estándar
+  ---------------------------------------------------------- */
+  .table-panel {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+  .table-wrapper {
+    @apply overflow-x-auto;
+  }
+  .table {
+    @apply w-full text-left border-collapse;
+  }
+  .table-head {
+    @apply bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider;
+  }
+  .th {
+    @apply py-4 px-6;
+  }
+  .th-center {
+    @apply py-4 px-6 text-center;
+  }
+  .table-body {
+    @apply divide-y divide-gray-100 text-sm;
+  }
+  .table-row {
+    @apply hover:bg-gray-50 transition-colors;
+  }
+  .td {
+    @apply py-4 px-6;
+  }
+  .td-center {
+    @apply py-4 px-6 text-center;
+  }
+  .td-id {
+    @apply py-4 px-6 font-semibold text-gray-800;
+  }
+  .td-muted {
+    @apply py-4 px-6 text-gray-600;
+  }
+  .td-light {
+    @apply py-4 px-6 text-gray-500;
+  }
+
+  /* Celda con avatar de usuario */
+  .user-cell {
+    @apply flex items-center gap-2;
+  }
+  .user-avatar-sm {
+    @apply w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold;
+  }
+
+  /* ----------------------------------------------------------
+     PAGINACIÓN
+  ---------------------------------------------------------- */
+  .pagination {
+    @apply flex gap-2;
+  }
+  .page-btn {
+    @apply px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs hover:bg-gray-50;
+  }
+  .page-btn-active {
+    @apply px-3 py-1 bg-accent text-white rounded-lg text-xs font-bold;
+  }
+  .page-btn-disabled {
+    @apply px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs opacity-50 cursor-not-allowed;
+  }
+
+  /* ----------------------------------------------------------
+     INPUTS Y FORMULARIOS
+  ---------------------------------------------------------- */
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+           transition duration-200;
+  }
+  .input-error {
+    @apply border-danger focus:ring-danger;
+  }
+  /* Input estilo páginas internas (con fondo gris) */
+  .input-page {
+    @apply w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
+           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent
+           transition-all;
+  }
+  .select-page {
+    @apply w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
+           text-gray-600
+           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent
+           transition-all;
+  }
+  /* Input con ícono a la izquierda (el padre debe ser relative) */
+  .input-icon {
+    @apply w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
+           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent
+           transition-all;
+  }
+  .input-icon-left {
+    @apply w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none;
+  }
+  /* Label de formulario */
+  .form-label {
+    @apply block text-sm font-semibold text-gray-700 mb-2;
+  }
+  .form-label-tiny {
+    @apply block text-[11px] font-bold text-gray-400 uppercase mb-1;
+  }
+  /* Textarea */
+  .textarea-page {
+    @apply w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm
+           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent
+           transition-all;
+  }
+  /* Select en tabla (cambio de rol) */
+  .select-table {
+    @apply w-32 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700
+           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent
+           transition-all cursor-pointer;
+  }
+
+  /* ----------------------------------------------------------
+     CARDS GENÉRICAS
+  ---------------------------------------------------------- */
+  .card {
+    @apply bg-white rounded-xl shadow p-6;
+  }
+  .card-hover {
+    @apply card hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200;
+  }
+
+  /* ----------------------------------------------------------
+     PROFILE CARD (tarjeta de perfil de usuario)
+  ---------------------------------------------------------- */
+  .profile-avatar {
+    @apply w-32 h-32 rounded-full bg-accent/10 mx-auto flex items-center justify-center
+           text-accent text-4xl font-bold border-4 border-white shadow-md;
+  }
+  .profile-name {
+    @apply text-xl font-bold text-gray-900 mt-4;
+  }
+  .profile-role {
+    @apply text-accent font-medium text-sm;
+  }
+
+  /* ----------------------------------------------------------
+     SEARCH BAR (barra de búsqueda con filtros)
+  ---------------------------------------------------------- */
+  .search-bar {
+    @apply bg-white p-4 rounded-2xl shadow-sm border border-gray-100
+           flex flex-col md:flex-row gap-4;
+  }
+  .search-input-wrap {
+    @apply relative flex-grow;
+  }
+
+  /* ----------------------------------------------------------
+     HEADER SECTION de ANALYTICS
+  ---------------------------------------------------------- */
+  .page-icon-title {
+    @apply p-2 bg-accent/10 rounded-xl;
+  }
+
+  /* ----------------------------------------------------------
+     TABLA SIMPLE (admin-requests - sin navbar)
+  ---------------------------------------------------------- */
+  .admin-table-container {
+    @apply bg-white rounded-xl shadow overflow-hidden;
+  }
+  .admin-table-head {
+    @apply bg-gray-50 border-b border-gray-200 text-left text-gray-600;
+  }
+  .admin-th {
+    @apply py-4 px-4;
+  }
+  .admin-row {
+    @apply hover:bg-gray-50 divide-y divide-gray-200;
+  }
+  .admin-td {
+    @apply py-5 px-4 text-gray-600;
+  }
+
+  /* ----------------------------------------------------------
+     TABLA ANTIGUO ESTILO (para admin-requests)
+  ---------------------------------------------------------- */
+  .old-header {
+    @apply flex justify-between items-end mb-6;
+  }
+  .old-title {
+    @apply text-2xl font-semibold text-gray-700;
+  }
+  .old-sub {
+    @apply text-sm text-gray-400;
+  }
+
+} /* fin @layer components */

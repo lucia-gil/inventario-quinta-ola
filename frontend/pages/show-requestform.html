@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nueva Transacción | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main-narrow">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Nueva Transacción</h1>
+        <p class="page-subtitle">Registra un nuevo movimiento de entrada o salida de material.</p>
+      </div>
+      <button onclick="window.history.back()" class="btn-ghost">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
+      </button>
+    </div>
+
+    <div class="panel-form">
+      <form action="#" method="POST" class="space-y-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="id_transaccion" class="form-label">ID Transacción</label>
+            <input type="text" id="id_transaccion" name="id_transaccion"
+              class="input-page" placeholder="Ej. TXN-0001">
+          </div>
+          <div>
+            <label for="solicitante" class="form-label">Solicitante</label>
+            <div class="relative">
+              <i data-lucide="user" class="input-icon-left"></i>
+              <input type="text" id="solicitante" name="solicitante"
+                class="input-icon" placeholder="Nombre del solicitante">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="material" class="form-label">Material</label>
+            <div class="relative">
+              <i data-lucide="box" class="input-icon-left"></i>
+              <input type="text" id="material" name="material"
+                class="input-icon" placeholder="Nombre o código del material">
+            </div>
+          </div>
+          <div>
+            <label for="cantidad" class="form-label">Cantidad</label>
+            <input type="number" id="cantidad" name="cantidad" min="1"
+              class="input-page" placeholder="0">
+          </div>
+        </div>
+
+        <div>
+          <label for="tipo" class="form-label">Tipo de Movimiento</label>
+          <select id="tipo" name="tipo" class="select-page">
+            <option value="" disabled selected>Selecciona el tipo...</option>
+            <option value="entrada">Entrada (+)</option>
+            <option value="salida">Salida (-)</option>
+          </select>
+        </div>
+
+        <hr class="border-gray-100">
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="window.history.back()" class="btn-ghost">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-page-primary">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Registrar Transacción
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbar({ active: 'transactions', name: 'Alvaro Gómez', role: 'Administrador' });
+    lucide.createIcons();
+  </script>
+</body>
+</html>

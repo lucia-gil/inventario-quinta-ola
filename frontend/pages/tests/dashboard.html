@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory System UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="flex min-h-screen">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-white shadow p-5 space-y-6">
+
+            <div>
+                <h1 class="text-xl font-bold">InventoryOS</h1>
+                <p class="text-xs text-gray-500">workflow + stock system</p>
+            </div>
+
+            <nav class="space-y-2 text-sm">
+
+                <a class="block p-2 rounded bg-gray-100 font-semibold">Dashboard</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Inventory</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Transactions</a>
+                <a class="block p-2 rounded hover:bg-gray-100">History</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Analytics</a>
+
+                <hr class="my-3">
+
+                <p class="text-xs text-gray-400 uppercase">Admin</p>
+                <a class="block p-2 rounded hover:bg-gray-100">Members</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Items</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Requests</a>
+
+                <p class="text-xs text-gray-400 uppercase mt-4">Super Admin</p>
+                <a class="block p-2 rounded hover:bg-red-50 text-red-600">Privileges</a>
+
+            </nav>
+
+            <div class="text-xs text-gray-400 pt-4">
+                Logged in as: Admin
+            </div>
+
+        </aside>
+
+        <!-- MAIN -->
+        <main class="flex-1 p-8 space-y-6">
+
+            <!-- HEADER -->
+            <header class="flex justify-between items-center">
+
+                <div>
+                    <h2 class="text-2xl font-bold">Dashboard</h2>
+                    <p class="text-sm text-gray-500">system overview</p>
+                </div>
+
+                <div class="flex gap-3 text-sm">
+                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded">System OK</span>
+                    <span class="px-3 py-1 bg-gray-200 rounded">Role: Admin</span>
+                </div>
+
+            </header>
+
+            <!-- KPI ROW -->
+            <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                <div class="bg-white p-4 rounded shadow">
+                    <p class="text-xs text-gray-500">Total Items</p>
+                    <p class="text-2xl font-bold">142</p>
+                    <p class="text-xs text-green-600">+3 today</p>
+                </div>
+
+                <div class="bg-white p-4 rounded shadow">
+                    <p class="text-xs text-gray-500">Low Stock</p>
+                    <p class="text-2xl font-bold text-yellow-600">7</p>
+                </div>
+
+                <div class="bg-white p-4 rounded shadow">
+                    <p class="text-xs text-gray-500">Pending Transactions</p>
+                    <p class="text-2xl font-bold text-blue-600">5</p>
+                </div>
+
+                <div class="bg-white p-4 rounded shadow">
+                    <p class="text-xs text-gray-500">Completed Today</p>
+                    <p class="text-2xl font-bold text-green-600">18</p>
+                </div>
+
+            </section>
+
+            <!-- WORKFLOW SNAPSHOT -->
+            <section class="bg-white p-5 rounded shadow space-y-3">
+
+                <h3 class="font-semibold">Transaction Queue</h3>
+
+                <div class="space-y-2 text-sm">
+
+                    <div class="flex flex-row justify-between p-2 bg-yellow-50 rounded">
+                        <span>OUT • Keyboard x3</span>
+                        <span class="text-yellow-600">Pending</span>
+                    </div>
+
+                    <div class="flex justify-between p-2 bg-blue-50 rounded">
+                        <span>IN • Mouse x10</span>
+                        <span class="text-blue-600">Waiting changes</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- INVENTORY PREVIEW -->
+            <section class="bg-white p-5 rounded shadow">
+
+                <div class="flex justify-between mb-3">
+                    <h3 class="font-semibold">Inventory Snapshot</h3>
+                    <button class="text-sm bg-blue-500 text-white px-3 py-1 rounded">
+                        View all
+                    </button>
+                </div>
+
+                <table class="w-full text-sm">
+
+                    <thead class="text-left text-gray-500 border-b">
+                        <tr>
+                            <th class="p-2">Item</th>
+                            <th class="p-2">Stock</th>
+                            <th class="p-2">Status</th>
+                            <th class="p-2">Tags</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <tr class="border-b">
+                            <td class="p-2">Keyboard</td>
+                            <td class="p-2">12</td>
+                            <td class="p-2 text-green-600">OK</td>
+                            <td class="p-2 text-gray-500">electronics</td>
+                        </tr>
+
+                        <tr class="border-b">
+                            <td class="p-2">Headphones</td>
+                            <td class="p-2">2</td>
+                            <td class="p-2 text-yellow-600">Low</td>
+                            <td class="p-2 text-gray-500">audio</td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </section>
+
+            <!-- ACTION HUB -->
+            <section class="grid md:grid-cols-3 gap-4">
+
+                <div class="bg-white p-4 rounded shadow">
+                    <h4 class="font-semibold">Quick IN</h4>
+                    <p class="text-sm text-gray-500 mb-2">Add stock</p>
+                    <button class="bg-green-500 text-white px-3 py-1 rounded text-sm">
+                        Create
+                    </button>
+                </div>
+
+                <div class="bg-white p-4 rounded shadow">
+                    <h4 class="font-semibold">Quick OUT</h4>
+                    <p class="text-sm text-gray-500 mb-2">Remove stock</p>
+                    <button class="bg-red-500 text-white px-3 py-1 rounded text-sm">
+                        Create
+                    </button>
+                </div>
+
+                <div class="bg-white p-4 rounded shadow">
+                    <h4 class="font-semibold">Admin Queue</h4>
+                    <p class="text-sm text-gray-500 mb-2">Review requests</p>
+                    <button class="bg-gray-800 text-white px-3 py-1 rounded text-sm">
+                        Open
+                    </button>
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</body>
+
+</html>

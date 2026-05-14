@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo - Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-background text-textMain font-sans scroll-smooth flex flex-col min-h-screen">
+
+  <main class="flex-grow pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
+
+    <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+      <div>
+        <h1 class="page-title text-secondary">Catálogo de Materiales</h1>
+        <p class="page-subtitle">Explora y solicita los recursos disponibles en el inventario.</p>
+      </div>
+      <div class="search-input-wrap w-full md:w-96">
+        <i data-lucide="search" class="input-icon-left"></i>
+        <input type="text" id="catalog-search"
+          placeholder="Buscar por nombre o código..."
+          class="input-icon w-full">
+      </div>
+    </div>
+
+    <!-- GRID DE TARJETAS -->
+    <div id="catalog-grid"
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <!-- inyectadas por JS -->
+    </div>
+
+    <!-- PAGINACIÓN -->
+    <div class="mt-12 flex justify-center">
+      <div id="catalog-pagination"></div>
+    </div>
+
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbarPublic({ active: 'catalog' });
+    QO.footerPublic();
+
+    // ── Reemplazar con fetch('/api/catalog') ──
+    const productos = [
+      { id: 1, name: 'Cemento Portland',   sku: 'CEM-001', img: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500', status: 'ok' },
+      { id: 2, name: 'Pintura Látex Blanca',sku: 'PIN-042', img: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=500', status: 'ok' },
+      { id: 3, name: 'Tubos PVC 2"',        sku: 'TUB-112', img: 'https://contusol.com.pe/wp-content/uploads/2025/01/TUBO-PVC-2%E2%80%B3-DESAGUE-TP.jpg', status: 'low' },
+      { id: 4, name: 'Ladrillo King Kong',  sku: 'LAD-005', img: 'https://d34fyu2ua7aizz.cloudfront.net/images/product/43/large/ts_image_61bb5f51482ec4_87680737.jpg', status: 'ok' },
+    ];
+
+    QO.renderCatalogCards('catalog-grid', productos);
+    QO.renderPagination('catalog-pagination', { current: 1, total: 3 });
+    lucide.createIcons();
+  </script>
+</body>
+</html>

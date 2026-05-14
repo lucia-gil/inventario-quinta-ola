@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UI System Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#f8fafc] text-[#111827]">
+
+    <!-- ================= APP SHELL ================= -->
+    <div class="flex min-h-screen">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-white border-r p-5 space-y-6">
+
+            <div class="text-xl font-bold">
+                InventorySys
+            </div>
+
+            <nav class="space-y-2 text-sm text-gray-700">
+                <a class="block p-2 rounded hover:bg-gray-100">Dashboard</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Items</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Transactions</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Members</a>
+                <a class="block p-2 rounded hover:bg-gray-100">Super Admin</a>
+            </nav>
+
+            <div class="pt-6 border-t text-xs text-gray-400">
+                logged as Admin
+            </div>
+
+        </aside>
+
+        <!-- ================= MAIN CONTENT ================= -->
+        <main class="flex-1 p-8 space-y-10">
+
+            <!-- ================= PAGE HEADER ================= -->
+            <header>
+                <h1 class="text-4xl font-bold">UI System Lab</h1>
+                <p class="text-gray-500 text-sm">
+                    full component coverage test (layout + domain + system)
+                </p>
+            </header>
+
+            <!-- ================= GRID SECTION ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold text-gray-800">
+                    Dashboard Layout Grid
+                </h2>
+
+                <div class="grid grid-cols-3 gap-4">
+
+                    <div class="bg-white border rounded-xl p-5">
+                        <p class="text-sm text-gray-500">Items</p>
+                        <p class="text-2xl font-bold">124</p>
+                    </div>
+
+                    <div class="bg-white border rounded-xl p-5">
+                        <p class="text-sm text-gray-500">Transactions</p>
+                        <p class="text-2xl font-bold">32</p>
+                    </div>
+
+                    <div class="bg-white border rounded-xl p-5">
+                        <p class="text-sm text-gray-500">Pending</p>
+                        <p class="text-2xl font-bold text-yellow-600">7</p>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- ================= BUTTON SYSTEM ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold">Button System</h2>
+
+                <div class="flex flex-wrap gap-3">
+
+                    <button class="px-4 py-2 bg-[#7c3aed] text-white rounded-lg">
+                        Primary Action
+                    </button>
+
+                    <button class="px-4 py-2 bg-gray-100 border rounded-lg">
+                        Secondary
+                    </button>
+
+                    <button class="px-4 py-2 bg-green-100 text-green-700 rounded-full">
+                        IN Action
+                    </button>
+
+                    <button class="px-4 py-2 bg-red-100 text-red-700 rounded-full">
+                        OUT Action
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- ================= PILL SYSTEM ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold">Unified Pill System</h2>
+
+                <div class="flex flex-wrap gap-2">
+
+                    <!-- STATUS -->
+                    <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">
+                        Approved
+                    </span>
+
+                    <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm">
+                        Pending
+                    </span>
+
+                    <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm">
+                        Rejected
+                    </span>
+
+                    <!-- ROLES -->
+                    <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm">
+                        Super Admin
+                    </span>
+
+                    <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
+                        Admin
+                    </span>
+
+                    <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm">
+                        Viewer
+                    </span>
+
+                    <!-- TAGS -->
+                    <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm">
+                        electronics
+                    </span>
+
+                    <span class="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-sm">
+                        fragile
+                    </span>
+
+                </div>
+
+            </section>
+
+            <!-- ================= TABLE SYSTEM ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold">Core Data Tables</h2>
+
+                <div class="bg-white border rounded-xl overflow-hidden">
+
+                    <table class="w-full text-sm">
+
+                        <thead class="bg-gray-50 text-left text-gray-600">
+                            <tr>
+                                <th class="p-4">Item</th>
+                                <th class="p-4">Stock</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Tags</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr class="border-t">
+                                <td class="p-4 font-medium">Keyboard</td>
+                                <td class="p-4">12</td>
+                                <td class="p-4">
+                                    <span class="px-3 py-1 rounded-full bg-green-100 text-green-700">
+                                        OK
+                                    </span>
+                                </td>
+                                <td class="p-4 flex gap-2 flex-wrap">
+                                    <span
+                                        class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700">electronics</span>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- ================= TRANSACTION FLOW ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold">Transaction Flow</h2>
+
+                <div class="bg-white border rounded-xl divide-y">
+
+                    <div class="p-4 flex justify-between">
+                        <div>
+                            <p class="font-medium">OUT - Keyboard</p>
+                            <p class="text-sm text-gray-500">Qty: 3</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">
+                            Pending
+                        </span>
+                    </div>
+
+                    <div class="p-4 flex justify-between">
+                        <div>
+                            <p class="font-medium">IN - Mouse</p>
+                            <p class="text-sm text-gray-500">Qty: 10</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-green-100 text-green-700">
+                            Approved
+                        </span>
+                    </div>
+
+                    <div class="p-4 flex justify-between">
+                        <div>
+                            <p class="font-medium">OUT - Monitor</p>
+                            <p class="text-sm text-gray-500">Qty: 1</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-red-100 text-red-700">
+                            Rejected
+                        </span>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- ================= MEMBER SYSTEM ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold">Member System (RBAC)</h2>
+
+                <div class="bg-white border rounded-xl divide-y">
+
+                    <div class="p-4 flex justify-between">
+                        <div>
+                            <p class="font-medium">Alice</p>
+                            <p class="text-sm text-gray-500">System access</p>
+                        </div>
+
+                        <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700">
+                            Super Admin
+                        </span>
+                    </div>
+
+                    <div class="p-4 flex justify-between">
+                        <div>
+                            <p class="font-medium">Bob</p>
+                            <p class="text-sm text-gray-500">Limited access</p>
+                        </div>
+
+                        <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                            Admin
+                        </span>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- ================= FORM SYSTEM ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold">Form System</h2>
+
+                <div class="bg-white border rounded-xl p-5 space-y-4">
+
+                    <input class="w-full px-4 py-2 border rounded-lg" placeholder="Item name" />
+
+                    <input class="w-full px-4 py-2 border rounded-lg" placeholder="Quantity" />
+
+                    <select class="w-full px-4 py-2 border rounded-lg">
+                        <option>Status</option>
+                    </select>
+
+                    <button class="px-4 py-2 bg-[#7c3aed] text-white rounded-lg">
+                        Submit
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- ================= EMPTY STATE ================= -->
+            <section class="space-y-4">
+
+                <h2 class="text-sm font-semibold">Empty State</h2>
+
+                <div class="bg-white border rounded-xl p-10 text-center text-gray-500">
+
+                    <p class="font-medium">No data available</p>
+                    <p class="text-sm">Create a new item or transaction to get started</p>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</body>
+
+</html>

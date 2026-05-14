@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quinta Ola</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+    /* Clases para el efecto 3D de las tarjetas */
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    </style>
+    
+</head>
+
+<body class="bg-background text-textMain font-sans scroll-smooth">
+
+    <div class="min-h-screen flex flex-col pt-20">
+
+        <nav class="bg-white/90 backdrop-blur-md shadow px-8 py-3 flex justify-between items-center fixed top-0 left-0 w-full z-50">
+            <div class="flex items-center">
+                <img src="img/QuintaOlaLogo.png" alt="Quinta Ola - Sistema Inteligente de Inventario" class="h-14 w-auto object-contain" />
+                
+                <span class="sr-only">Quinta Ola</span>
+            </div>
+
+            <div class="flex gap-6 text-sm items-center">
+                <a href="/pages/catalog.html"
+                    class="relative text-secondary hover:text-accent transition font-medium group">
+                    Nuestros productos
+                    <span class="absolute left-0 -bottom-1 w-0 h-[2px] bg-accent transition-all duration-300 group-hover:w-full"></span>
+                </a>
+
+                <a href="/pages/show-login.html"
+                    class="bg-accent text-white px-5 py-2 rounded-lg font-medium hover:bg-secondary transition duration-200 shadow-sm flex items-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Hola, inicia sesión
+                </a>
+            </div>
+        </nav>
+
+        <div id="top" class="relative flex flex-col items-center justify-center text-center min-h-[80vh] px-6">
+
+            <div class="absolute inset-0">
+                <img id="heroImage"
+                    src="https://img.freepik.com/foto-gratis/grupo-personas-arrojando-dinero-oficina_1303-15891.jpg"
+                    class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-gray-900/70"></div>
+            </div>
+
+            <div class="relative z-10 max-w-4xl w-full space-y-8 mt-10">
+
+                <h2 class="text-4xl md:text-6xl font-title font-bold leading-tight text-white">
+                    Bienvenido a <span class="text-accent">Quinta Ola</span><br>
+                    <span class="text-2xl md:text-4xl font-medium text-gray-300 mt-3 block">
+                        Sistema inteligente de inventario
+                    </span>
+                </h2>
+
+                <p class="text-base md:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                    Gestiona materiales, visualiza productos y optimiza procesos
+                    con una plataforma moderna, rápida y eficiente.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6 w-full max-w-2xl mx-auto">
+
+                    <a href="/pages/catalog.html" class="bg-white text-gray-900 hover:bg-gray-200 px-8 py-3 rounded-lg font-semibold transition shadow-lg">
+                        Catálogo
+                    </a>
+
+                    <a href="/pages/show-login.html" class="bg-accent text-white hover:opacity-90 px-8 py-3 rounded-lg font-semibold transition shadow-lg">
+                        Acceder al sistema
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+
+        <section class="py-24 px-6 bg-gray-50 border-t border-gray-200">
+            <div class="max-w-6xl mx-auto text-center">
+
+                <div class="mb-16">
+                    <span class="text-xs font-bold tracking-widest uppercase text-accent bg-accent/10 px-4 py-1.5 rounded-full mb-4 inline-block">
+                        Funcionalidades Principales
+                    </span>
+                    <h2 class="text-3xl md:text-4xl font-title font-bold text-secondary mt-4 mb-4">
+                        Todo lo que necesitas en una sola plataforma
+                    </h2>
+                    <p class="text-base text-gray-600 max-w-2xl mx-auto">
+                        Optimiza los procesos de tu empresa con herramientas diseñadas para escalar, mantener el orden y mejorar la toma de decisiones.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 text-left">
+
+    <div class="h-[460px] perspective-1000 group">
+            <div id="card-1" class="relative w-full h-full transition-transform duration-700 transform-style-3d">
+                
+                <div class="absolute inset-0 w-full h-full backface-hidden bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 flex flex-col">
+                    <div class="overflow-hidden rounded-t-xl h-48 relative">
+                        <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d" class="w-full h-full object-cover" alt="Gestión de Inventario" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/20 to-transparent opacity-80"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <i data-lucide="package" class="w-7 h-7"></i>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-xl font-bold text-secondary mb-2">Gestión de inventario</h3>
+                        <p class="text-gray-600 text-sm mb-6 flex-grow leading-relaxed">
+                            Supervisa y controla tu stock en tiempo real. Configura alertas de escasez y automatiza el reabastecimiento para que tu operación nunca se detenga.
+                        </p>
+                        <button onclick="document.getElementById('card-1').classList.toggle('rotate-y-180')" class="text-accent font-semibold text-sm hover:opacity-80 flex items-center gap-1 transition-opacity w-max">
+                            Conocer más <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="absolute inset-0 w-full h-full backface-hidden rotate-y-180 bg-accent text-white rounded-2xl p-8 shadow-lg flex flex-col justify-center text-center items-center">
+                    <i data-lucide="info" class="w-12 h-12 mb-4 opacity-80"></i>
+                    <h3 class="text-xl font-bold mb-3">Detalle Técnico</h3>
+                    <p class="text-sm mb-6 text-white/90 leading-relaxed">
+                        El sistema actualizará automáticamente el stock de los materiales (Total y Disponible) en la base de datos MySQL cada vez que se apruebe una solicitud, manteniendo la trazabilidad.
+                    </p>
+                    <button onclick="document.getElementById('card-1').classList.toggle('rotate-y-180')" class="bg-white text-accent px-6 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow">
+                        Volver
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="h-[460px] perspective-1000 group">
+            <div id="card-2" class="relative w-full h-full transition-transform duration-700 transform-style-3d">
+                
+                <div class="absolute inset-0 w-full h-full backface-hidden bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 flex flex-col">
+                    <div class="overflow-hidden rounded-t-xl h-48 relative">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71" class="w-full h-full object-cover" alt="Análisis de Datos" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/20 to-transparent opacity-80"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-xl font-bold text-secondary mb-2">Análisis y Reportes</h3>
+                        <p class="text-gray-600 text-sm mb-6 flex-grow leading-relaxed">
+                            Convierte datos complejos en paneles visuales intuitivos. Analiza tendencias, evalúa el rendimiento y toma decisiones basadas en información precisa.
+                        </p>
+                        <button onclick="document.getElementById('card-2').classList.toggle('rotate-y-180')" class="text-accent font-semibold text-sm hover:opacity-80 flex items-center gap-1 transition-opacity w-max">
+                            Conocer más <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="absolute inset-0 w-full h-full backface-hidden rotate-y-180 bg-accent text-white rounded-2xl p-8 shadow-lg flex flex-col justify-center text-center items-center">
+                    <i data-lucide="file-spreadsheet" class="w-12 h-12 mb-4 opacity-80"></i>
+                    <h3 class="text-xl font-bold mb-3">Exportación Rápida</h3>
+                    <p class="text-sm mb-6 text-white/90 leading-relaxed">
+                        Se generarán reportes de consumo mensuales que reemplazarán el uso manual de Excel, permitiendo exportar toda la data en formato CSV con un solo clic.
+                    </p>
+                    <button onclick="document.getElementById('card-2').classList.toggle('rotate-y-180')" class="bg-white text-accent px-6 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow">
+                        Volver
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="h-[460px] perspective-1000 group">
+            <div id="card-3" class="relative w-full h-full transition-transform duration-700 transform-style-3d">
+                
+                <div class="absolute inset-0 w-full h-full backface-hidden bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 flex flex-col">
+                    <div class="overflow-hidden rounded-t-xl h-48 relative">
+                        <img src="https://images.unsplash.com/photo-1556740749-887f6717d7e4" class="w-full h-full object-cover" alt="Solicitudes Internas" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/20 to-transparent opacity-80"></div>
+                        <div class="absolute bottom-4 left-4 text-white">
+                            <i data-lucide="zap" class="w-7 h-7"></i>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-xl font-bold text-secondary mb-2">Solicitudes rápidas</h3>
+                        <p class="text-gray-600 text-sm mb-6 flex-grow leading-relaxed">
+                            Agiliza los pedidos internos con flujos de aprobación automatizados. Reduce el papeleo, evita cuellos de botella y mejora la comunicación entre áreas.
+                        </p>
+                        <button onclick="document.getElementById('card-3').classList.toggle('rotate-y-180')" class="text-accent font-semibold text-sm hover:opacity-80 flex items-center gap-1 transition-opacity w-max">
+                            Conocer más <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="absolute inset-0 w-full h-full backface-hidden rotate-y-180 bg-accent text-white rounded-2xl p-8 shadow-lg flex flex-col justify-center text-center items-center">
+                    <i data-lucide="check-circle" class="w-12 h-12 mb-4 opacity-80"></i>
+                    <h3 class="text-xl font-bold mb-3">Flujo de Aprobación</h3>
+                    <p class="text-sm mb-6 text-white/90 leading-relaxed">
+                        Las solicitudes pasarán por estados de Pendiente, Aprobada, Rechazada y Entregada, enviando notificaciones para asegurar una comunicación transparente.
+                    </p>
+                    <button onclick="document.getElementById('card-3').classList.toggle('rotate-y-180')" class="bg-white text-accent px-6 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow">
+                        Volver
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+        </section>
+
+        <section class="relative py-24 px-6 bg-gray-900 overflow-hidden">
+            <div class="absolute inset-0 opacity-20 pointer-events-none">
+                <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-accent blur-[100px]"></div>
+                <div class="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-blue-500 blur-[100px]"></div>
+            </div>
+
+            <div class="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center gap-6">
+                <h2 class="text-3xl md:text-5xl font-title font-bold text-white">
+                    ¿Listo para tomar el control de tu inventario?
+                </h2>
+                <p class="text-base md:text-lg text-gray-300 max-w-2xl">
+                    Únete a las empresas que ya están optimizando sus recursos, reduciendo costos operativos y tomando decisiones inteligentes con Quinta Ola.
+                </p>
+                
+                <div class="mt-6 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                    <a href="/pages/show-login.html" class="bg-accent text-white hover:bg-white hover:text-accent px-8 py-3.5 rounded-lg font-bold transition-all duration-300 shadow-lg flex items-center justify-center gap-2 group">
+                        Acceder al sistema 
+                        <i data-lucide="arrow-right" class="w-5 h-5 transition-transform group-hover:translate-x-1"></i>
+                    </a>
+                    <a href="#top" class="bg-white/10 text-white hover:bg-white/20 border border-white/20 px-8 py-3.5 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center">
+                        Explorar funcionalidades
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <footer class="bg-gray-950 text-gray-400 border-t border-gray-800 pt-16 pb-8">
+            <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 text-sm mb-12">
+
+                <div class="md:col-span-2 space-y-5">
+                    <div class="flex items-center">
+                        <img src="img/QuintaOlaLogo.png" alt="Quinta Ola Logo" class="h-14 w-auto object-contain" />
+                        
+                        <span class="sr-only">Quinta Ola</span>
+                    </div>
+                    <p class="max-w-sm leading-relaxed text-gray-400">
+                        Innovando la gestión de inventarios con soluciones modernas, intuitivas y escalables para empresas que miran hacia el futuro.
+                    </p>
+                    
+                    <div class="flex gap-3 pt-2 text-gray-400">
+                        <a href="#" class="hover:text-white transition-colors p-2 bg-gray-900 rounded-full hover:bg-accent border border-gray-800 hover:border-accent">
+                            <i data-lucide="instagram" class="w-4 h-4"></i>
+                        </a>
+                        <a href="#" class="hover:text-white transition-colors p-2 bg-gray-900 rounded-full hover:bg-green-500 border border-gray-800 hover:border-green-500">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                        </a>
+                        <a href="#" class="hover:text-white transition-colors p-2 bg-gray-900 rounded-full hover:bg-blue-600 border border-gray-800 hover:border-blue-600">
+                            <i data-lucide="facebook" class="w-4 h-4"></i>
+                        </a>
+                        <a href="#" class="hover:text-white transition-colors p-2 bg-gray-900 rounded-full hover:bg-blue-500 border border-gray-800 hover:border-blue-500">
+                            <i data-lucide="linkedin" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h4 class="text-white font-semibold uppercase tracking-wider text-xs">Plataforma</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#top" class="hover:text-accent transition-colors block">Inicio</a></li>
+                        <li><a href="/pages/catalog.html" class="hover:text-accent transition-colors block">Nuestros productos</a></li>
+                        <li><a href="/pages/show-login.html" class="hover:text-accent transition-colors block">Iniciar sesión</a></li>
+                    </ul>
+                </div>
+
+                <div class="space-y-4">
+                    <h4 class="text-white font-semibold uppercase tracking-wider text-xs">Soporte</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="hover:text-accent transition-colors block">Centro de ayuda</a></li>
+                        <li><a href="#" class="hover:text-accent transition-colors block">Términos de servicio</a></li>
+                        <li><a href="#" class="hover:text-accent transition-colors block">Política de privacidad</a></li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="max-w-6xl mx-auto px-6 border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+                <p>© 2026 Quinta Ola. Todos los derechos reservados.</p>
+                <p>Hecho con <i data-lucide="heart" class="w-3 h-3 inline text-accent fill-accent"></i> para la gestión de inventarios</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+
+    <script>
+        lucide.createIcons();
+    </script>
+    
+</body>
+
+</html>

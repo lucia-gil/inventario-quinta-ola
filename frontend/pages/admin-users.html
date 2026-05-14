@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administrar Miembros | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Administrar Miembros</h1>
+        <p class="page-subtitle">Control de acceso y gestión de usuarios del sistema.</p>
+      </div>
+      <a href="/pages/show-signup.html" class="btn-page-primary">
+        <i data-lucide="user-plus" class="w-4 h-4"></i> Agregar Miembro
+      </a>
+    </div>
+
+    <div class="table-panel">
+      <div class="table-wrapper">
+        <table class="table">
+          <thead class="table-head">
+            <tr>
+              <th class="th">Miembro</th>
+              <th class="th">Correo Electrónico</th>
+              <th class="th">Fecha de Creación</th>
+              <th class="th">Nivel Actual</th>
+              <th class="th">Cambiar Nivel</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody" class="table-body">
+            <!-- filas inyectadas por JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="panel-footer">
+        <p class="panel-count-text" id="users-count">Cargando miembros...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbar({ active: 'members', name: 'Alvaro Gómez', role: 'Administrador', menuType: 'admin' });
+
+    // ── Reemplazar con fetch('/api/users') ──
+    const usuarios = [
+      { id: 1, name: 'Juan Pérez',  email: 'juan.perez@email.com',  lastSeen: '2026-04-15 · 10:42 AM', role: 'Admin' },
+      { id: 2, name: 'María López', email: 'maria.lopez@email.com', lastSeen: '2026-04-14 · 6:18 PM',  role: 'Manager' },
+      { id: 3, name: 'Carlos Ruiz', email: 'carlos.ruiz@email.com', lastSeen: '2026-04-13 · 3:05 PM',  role: 'Viewer' },
+      { id: 4, name: 'Ana Torres',  email: 'ana.torres@email.com',  lastSeen: '2026-04-12 · 9:21 AM',  role: 'Manager' },
+    ];
+
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = usuarios.map(u => `
+      <tr class="table-row">
+        <td class="td">
+
+          <div class="flex items-center gap-3">
+            ${QO.userAvatar(u.name)}
+            <a href="/pages/info_usuarios.html?id=${u.id}"
+              class="font-semibold text-gray-800 hover:text-accent transition-colors">
+              ${u.name}
+            </a>
+          </div>
+
+        </td>
+        <td class="td-muted">${u.email}</td>
+        <td class="td-light">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400"></i>
+            ${u.lastSeen}
+          </div>
+        </td>
+        <td class="td">${QO.roleBadge(u.role)}</td>
+        <td class="td">
+          <select class="select-table">
+            <option ${u.role==='Admin'   ? 'selected':''}>Admin</option>
+            <option ${u.role==='Manager' ? 'selected':''}>Manager</option>
+            <option ${u.role==='Viewer'  ? 'selected':''}>Viewer</option>
+          </select>
+        </td>
+      </tr>`).join('');
+
+    document.getElementById('users-count').textContent =
+      `Mostrando ${usuarios.length} miembros registrados`;
+
+    lucide.createIcons();
+  </script>
+  <script type="module" src="/src/admin-users.ts"></script>
+</body>
+</html>

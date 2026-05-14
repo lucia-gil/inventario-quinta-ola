@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notificaciones | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main-narrow">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Notificaciones</h1>
+        <p class="page-subtitle">Alertas y actualizaciones sobre tus solicitudes.</p>
+      </div>
+      <button id="btn-mark-all" class="btn-ghost">
+        <i data-lucide="check-check" class="w-4 h-4"></i> Marcar todas como leídas
+      </button>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="flex gap-2 flex-wrap" id="filter-tabs">
+      <button class="filter-tab filter-tab-active" data-filter="all"      onclick="filterNotifs('all')">Todas</button>
+      <button class="filter-tab"                   data-filter="unread"   onclick="filterNotifs('unread')">No leídas <span id="count-unread"></span></button>
+      <button class="filter-tab"                   data-filter="approval" onclick="filterNotifs('approval')">Aprobaciones</button>
+      <button class="filter-tab"                   data-filter="rejection" onclick="filterNotifs('rejection')">Rechazos</button>
+      <button class="filter-tab"                   data-filter="delivery"  onclick="filterNotifs('delivery')">Entregas</button>
+      <button class="filter-tab"                   data-filter="info"      onclick="filterNotifs('info')">Sistema</button>
+    </div>
+
+    <!-- LISTA -->
+    <div id="notif-list" class="space-y-3"></div>
+
+    <!-- VACÍO -->
+    <div id="notif-empty" class="hidden panel-form text-center py-16">
+      <i data-lucide="bell-off" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+      <p class="text-gray-400 font-medium">No hay notificaciones aquí.</p>
+    </div>
+
+  </main>
+
+  <style>
+    .filter-tab {
+      padding: 0.35rem 1rem; border-radius: 9999px; font-size: 0.78rem;
+      font-weight: 600; border: 1px solid #e5e7eb; background: white;
+      color: #6b7280; cursor: pointer; transition: all 0.2s;
+    }
+    .filter-tab:hover        { border-color: #e83e8c; color: #e83e8c; }
+    .filter-tab-active       { background: #e83e8c !important; color: white !important; border-color: #e83e8c !important; }
+    .notif-card              { background: white; border-radius: 1rem; border: 1px solid #f3f4f6;
+                               padding: 1.1rem 1.4rem; display: flex; gap: 1rem;
+                               align-items: flex-start; transition: box-shadow 0.2s; cursor: pointer; }
+    .notif-card:hover        { box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+    .notif-card.unread       { border-left: 3px solid #e83e8c; background: #fff8fb; }
+    .notif-icon              { width: 2.4rem; height: 2.4rem; border-radius: 9999px;
+                               display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .unread-dot              { width: 0.5rem; height: 0.5rem; border-radius: 9999px;
+                               background: #e83e8c; flex-shrink: 0; margin-top: 0.4rem; }
+  </style>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    // CONECTAR: obtener rol del usuario desde sesión para ajustar menuType
+    QO.navbar({ active: '', name: 'Álvaro Gómez', role: 'Administrador', menuType: 'admin' });
+    QO.footer();
+
+    // CONECTAR: fetch('/api/notifications', { headers: { Authorization: `Bearer ${token}` } })
+    // Shape esperado del backend: [{ id, type, title, message, date, read, link }]
+    const notificaciones = [
+      {
+        id: 1, type: 'approval', read: false,
+        title: 'Solicitud aprobada',
+        message: 'Tu solicitud TXN-0002 de "Polera Quinta Ola (M) × 10" fue aprobada por María López.',
+        date: 'Hace 10 min',
+        link: '/pages/request-detail.html?id=TXN-0002',
+      },
+      {
+        id: 2, type: 'rejection', read: false,
+        title: 'Solicitud rechazada',
+        message: 'Tu solicitud TXN-0003 de "Juego Didáctico × 3" fue rechazada. Motivo: sin stock disponible.',
+        date: 'Hace 2 horas',
+        link: '/pages/request-detail.html?id=TXN-0003',
+      },
+      {
+        id: 3, type: 'approval', read: false,
+        title: 'Nueva solicitud pendiente de aprobación',
+        message: 'Carlos Ruiz creó la solicitud TXN-0005. Requiere tu aprobación.',
+        date: 'Hace 3 horas',
+        link: '/pages/request-detail.html?id=TXN-0005',
+      },
+      {
+        id: 4, type: 'delivery', read: true,
+        title: 'Material entregado',
+        message: 'La solicitud TXN-0001 de "Kit Humanitario Grande × 5" fue marcada como entregada.',
+        date: 'Ayer 4:30 PM',
+        link: '/pages/request-detail.html?id=TXN-0001',
+      },
+      {
+        id: 5, type: 'info', read: true,
+        title: 'Alerta de stock bajo',
+        message: '"Polera Quinta Ola (M)" tiene solo 7 unidades — por debajo del mínimo de 15.',
+        date: 'Hace 2 días',
+        link: '/pages/inventory.html',
+      },
+    ];
+
+    const iconMap = {
+      approval:  { icon: 'check-circle',   bg: 'bg-green-50',  color: 'text-green-600' },
+      rejection: { icon: 'x-circle',       bg: 'bg-red-50',    color: 'text-red-500'   },
+      delivery:  { icon: 'package-check',  bg: 'bg-blue-50',   color: 'text-blue-600'  },
+      info:      { icon: 'alert-triangle', bg: 'bg-yellow-50', color: 'text-yellow-600' },
+    };
+
+    let currentFilter = 'all';
+
+    function renderNotifs(filter) {
+      const list  = document.getElementById('notif-list');
+      const empty = document.getElementById('notif-empty');
+
+      const filtered = notificaciones.filter(n => {
+        if (filter === 'all')    return true;
+        if (filter === 'unread') return !n.read;
+        return n.type === filter;
+      });
+
+      // Contador de no leídas
+      const unreadCount = notificaciones.filter(n => !n.read).length;
+      document.getElementById('count-unread').textContent = unreadCount > 0 ? `(${unreadCount})` : '';
+
+      if (filtered.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+      } else {
+        empty.classList.add('hidden');
+        list.innerHTML = filtered.map(n => {
+          const ic = iconMap[n.type] || iconMap.info;
+          return `
+            <div class="notif-card ${n.read ? '' : 'unread'}"
+                 onclick="markRead(${n.id}); window.location.href='${n.link}'">
+              <div class="notif-icon ${ic.bg} ${ic.color}">
+                <i data-lucide="${ic.icon}" class="w-5 h-5"></i>
+              </div>
+              <div class="flex-grow min-w-0">
+                <div class="flex justify-between items-start gap-3">
+                  <p class="text-sm font-bold text-gray-900">${n.title}</p>
+                  <span class="text-[11px] text-gray-400 whitespace-nowrap">${n.date}</span>
+                </div>
+                <p class="text-sm text-gray-500 mt-0.5 leading-relaxed">${n.message}</p>
+              </div>
+              ${!n.read ? '<div class="unread-dot"></div>' : ''}
+            </div>`;
+        }).join('');
+      }
+      lucide.createIcons();
+    }
+
+    function filterNotifs(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(btn => {
+        btn.classList.toggle('filter-tab-active', btn.dataset.filter === filter);
+      });
+      renderNotifs(filter);
+    }
+
+    function markRead(id) {
+      // CONECTAR: fetch(`/api/notifications/${id}/read`, { method: 'PATCH' })
+      const n = notificaciones.find(n => n.id === id);
+      if (n) n.read = true;
+    }
+
+    document.getElementById('btn-mark-all').addEventListener('click', () => {
+      // CONECTAR: fetch('/api/notifications/read-all', { method: 'PATCH' })
+      notificaciones.forEach(n => n.read = true);
+      renderNotifs(currentFilter);
+    });
+
+    renderNotifs('all');
+  </script>
+</body>
+</html>

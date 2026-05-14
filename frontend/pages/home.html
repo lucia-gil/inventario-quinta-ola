@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inicio | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main">
+
+    <!-- BANNER DE BIENVENIDA -->
+    <div class="panel-form flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div>
+        <h2 class="page-title mb-2">Resumen de Inventario</h2>
+        <p class="text-gray-500 text-base max-w-2xl">
+          Controla, gestiona y optimiza el flujo de materiales de Quinta Ola. Todo en un solo lugar.
+        </p>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="/pages/history.html" class="btn-ghost">
+          <i data-lucide="list" class="w-4 h-4 mr-1"></i> Ver Historial
+        </a>
+        <a href="/pages/show-requestform.html" class="btn-page-primary">
+          <i data-lucide="plus-circle" class="w-4 h-4 mr-1"></i> Nueva Solicitud
+        </a>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div id="home-stats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- inyectadas por JS -->
+    </div>
+
+    <!-- ACCESOS RÁPIDOS -->
+    <div>
+      <h3 class="text-lg font-bold text-secondary mb-4">Accesos Rápidos</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <a href="/pages/history.html" class="quick-card">
+          <div class="quick-card-bg-icon"><i data-lucide="clipboard-list" class="w-16 h-16 text-secondary"></i></div>
+          <div class="quick-card-icon"><i data-lucide="clipboard-list" class="w-5 h-5"></i></div>
+          <h3 class="quick-card-title">Mi Historial</h3>
+          <p class="quick-card-desc">Visualiza tus movimientos</p>
+        </a>
+
+        <a href="/pages/show-requestform.html" class="quick-card">
+          <div class="quick-card-bg-icon"><i data-lucide="shopping-cart" class="w-16 h-16 text-secondary"></i></div>
+          <div class="quick-card-icon"><i data-lucide="shopping-cart" class="w-5 h-5"></i></div>
+          <h3 class="quick-card-title">Solicitar Material</h3>
+          <p class="quick-card-desc">Registra un nuevo pedido</p>
+        </a>
+
+        <a href="/pages/profile.html" class="quick-card">
+          <div class="quick-card-bg-icon"><i data-lucide="user-cog" class="w-16 h-16 text-secondary"></i></div>
+          <div class="quick-card-icon"><i data-lucide="user-cog" class="w-5 h-5"></i></div>
+          <h3 class="quick-card-title">Mi Perfil</h3>
+          <p class="quick-card-desc">Gestiona tus datos</p>
+        </a>
+
+        <div id="card-permisos">
+          <a href="/pages/superadmin-permissions.html" class="quick-card">
+            <div class="quick-card-bg-icon"><i data-lucide="shield-check" class="w-16 h-16 text-secondary"></i></div>
+            <div class="quick-card-icon"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+            <h3 class="quick-card-title">Permisos</h3>
+            <p class="quick-card-desc">Control de accesos (Admin)</p>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbar({ active: 'home', name: 'Usuario' });
+    QO.footer();
+
+    QO.renderStatCards('home-stats', [
+      { label: 'Transacciones del mes', value: 128, icon: 'arrow-right-left', colorClass: 'stat-icon-blue' },
+      { label: 'Items en inventario',   value: 54,  icon: 'package',          colorClass: 'stat-icon-pink' },
+      { label: 'Solicitudes Aprobadas', value: 42,  icon: 'check-circle',     colorClass: 'stat-icon-green' },
+    ]);
+
+    lucide.createIcons();
+
+    const rolActual = 'default'; // CONECTAR: reemplazar con el rol real de la sesión
+    if (rolActual !== 'superadmin') {
+      document.getElementById('card-permisos').style.display = 'none';
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventario | Quinta Ola</title>
+  <link href="/src/style.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="page-body">
+
+  <main class="page-main">
+
+    <!-- CABECERA -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Lista de Materiales</h1>
+        <p class="page-subtitle">Listado de materiales y stock actual en tiempo real.</p>
+      </div>
+      <a href="/pages/admin-items.html" class="btn-page-primary">
+        <i data-lucide="plus" class="w-4 h-4"></i> Añadir Material
+      </a>
+    </div>
+
+    <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <i data-lucide="search" class="input-icon-left"></i>
+        <input type="text" id="search-input" placeholder="Buscar materiales..."
+          class="input-icon" />
+      </div>
+      <div class="flex gap-3">
+        <select id="filter-tag" class="select-page w-auto">
+          <option value="">Todas las Etiquetas</option>
+          <option>Construcción</option>
+          <option>Acabados</option>
+          <option>Líquidos</option>
+          <option>Plomería</option>
+        </select>
+        <select id="filter-stock" class="select-page w-auto">
+          <option value="">Todos los Stocks</option>
+          <option value="OK">OK (En Stock)</option>
+          <option value="Stock Bajo">Bajo Stock</option>
+          <option value="Sin Stock">Sin Stock</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TABLA DE INVENTARIO -->
+    <div class="table-panel">
+      <div class="table-wrapper">
+        <table class="table">
+          <thead class="table-head">
+            <tr>
+              <th class="th">Material</th>
+              <th class="th">Tags</th>
+              <th class="th">Stock</th>
+              <th class="th">Mínimo</th>
+              <th class="th">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody" class="table-body">
+            <!-- filas inyectadas por JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel-footer">
+        <p class="panel-count-text" id="inventory-count">Mostrando 0 items</p>
+        <div id="inventory-pagination"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/src/ui.js"></script>
+  <script>
+    QO.navbar({ active: 'inventory', name: 'Alvaro Gómez', role: 'Administrador' });
+
+    // ── Datos de ejemplo — reemplazar con fetch('/api/inventory') ──
+    const inventario = [
+      {
+        img: 'https://promart.vteximg.com.br/arquivos/ids/9975675/22662.jpg',
+        name: 'Cemento', tags: ['Construcción', 'Pesado'],
+        stock: 50, unit: 'bolsas', min: 20, status: 'OK'
+      },
+      {
+        img: 'https://promart.vteximg.com.br/arquivos/ids/8887530/119205.jpg',
+        name: 'Pintura Blanca', tags: ['Acabados', 'Líquido'],
+        stock: 8, unit: 'galones', min: 15, status: 'Stock Bajo'
+      },
+      {
+        img: 'https://www.koplastindustrial.com/wp-content/uploads/2023/12/TUBERIAS-PARA-DESAGUE.jpg',
+        name: 'Tubos PVC', tags: ['Plomería'],
+        stock: 0, unit: 'unidades', min: 10, status: 'Sin Stock'
+      },
+    ];
+
+    QO.renderInventoryRows('inventory-tbody', inventario);
+    document.getElementById('inventory-count').textContent =
+      `Mostrando 1 a ${inventario.length} de ${inventario.length} items`;
+
+    QO.renderPagination('inventory-pagination', { current: 1, total: 5 });
+    lucide.createIcons();
+  </script>
+</body>
+</html>
