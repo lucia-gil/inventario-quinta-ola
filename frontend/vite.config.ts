@@ -12,7 +12,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main:                  resolve(__dirname, 'index.html'),
-        pagesIndex:            resolve(__dirname, 'pages/index.html'),
+        //pagesIndex:            resolve(__dirname, 'pages/index.html'),
         home:                  resolve(__dirname, 'pages/home.html'),
         dashboard:             resolve(__dirname, 'pages/dashboard.html'),
         inventory:             resolve(__dirname, 'pages/inventory.html'),
