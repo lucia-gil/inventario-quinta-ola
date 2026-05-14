@@ -1,240 +1,156 @@
--- =========================================================
--- BASIC INSERTS
--- =========================================================
+-- =========================
+-- INSERTS BASE
+-- =========================
 
--- Create role
-INSERT INTO roles (
-    id,
-    name,
-    is_system
-)
-VALUES (
-    'role-admin',
-    'Admin',
-    TRUE
-);
+-- Crear ítem
+INSERT INTO items (id, name, description, unit, cached_quantity, min_quantity, status)
+VALUES ('item-1', 'Kit Humanitario Grande', 'Kit de ayuda humanitaria completo', 'kits', 30, 10, 'OK');
 
--- Create permission
-INSERT INTO permissions (
-    id,
-    `key`,
-    description
-)
-VALUES (
-    'perm-approve',
-    'transaction.approve',
-    'Can approve transactions'
-);
+-- Crear tag
+INSERT INTO tags (id, name, created_by)
+VALUES ('tag-1', 'Kits Humanitarios', 'user-1');
 
--- Assign permission to role
-INSERT INTO role_permissions (
-    role_id,
-    permission_id
-)
-VALUES (
-    'role-admin',
-    'perm-approve'
-);
+-- Asignar tag a ítem
+INSERT INTO item_tags (item_id, tag_id)
+VALUES ('item-1', 'tag-1');
 
--- Create user
-INSERT INTO users (
-    id,
-    email,
-    name,
-    password_hash,
-    role_id
-)
-VALUES (
-    'user-1',
-    'admin@example.com',
-    'Admin User',
-    'hashed_password',
-    'role-admin'
-);
+-- Crear transacción
+INSERT INTO transactions (id, item_id, requester_id, type, quantity, status, notes)
+VALUES ('trx-1', 'item-1', 'user-1', 'OUT', 2, 'PENDING', 'Para taller del sábado');
 
--- Create item
-INSERT INTO items (
-    id,
-    name,
-    cached_quantity,
-    status
-)
-VALUES (
-    'item-1',
-    'Laptop',
-    10,
-    'OK'
-);
+-- =========================
+-- SELECTS
+-- =========================
 
--- Create tag
-INSERT INTO tags (
-    id,
-    name,
-    created_by
-)
-VALUES (
-    'tag-1',
-    'Electronics',
-    'user-1'
-);
+-- Listar ítems activos (para catálogo y formularios)
+SELECT * FROM items WHERE activo = 1;
 
--- Link tag to item
-INSERT INTO item_tags (
-    item_id,
-    tag_id
-)
-VALUES (
-    'item-1',
-    'tag-1'
-);
-
--- Create transaction
-INSERT INTO transactions (
-    id,
-    item_id,
-    requester_id,
-    type,
-    quantity,
-    status
-)
-VALUES (
-    'trx-1',
-    'item-1',
-    'user-1',
-    'OUT',
-    2,
-    'PENDING'
-);
-
--- =========================================================
--- SELECT QUERIES
--- =========================================================
-
--- Get all items
+-- Listar todos los ítems incluyendo inactivos (para admin)
 SELECT * FROM items;
 
--- Get single item
-SELECT * FROM items
-WHERE id = 'item-1';
-
--- Get item tags
+-- Detalle de un ítem con sus tags
 SELECT
-    items.name,
-    tags.name AS tag_name
-FROM item_tags
-JOIN items
-    ON item_tags.item_id = items.id
-JOIN tags
-    ON item_tags.tag_id = tags.id;
+    i.id, i.name, i.description, i.unit,
+    i.cached_quantity, i.min_quantity, i.status, i.activo,
+    GROUP_CONCAT(t.name SEPARATOR ', ') AS tags
+FROM items i
+LEFT JOIN item_tags it ON i.id = it.item_id
+LEFT JOIN tags t       ON it.tag_id = t.id
+WHERE i.id = 'item-1'
+GROUP BY i.id;
 
--- Get all transactions for item
-SELECT *
-FROM transactions
-WHERE item_id = 'item-1';
-
--- Get pending transactions
-SELECT *
-FROM transactions
-WHERE status = 'PENDING';
-
--- Get transactions created by user
-SELECT *
-FROM transactions
-WHERE requester_id = 'user-1';
-
--- Get item stock history
+-- Transacciones pendientes (para el aprobador)
 SELECT
-    type,
-    quantity,
-    status,
-    created_at
-FROM transactions
-WHERE item_id = 'item-1'
-ORDER BY created_at DESC;
+    t.id, t.type, t.quantity, t.status, t.notes, t.created_at,
+    i.name AS item_name,
+    u.name AS requester_name
+FROM transactions t
+JOIN items i ON t.item_id = i.id
+JOIN users u ON t.requester_id = u.id
+WHERE t.status = 'PENDING'
+ORDER BY t.created_at DESC;
 
--- =========================================================
--- UPDATE QUERIES
--- =========================================================
+-- Historial completo con filtros
+SELECT
+    t.id, t.type, t.quantity, t.status, t.notes,
+    t.created_at, t.processed_at,
+    i.name  AS item_name,
+    u.name  AS requester_name,
+    a.name  AS approver_name
+FROM transactions t
+JOIN  items i ON t.item_id      = i.id
+JOIN  users u ON t.requester_id = u.id
+LEFT JOIN users a ON t.approver_id = a.id
+ORDER BY t.created_at DESC;
 
--- Approve transaction
+-- Transacciones de un usuario específico
+SELECT
+    t.id, t.type, t.quantity, t.status, t.created_at,
+    i.name AS item_name
+FROM transactions t
+JOIN items i ON t.item_id = i.id
+WHERE t.requester_id = 'user-1'
+ORDER BY t.created_at DESC;
+
+-- Solicitudes aprobadas listas para entregar (para encargado de depósito)
+SELECT
+    t.id, t.quantity, t.notes, t.created_at,
+    i.name AS item_name, i.unit,
+    u.name AS requester_name,
+    a.name AS approver_name
+FROM transactions t
+JOIN  items i ON t.item_id      = i.id
+JOIN  users u ON t.requester_id = u.id
+JOIN  users a ON t.approver_id  = a.id
+WHERE t.status = 'APPROVED'
+ORDER BY t.created_at ASC;
+
+-- =========================
+-- UPDATES
+-- =========================
+
+-- Aprobar transacción
 UPDATE transactions
-SET
-    status = 'APPROVED',
-    approver_id = 'user-1'
+SET status = 'APPROVED', approver_id = 'user-1'
 WHERE id = 'trx-1';
 
--- Complete transaction
+-- Rechazar transacción
 UPDATE transactions
+SET status = 'REJECTED', approver_id = 'user-1', notes = 'Sin stock suficiente'
+WHERE id = 'trx-1';
+
+-- Marcar como entregada (encargado de depósito)
+UPDATE transactions
+SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP
+WHERE id = 'trx-1';
+
+-- Descontar stock al completar una salida
+UPDATE items
 SET
-    status = 'COMPLETED',
-    processed_at = CURRENT_TIMESTAMP
-WHERE id = 'trx-1';
-
--- Update item stock manually
-UPDATE items
-SET cached_quantity = cached_quantity - 2
+    cached_quantity = cached_quantity - 2,
+    status = CASE
+        WHEN cached_quantity - 2 <= 0          THEN 'UNAVAILABLE'
+        WHEN cached_quantity - 2 <= min_quantity THEN 'LOW'
+        ELSE 'OK'
+    END
 WHERE id = 'item-1';
 
--- Update item status
+-- Sumar stock al completar una entrada
 UPDATE items
-SET status = 'LOW'
+SET
+    cached_quantity = cached_quantity + 2,
+    status = CASE
+        WHEN cached_quantity + 2 <= 0            THEN 'UNAVAILABLE'
+        WHEN cached_quantity + 2 <= min_quantity  THEN 'LOW'
+        ELSE 'OK'
+    END
 WHERE id = 'item-1';
 
--- =========================================================
--- DELETE QUERIES
--- =========================================================
+-- Deshabilitar ítem (en lugar de DELETE)
+UPDATE items SET activo = 0 WHERE id = 'item-1';
 
--- Remove tag from item
-DELETE FROM item_tags
-WHERE item_id = 'item-1'
-AND tag_id = 'tag-1';
+-- Rehabilitar ítem
+UPDATE items SET activo = 1 WHERE id = 'item-1';
 
--- Delete transaction
-DELETE FROM transactions
-WHERE id = 'trx-1';
+-- Deshabilitar usuario
+UPDATE users SET activo = 0 WHERE id = 'user-1';
 
--- Delete tag
-DELETE FROM tags
-WHERE id = 'tag-1';
+-- =========================
+-- STOCK REBUILD
+-- (recalcular cached_quantity desde cero si hay inconsistencias)
+-- =========================
 
--- =========================================================
--- PERMISSION LOOKUP
--- =========================================================
-
--- Get all permissions for a user through role
-SELECT
-    permissions.`key`
-FROM users
-JOIN roles
-    ON users.role_id = roles.id
-JOIN role_permissions
-    ON roles.id = role_permissions.role_id
-JOIN permissions
-    ON role_permissions.permission_id = permissions.id
-WHERE users.id = 'user-1';
-
--- Get user overrides
-SELECT
-    permissions.`key`,
-    user_permission_overrides.effect
-FROM user_permission_overrides
-JOIN permissions
-    ON user_permission_overrides.permission_id = permissions.id
-WHERE user_permission_overrides.user_id = 'user-1';
-
--- =========================================================
--- STOCK REBUILD QUERY
--- =========================================================
-
-SELECT
-    item_id,
-    SUM(
-        CASE
-            WHEN type = 'IN'  THEN quantity
+UPDATE items i
+JOIN (
+    SELECT
+        item_id,
+        SUM(CASE
+            WHEN type = 'IN'  THEN  quantity
             WHEN type = 'OUT' THEN -quantity
             ELSE 0
-        END
-    ) AS real_stock
-FROM transactions
-WHERE status = 'COMPLETED'
-GROUP BY item_id;
+        END) AS real_stock
+    FROM transactions
+    WHERE status = 'COMPLETED'
+    GROUP BY item_id
+) calc ON i.id = calc.item_id
+SET i.cached_quantity = calc.real_stock;
