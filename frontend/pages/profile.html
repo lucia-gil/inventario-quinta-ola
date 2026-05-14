@@ -29,8 +29,8 @@
             </label>
           </div>
 
-          <h2 class="profile-name">Alvaro Gómez</h2>
-          <p class="text-gray-500 text-sm mb-6">alvaro@email.com</p>
+          <h2 class="profile-name" id="profile-name">Alvaro Gómez</h2>
+          <p class="text-gray-500 text-sm mb-6" id="profile-email">alvaro@email.com</p>
 
           <div class="pt-6 border-t border-gray-100">
             <a href="/pages/show-login.html" class="btn-logout">
@@ -58,21 +58,21 @@
               <i data-lucide="user-cog" class="w-5 h-5 text-accent"></i>
               Información Personal
             </h3>
-            <span class="role-manager">Manager</span>
+            <span class="role-manager" id="profile-role">Manager</span>
           </div>
           <div class="p-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               <div class="space-y-1">
                 <label class="form-label-tiny">Nombre</label>
-                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2">Alvaro</p>
+                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2" id="profile-firstname">Alvaro</p>
               </div>
               <div class="space-y-1">
                 <label class="form-label-tiny">Apellido</label>
-                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2">Gómez</p>
+                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2" id="profile-lastname">Gomez</p>
               </div>
               <div class="md:col-span-2 space-y-1">
                 <label class="form-label-tiny">Correo Electrónico</label>
-                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2">alvaro@email.com</p>
+                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2" id="profile-email2">alvaro@email.com</p>
               </div>
             </div>
           </div>
@@ -116,10 +116,26 @@
 
   <script src="/src/ui.js"></script>
   <script>
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const userRole = localStorage.getItem('userRole') || '';
+    const userName  = localStorage.getItem('userName')  || 'Usuario';
+    const userRole  = localStorage.getItem('userRole')  || '';
+    const userEmail = localStorage.getItem('userEmail') || '';
+
     QO.navbar({ active: '', name: userName, role: userRole });
     lucide.createIcons();
+
+    // Rellenar datos del perfil
+    const nameParts = userName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName  = nameParts.slice(1).join(' ') || '';
+    const initials  = (firstName[0] || '') + (lastName[0] || '');
+
+    document.getElementById('userInitials').textContent  = initials.toUpperCase();
+    document.getElementById('profile-name').textContent  = userName;
+    document.getElementById('profile-email').textContent = userEmail;
+    document.getElementById('profile-firstname').textContent = firstName;
+    document.getElementById('profile-lastname').textContent  = lastName;
+    document.getElementById('profile-email2').textContent   = userEmail;
+    document.getElementById('profile-role').textContent     = userRole;
 
     document.getElementById('avatar-upload').addEventListener('change', function(e) {
       if (e.target.files && e.target.files[0]) {
