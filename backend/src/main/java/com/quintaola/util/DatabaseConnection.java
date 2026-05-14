@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class DatabaseConnection {
 
     // CONECTAR: cambia estos datos si tu BD tiene usuario/contraseña diferente
-    private static final String URL      = "jdbc:mysql://localhost:3306/inventorydb?useSSL=false&serverTimezone=America/Lima";
+    private static final String URL = "jdbc:mysql://localhost:3306/inventorydb?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true";
     private static final String USER     = "root";
     private static final String PASSWORD = "lucia1234"; // tu contraseña de MySQL
 
