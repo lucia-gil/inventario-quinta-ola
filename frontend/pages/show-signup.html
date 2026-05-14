@@ -145,6 +145,63 @@
 
     <script>
         lucide.createIcons();
+
+        document.querySelector('form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const nombres   = document.querySelectorAll('input[type="text"]')[0].value;
+            const apellidos = document.querySelectorAll('input[type="text"]')[1].value;
+            const dni       = document.querySelectorAll('input[type="text"]')[2].value;
+            const email     = document.querySelector('input[type="email"]').value;
+            const password  = document.querySelectorAll('input[type="password"]')[0].value;
+            const confirm   = document.querySelectorAll('input[type="password"]')[1].value;
+
+            // Validar contraseñas
+            if (password !== confirm) {
+                let errorDiv = document.getElementById('signup-error');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.id = 'signup-error';
+                    errorDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mt-3';
+                    document.querySelector('form').appendChild(errorDiv);
+                }
+                errorDiv.textContent = 'Las contraseñas no coinciden';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        name:         nombres + ' ' + apellidos,
+                        email:        email,
+                        dni:          dni,
+                        passwordHash: password
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('¡Cuenta creada correctamente! Ya puedes iniciar sesión.');
+                    window.location.href = '/pages/show-login.html';
+                } else {
+                    let errorDiv = document.getElementById('signup-error');
+                    if (!errorDiv) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.id = 'signup-error';
+                        errorDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mt-3';
+                        document.querySelector('form').appendChild(errorDiv);
+                    }
+                    errorDiv.textContent = data.error || 'Error al registrar la cuenta';
+                }
+
+            } catch (err) {
+                alert('No se pudo conectar al servidor. Verifica que Tomcat esté corriendo.');
+            }
+        });
     </script>
 </body>
 </html>

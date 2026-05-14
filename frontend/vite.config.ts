@@ -2,9 +2,19 @@ import { defineConfig } from 'vite'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
   css: {
     postcss: './postcss.config.js',
   },
