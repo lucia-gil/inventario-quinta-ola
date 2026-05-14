@@ -77,7 +77,9 @@
         // Inyectamos Navbar con el perfil de SuperAdmin activo
         // Ojo: si 'auditoria' no estaba en tu lista de NAV_LINKS original en ui.js, 
         // simplemente no resaltará nada, pero la barra y el perfil cargarán perfecto.
-        QO.navbar({ active: 'auditoria', name: 'Super Admin', role: 'Control Total' });
+        const userName = localStorage.getItem('userName') || 'Usuario';
+        const userRole = localStorage.getItem('userRole') || '';
+        QO.navbar({ active: '...', name: userName, role: userRole });
         
         QO.footer();
         QO.init();

@@ -75,7 +75,9 @@
     <script type="module" src="/src/analytics.ts"></script>
     <script>
         // 1. Inyectamos la navbar (lo ponemos como "history" activo porque viene de ahí, o puedes dejarlo vacío '')
-        QO.navbar({ active: 'history', name: 'Alvaro Gómez', role: 'Administrador' });
+        const userName = localStorage.getItem('userName') || 'Usuario';
+        const userRole = localStorage.getItem('userRole') || '';
+        QO.navbar({ active: '...', name: userName, role: userRole });
         
         // 2. Inyectamos el footer
         QO.footer();

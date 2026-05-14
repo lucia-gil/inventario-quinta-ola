@@ -97,7 +97,9 @@
 
   <script src="/src/ui.js"></script>
   <script>
-    QO.navbar({ active: 'inventory', name: 'Alvaro Gómez', role: 'Administrador' });
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const userRole = localStorage.getItem('userRole') || '';
+    QO.navbar({ active: 'inventory', name: userName, role: userRole });
     lucide.createIcons();
   </script>
   <script type="module" src="/src/admin-item.ts"></script>

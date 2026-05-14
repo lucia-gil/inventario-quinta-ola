@@ -78,7 +78,9 @@
   <script src="/src/ui.js"></script>
   <script>
     // ── Configuración de esta página ──────────────────────────
-    QO.navbar({ active: 'dashboard', name: 'Alvaro Gómez', role: 'Administrador' });
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const userRole = localStorage.getItem('userRole') || '';
+    QO.navbar({ active: 'dashboard', name: userName, role: userRole });
     QO.footer();
 
     // ── Datos de ejemplo (reemplazar con fetch a tu API) ──────

@@ -128,7 +128,9 @@
   <script src="/src/ui.js"></script>
   <script>
     // Vista solo para encargado de depósito — menuType default (sin admin ni superadmin)
-    QO.navbar({ active: 'transactions', name: 'Álvaro Gómez', role: 'Encargado de Depósito' });
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const userRole = localStorage.getItem('userRole') || '';
+    QO.navbar({ active: '...', name: userName, role: userRole });
     QO.footer();
 
     // CONECTAR: fetch('/api/requests?status=Aprobada', { headers: { Authorization: `Bearer ${token}` } })

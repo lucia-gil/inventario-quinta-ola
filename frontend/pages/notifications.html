@@ -65,7 +65,9 @@
   <script src="/src/ui.js"></script>
   <script>
     // CONECTAR: obtener rol del usuario desde sesión para ajustar menuType
-    QO.navbar({ active: '', name: 'Álvaro Gómez', role: 'Administrador', menuType: 'admin' });
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const userRole = localStorage.getItem('userRole') || '';
+    QO.navbar({ active: '...', name: userName, role: userRole });
     QO.footer();
 
     // CONECTAR: fetch('/api/notifications', { headers: { Authorization: `Bearer ${token}` } })
