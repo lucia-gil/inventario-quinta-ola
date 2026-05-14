@@ -121,6 +121,44 @@
 
     <script>
         lucide.createIcons();
+
+        document.querySelector('form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email    = document.querySelector('input[type="email"]').value;
+            const password = document.querySelector('input[type="password"]').value;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('userId',   data.userId);
+                    localStorage.setItem('userName', data.userName);
+                    localStorage.setItem('userRole', data.userRole);
+                    localStorage.setItem('roleId',   data.roleId);
+                    window.location.href = 'http://localhost:5173' + data.redirect;
+                } else {
+                    let errorDiv = document.getElementById('login-error');
+                    if (!errorDiv) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.id = 'login-error';
+                        errorDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mt-3';
+                        document.querySelector('form').appendChild(errorDiv);
+                    }
+                    errorDiv.textContent = data.error || 'Correo o contraseña incorrectos';
+                }
+
+            } catch (err) {
+                alert('No se pudo conectar al servidor. Verifica que Tomcat esté corriendo.');
+            }
+        });
     </script>
 </body>
 </html>

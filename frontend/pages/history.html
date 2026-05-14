@@ -60,7 +60,9 @@
 
   <script src="/src/ui.js"></script>
   <script>
-    QO.navbar({ active: 'history', name: 'Alvaro Gómez', role: 'Administrador' });
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const userRole = localStorage.getItem('userRole') || '';
+    QO.navbar({ active: 'history', name: userName, role: userRole });
 
     // ── Reemplazar con fetch('/api/history?page=1') ──
     const historial = [

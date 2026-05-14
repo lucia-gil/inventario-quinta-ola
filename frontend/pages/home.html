@@ -77,7 +77,9 @@
 
   <script src="/src/ui.js"></script>
   <script>
-    QO.navbar({ active: 'home', name: 'Usuario' });
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const userRole = localStorage.getItem('userRole') || '';
+    QO.navbar({ active: 'home', name: userName, role: userRole });
     QO.footer();
 
     QO.renderStatCards('home-stats', [

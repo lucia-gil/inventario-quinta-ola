@@ -76,7 +76,9 @@
 
   <script src="/src/ui.js"></script>
   <script>
-    QO.navbar({ active: 'inventory', name: 'Alvaro Gómez', role: 'Administrador' });
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const userRole = localStorage.getItem('userRole') || '';
+    QO.navbar({ active: 'inventory', name: userName, role: userRole });
 
     // ── Datos de ejemplo — reemplazar con fetch('/api/inventory') ──
     const inventario = [
