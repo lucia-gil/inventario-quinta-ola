@@ -154,3 +154,57 @@ JOIN (
     GROUP BY item_id
 ) calc ON i.id = calc.item_id
 SET i.cached_quantity = calc.real_stock;
+
+-- =========================
+-- SUBCONSULTAS AVANZADAS
+-- =========================
+
+-- 1. Top solicitante: usuario con más solicitudes
+SELECT 
+    u.name AS usuario,
+    u.email,
+    COUNT(t.id) AS total_solicitudes
+FROM users u
+JOIN transactions t ON u.id = t.requester_id
+GROUP BY u.id, u.name, u.email
+HAVING COUNT(t.id) = (
+    SELECT MAX(cnt) FROM (
+        SELECT COUNT(id) AS cnt 
+        FROM transactions 
+        GROUP BY requester_id
+    ) AS subconsulta
+);
+
+-- 2. Alerta de reposición: materiales con stock menor al promedio
+SELECT 
+    id,
+    name,
+    cached_quantity AS stock_actual,
+    min_quantity AS stock_minimo,
+    (SELECT AVG(cached_quantity) FROM items WHERE activo = 1) AS promedio_stock,
+    status
+FROM items
+WHERE activo = 1
+AND cached_quantity < (
+    SELECT AVG(cached_quantity) FROM items WHERE activo = 1
+)
+ORDER BY cached_quantity ASC;
+
+-- 3. Historial detallado: solicitudes de materiales por etiqueta
+SELECT 
+    t.id AS solicitud_id,
+    u.name AS solicitante,
+    i.name AS material,
+    tg.name AS etiqueta,
+    t.quantity AS cantidad,
+    t.status AS estado,
+    t.created_at AS fecha
+FROM transactions t
+JOIN users u  ON t.requester_id = u.id
+JOIN items i  ON t.item_id = i.id
+LEFT JOIN item_tags it ON i.id = it.item_id
+LEFT JOIN tags tg      ON it.tag_id = tg.id
+WHERE i.id IN (
+    SELECT item_id FROM item_tags
+)
+ORDER BY t.created_at DESC;
