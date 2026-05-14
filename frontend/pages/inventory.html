@@ -110,7 +110,8 @@
     document.getElementById('inventory-count').textContent =
       `Mostrando 1 a ${inventario.length} de ${inventario.length} items`;
 
-    QO.renderPagination('inventory-pagination', { current: 1, total: 5 });
+    QO.renderPagination('inventory-pagination', { current: 1, total: Math.ceil(inventario.length / 5) });
+
     lucide.createIcons();
   </script>
 </body>
