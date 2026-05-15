@@ -1,3 +1,23 @@
+// ============================================================
+// ITEM DAO METHODS (SIGNATURE + OUTPUT CONTRACT)
+// ============================================================
+//
+// getAll()            - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// getAllActive()      - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// getPage(limit,offset)- id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// getById(id)         - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// search(text)        - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+//
+// getLowStock()       - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// getOkStock()        - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// getUnavailable()    - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+//
+// getNewest()         - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// getOldest()         - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+//
+// getMostRequested()  - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, total_requests, tags
+// ============================================================
+
 package com.quintaola.dao;
 
 import com.quintaola.model.Item;
@@ -130,5 +150,286 @@ public class ItemDAO {
         item.setActivo         (rs.getBoolean  ("activo"));
         item.setCreatedAt      (rs.getString   ("created_at"));
         return item;
+    }
+
+    // ============================================================
+    // getAll()
+    // ============================================================
+    public ResultSet getAll() throws SQLException {
+
+        // Devuelve todos los items del sistema (activos e inactivos),
+        // incluyendo sus tags concatenados en una sola columna.
+        // No aplica filtros ni orden específico.
+
+        String sql = """
+            SELECT
+                i.id,
+                i.name,
+                i.description,
+                i.image_url,
+                i.unit,
+                i.cached_quantity,
+                i.min_quantity,
+                i.status,
+                i.activo,
+                i.created_at,
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
+            FROM items i
+            LEFT JOIN item_tags it ON it.item_id = i.id
+            LEFT JOIN tags t ON t.id = it.tag_id
+            GROUP BY
+                i.id, i.name, i.description, i.image_url,
+                i.unit, i.cached_quantity, i.min_quantity,
+                i.status, i.activo, i.created_at
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getLowStock()
+    // ============================================================
+    public ResultSet getLowStock() throws SQLException {
+
+        // Devuelve los items cuyo stock actual es menor o igual
+        // al stock mínimo definido (cached_quantity <= min_quantity).
+        // Solo incluye items activos.
+
+        String sql = """
+            SELECT
+                i.id,
+                i.name,
+                i.description,
+                i.image_url,
+                i.unit,
+                i.cached_quantity,
+                i.min_quantity,
+                i.status,
+                i.activo,
+                i.created_at,
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
+            FROM items i
+            LEFT JOIN item_tags it ON it.item_id = i.id
+            LEFT JOIN tags t ON t.id = it.tag_id
+            WHERE i.cached_quantity <= i.min_quantity
+            AND i.activo = 1
+            GROUP BY
+                i.id, i.name, i.description, i.image_url,
+                i.unit, i.cached_quantity, i.min_quantity,
+                i.status, i.activo, i.created_at
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getOkStock()
+    // ============================================================
+    public ResultSet getOkStock() throws SQLException {
+
+        // Devuelve los items con stock suficiente,
+        // es decir cuando cached_quantity es mayor al min_quantity.
+        // Solo incluye items activos.
+
+        String sql = """
+            SELECT
+                i.id,
+                i.name,
+                i.description,
+                i.image_url,
+                i.unit,
+                i.cached_quantity,
+                i.min_quantity,
+                i.status,
+                i.activo,
+                i.created_at,
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
+            FROM items i
+            LEFT JOIN item_tags it ON it.item_id = i.id
+            LEFT JOIN tags t ON t.id = it.tag_id
+            WHERE i.cached_quantity > i.min_quantity
+            AND i.activo = 1
+            GROUP BY
+                i.id, i.name, i.description, i.image_url,
+                i.unit, i.cached_quantity, i.min_quantity,
+                i.status, i.activo, i.created_at
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getUnavailable()
+    // ============================================================
+    public ResultSet getUnavailable() throws SQLException {
+
+        // Devuelve los items que están marcados como no disponibles
+        // o desactivados en el sistema.
+        // También puede incluir items con status UNAVAILABLE.
+
+        String sql = """
+            SELECT
+                i.id,
+                i.name,
+                i.description,
+                i.image_url,
+                i.unit,
+                i.cached_quantity,
+                i.min_quantity,
+                i.status,
+                i.activo,
+                i.created_at,
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
+            FROM items i
+            LEFT JOIN item_tags it ON it.item_id = i.id
+            LEFT JOIN tags t ON t.id = it.tag_id
+            WHERE i.status = 'UNAVAILABLE'
+            OR i.activo = 0
+            GROUP BY
+                i.id, i.name, i.description, i.image_url,
+                i.unit, i.cached_quantity, i.min_quantity,
+                i.status, i.activo, i.created_at
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getNewest()
+    // ============================================================
+    public ResultSet getNewest() throws SQLException {
+
+        // Devuelve los items ordenados desde el más reciente al más antiguo
+        // según su fecha de creación (created_at DESC).
+
+        String sql = """
+            SELECT
+                i.id,
+                i.name,
+                i.description,
+                i.image_url,
+                i.unit,
+                i.cached_quantity,
+                i.min_quantity,
+                i.status,
+                i.activo,
+                i.created_at,
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
+            FROM items i
+            LEFT JOIN item_tags it ON it.item_id = i.id
+            LEFT JOIN tags t ON t.id = it.tag_id
+            GROUP BY
+                i.id, i.name, i.description, i.image_url,
+                i.unit, i.cached_quantity, i.min_quantity,
+                i.status, i.activo, i.created_at
+            ORDER BY i.created_at DESC
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getOldest()
+    // ============================================================
+    public ResultSet getOldest() throws SQLException {
+
+        // Devuelve los items ordenados desde el más antiguo al más reciente
+        // según su fecha de creación (created_at ASC).
+
+        String sql = """
+            SELECT
+                i.id,
+                i.name,
+                i.description,
+                i.image_url,
+                i.unit,
+                i.cached_quantity,
+                i.min_quantity,
+                i.status,
+                i.activo,
+                i.created_at,
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
+            FROM items i
+            LEFT JOIN item_tags it ON it.item_id = i.id
+            LEFT JOIN tags t ON t.id = it.tag_id
+            GROUP BY
+                i.id, i.name, i.description, i.image_url,
+                i.unit, i.cached_quantity, i.min_quantity,
+                i.status, i.activo, i.created_at
+            ORDER BY i.created_at ASC
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getMostRequested()
+    // ============================================================
+    public ResultSet getMostRequested() throws SQLException {
+
+        // Devuelve los items ordenados por mayor cantidad de solicitudes de salida (OUT).
+        // Se usa COUNT(t.id) para medir cuántas veces fue solicitado cada item.
+
+        String sql = """
+            SELECT
+                i.id,
+                i.name,
+                i.description,
+                i.image_url,
+                i.unit,
+                i.cached_quantity,
+                i.min_quantity,
+                i.status,
+                i.activo,
+                i.created_at,
+
+                COUNT(t.id) AS total_requests,
+
+                GROUP_CONCAT(DISTINCT tg.name SEPARATOR ', ') AS tags
+
+            FROM items i
+
+            LEFT JOIN transactions t
+                ON t.item_id = i.id
+            AND t.type = 'OUT'
+
+            LEFT JOIN item_tags it
+                ON it.item_id = i.id
+
+            LEFT JOIN tags tg
+                ON tg.id = it.tag_id
+
+            WHERE i.activo = 1
+
+            GROUP BY
+                i.id, i.name, i.description, i.image_url,
+                i.unit, i.cached_quantity, i.min_quantity,
+                i.status, i.activo, i.created_at
+
+            ORDER BY total_requests DESC
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
     }
 }

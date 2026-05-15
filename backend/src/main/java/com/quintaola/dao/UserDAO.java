@@ -1,3 +1,18 @@
+// ============================================================
+// USER DAO SUMMARY (CORE FUNCTIONS ONLY)
+// ============================================================
+//
+// getAll()            - id, email, dni, name, role_id, activo, created_at
+// getActive()         - id, email, dni, name, role_id, activo, created_at
+// getInactive()       - id, email, dni, name, role_id, activo, created_at
+// getById(id)         - id, email, dni, name, role_id, activo, created_at
+// findByEmail(email)  - id, email, dni, name, role_id, activo, created_at
+// findByDni(dni)      - id, email, dni, name, role_id, activo, created_at
+// getByRole(roleId)   - id, email, dni, name, role_id, activo, created_at
+// getNewest()         - id, email, dni, name, role_id, activo, created_at
+// getOldest()         - id, email, dni, name, role_id, activo, created_at
+// ============================================================
+
 package com.quintaola.dao;
 
 import com.quintaola.model.User;
@@ -119,5 +134,246 @@ public class UserDAO {
         user.setActivo      (rs.getBoolean("activo"));
         user.setCreatedAt   (rs.getString ("created_at"));
         return user;
+    }   
+    
+    // ============================================================
+    // getAll()
+    // ============================================================
+    public ResultSet getAll() throws SQLException {
+
+        // Devuelve todos los usuarios sin filtros.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getActive()
+    // ============================================================
+    public ResultSet getActive() throws SQLException {
+
+        // Devuelve solo usuarios activos.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            WHERE u.activo = 1
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getInactive()
+    // ============================================================
+    public ResultSet getInactive() throws SQLException {
+
+        // Devuelve solo usuarios inactivos.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            WHERE u.activo = 0
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getById(id)
+    // ============================================================
+    public ResultSet getById(String id) throws SQLException {
+
+        // Devuelve un usuario por ID.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            WHERE u.id = ?
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        ps.setString(1, id);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // findByEmail(email)
+    // ============================================================
+    public ResultSet findByEmail(String email) throws SQLException {
+
+        // Busca usuario por email.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            WHERE u.email = ?
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        ps.setString(1, email);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // findByDni(dni)
+    // ============================================================
+    public ResultSet findByDni(String dni) throws SQLException {
+
+        // Busca usuario por DNI.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            WHERE u.dni = ?
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        ps.setString(1, dni);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getByRole(roleId)
+    // ============================================================
+    public ResultSet getByRole(String roleId) throws SQLException {
+
+        // Devuelve usuarios filtrados por rol.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            WHERE u.role_id = ?
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        ps.setString(1, roleId);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getNewest()
+    // ============================================================
+    public ResultSet getNewest() throws SQLException {
+
+        // Usuarios ordenados del más reciente al más antiguo.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            ORDER BY u.created_at DESC
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
+    }
+
+    // ============================================================
+    // getOldest()
+    // ============================================================
+    public ResultSet getOldest() throws SQLException {
+
+        // Usuarios ordenados del más antiguo al más reciente.
+
+        String sql = """
+            SELECT
+                u.id,
+                u.email,
+                u.dni,
+                u.name,
+                u.role_id,
+                u.activo,
+                u.created_at
+            FROM users u
+            ORDER BY u.created_at ASC
+        """;
+
+        Connection conn = DatabaseConnection.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        return ps.executeQuery();
     }
 }

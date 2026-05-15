@@ -1,5 +1,10 @@
 package com.quintaola.model;
 
+import java.sql.Timestamp;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.util.List;
+
 public class Item {
 
     private String id;
@@ -7,69 +12,69 @@ public class Item {
     private String description;
     private String imageUrl;
     private String unit;
+
     private int cachedQuantity;
     private int minQuantity;
+
     private String status;
     private boolean activo;
-    private String createdAt;
 
-    // Constructor vacío
-    public Item() {}
+    private Timestamp createdAt;
 
-    // Constructor completo
-    public Item(String id, String name, String description, String imageUrl,
-                String unit, int cachedQuantity, int minQuantity,
-                String status, boolean activo, String createdAt) {
-        this.id            = id;
-        this.name          = name;
-        this.description   = description;
-        this.imageUrl      = imageUrl;
-        this.unit          = unit;
-        this.cachedQuantity = cachedQuantity;
-        this.minQuantity   = minQuantity;
-        this.status        = status;
-        this.activo        = activo;
-        this.createdAt     = createdAt;
-    }
+    private List<String> tags;
 
-    // Getters y Setters
-    public String getId()                     { return id; }
-    public void setId(String id)              { this.id = id; }
+    // Getters & Setters
 
-    public String getName()                   { return name; }
-    public void setName(String name)          { this.name = name; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public String getDescription()            { return description; }
-    public void setDescription(String desc)   { this.description = desc; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getImageUrl()               { return imageUrl; }
-    public void setImageUrl(String imageUrl)  { this.imageUrl = imageUrl; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getUnit()                   { return unit; }
-    public void setUnit(String unit)          { this.unit = unit; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public int getCachedQuantity()                        { return cachedQuantity; }
-    public void setCachedQuantity(int cachedQuantity)     { this.cachedQuantity = cachedQuantity; }
+    public String getUnit() { return unit; }
+    public void setUnit(String unit) { this.unit = unit; }
 
-    public int getMinQuantity()                           { return minQuantity; }
-    public void setMinQuantity(int minQuantity)           { this.minQuantity = minQuantity; }
+    public int getCachedQuantity() { return cachedQuantity; }
+    public void setCachedQuantity(int cachedQuantity) { this.cachedQuantity = cachedQuantity; }
 
-    public String getStatus()                 { return status; }
-    public void setStatus(String status)      { this.status = status; }
+    public int getMinQuantity() { return minQuantity; }
+    public void setMinQuantity(int minQuantity) { this.minQuantity = minQuantity; }
 
-    public boolean isActivo()                 { return activo; }
-    public void setActivo(boolean activo)     { this.activo = activo; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public String getCreatedAt()              { return createdAt; }
-    public void setCreatedAt(String createdAt){ this.createdAt = createdAt; }
+    public boolean isActivo() { return activo; }
+    public void setActivo(boolean activo) { this.activo = activo; }
 
-    // Traducción de status para el frontend
-    public String getStatusFrontend() {
-        return switch (this.status) {
-            case "OK"          -> "OK";
-            case "LOW"         -> "Stock Bajo";
-            case "UNAVAILABLE" -> "Sin Stock";
-            default            -> this.status;
-        };
+    public Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
+
+    private Item mapItem(ResultSet rs) throws SQLException {
+        Item item = new Item();
+
+        item.setId(rs.getString("id"));
+        item.setName(rs.getString("name"));
+        item.setDescription(rs.getString("description"));
+        item.setImageUrl(rs.getString("image_url"));
+        item.setUnit(rs.getString("unit"));
+
+        item.setCachedQuantity(rs.getInt("cached_quantity"));
+        item.setMinQuantity(rs.getInt("min_quantity"));
+
+        item.setStatus(rs.getString("status"));
+        item.setActivo(rs.getBoolean("activo"));
+
+        item.setCreatedAt(rs.getTimestamp("created_at"));
+
+        return item;
     }
 }
