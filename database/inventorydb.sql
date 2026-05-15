@@ -11,11 +11,10 @@ CREATE TABLE roles (
 
 -- Roles del sistema
 INSERT INTO roles (id, name, is_system) VALUES
-    ('role-solicitante', 'Solicitante',          TRUE),
-    ('role-aprobador',   'Aprobador',             TRUE),
-    ('role-deposito',    'Encargado de Deposito', TRUE),
-    ('role-admin',       'Administrador',         TRUE),
-    ('role-superadmin',  'SuperAdmin',            TRUE);
+    ('role-viewer',      'Viewer',          TRUE),
+    ('role-member',      'Member',          TRUE),
+    ('role-manager',     'Manager',              TRUE),
+    ('role-admin',       'Administrador',        TRUE);
 
 -- =========================
 -- USERS
