@@ -49,29 +49,30 @@ public class TransactionDAO {
         String sql = "SELECT * FROM transactions ORDER BY created_at DESC";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                list.add(mapRow(rs));
+                list.add(Transaction.mapTransaction(rs));
             }
         }
 
         return list;
     }
 
-    // ── GET BY ID ─────────────────────────────────────────────────
+    // // ── GET BY ID ─────────────────────────────────────────────────
     public Transaction getById(String id) throws SQLException {
 
         String sql = "SELECT * FROM transactions WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next())
+                    return Transaction.mapTransaction(rs);
             }
         }
 
@@ -83,19 +84,19 @@ public class TransactionDAO {
         List<Transaction> list = new ArrayList<>();
 
         String sql = """
-            SELECT * FROM transactions
-            WHERE item_id = ?
-            ORDER BY created_at DESC
-        """;
+                    SELECT * FROM transactions
+                    WHERE item_id = ?
+                    ORDER BY created_at DESC
+                """;
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, itemId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapRow(rs));
+                    list.add(Transaction.mapTransaction(rs));
                 }
             }
         }
@@ -107,24 +108,24 @@ public class TransactionDAO {
     public boolean create(Transaction tx) throws SQLException {
 
         String sql = """
-            INSERT INTO transactions (
-                id, item_id, requester_id, approver_id,
-                type, quantity, status, notes,
-                created_at, updated_at, processed_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NULL)
-        """;
+                    INSERT INTO transactions (
+                        id, item_id, requester_id, approver_id,
+                        type, quantity, status, notes,
+                        created_at, updated_at, processed_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NULL)
+                """;
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, UUID.randomUUID().toString());
             ps.setString(2, tx.getItemId());
             ps.setString(3, tx.getRequesterId());
             ps.setString(4, tx.getApproverId());
 
-            ps.setString(5, tx.getType());   // IN / OUT / ADJUST
-            ps.setInt   (6, tx.getQuantity());
+            ps.setString(5, tx.getType()); // IN / OUT / ADJUST
+            ps.setInt(6, tx.getQuantity());
 
             ps.setString(7, tx.getStatus() != null ? tx.getStatus() : "PENDING");
             ps.setString(8, tx.getNotes());
@@ -137,16 +138,16 @@ public class TransactionDAO {
     public boolean updateStatus(String id, String status, String approverId) throws SQLException {
 
         String sql = """
-            UPDATE transactions
-            SET status = ?,
-                approver_id = ?,
-                processed_at = NOW(),
-                updated_at = NOW()
-            WHERE id = ?
-        """;
+                    UPDATE transactions
+                    SET status = ?,
+                        approver_id = ?,
+                        processed_at = NOW(),
+                        updated_at = NOW()
+                    WHERE id = ?
+                """;
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, status);
             ps.setString(2, approverId);
@@ -162,97 +163,75 @@ public class TransactionDAO {
         String sql = "DELETE FROM transactions WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, id);
             return ps.executeUpdate() > 0;
         }
     }
 
-    // ── MAP ROW ───────────────────────────────────────────────────
-    private Transaction mapRow(ResultSet rs) throws SQLException {
-        Transaction tx = new Transaction();
-
-        tx.setId(rs.getString("id"));
-
-        tx.setItemId(rs.getString("item_id"));
-        tx.setRequesterId(rs.getString("requester_id"));
-        tx.setApproverId(rs.getString("approver_id"));
-
-        tx.setType(rs.getString("type"));
-        tx.setQuantity(rs.getInt("quantity"));
-
-        tx.setStatus(rs.getString("status"));
-        tx.setNotes(rs.getString("notes"));
-
-        tx.setCreatedAt(rs.getTimestamp("created_at"));
-        tx.setUpdatedAt(rs.getTimestamp("updated_at"));
-        tx.setProcessedAt(rs.getTimestamp("processed_at"));
-
-        return tx;
-    }
-    
     // ============================================================
     // getAll()
     // ============================================================
-    public ResultSet getAll() throws SQLException {
 
-        // Devuelve todas las transacciones del sistema sin filtros.
-        // Incluye información completa del flujo de la transacción.
+    // public ResultSet getAll() throws SQLException {
 
-        String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-        """;
+    // // Devuelve todas las transacciones del sistema sin filtros.
+    // // Incluye información completa del flujo de la transacción.
 
-        Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql);
+    // String sql = """
+    // SELECT
+    // t.id,
+    // t.item_id,
+    // t.requester_id,
+    // t.approver_id,
+    // t.type,
+    // t.quantity,
+    // t.status,
+    // t.notes,
+    // t.created_at,
+    // t.updated_at,
+    // t.processed_at
+    // FROM transactions t
+    // """;
 
-        return ps.executeQuery();
-    }
+    // Connection conn = DatabaseConnection.getConnection();
+    // PreparedStatement ps = conn.prepareStatement(sql);
 
-    // ============================================================
-    // getById(id)
-    // ============================================================
-    public ResultSet getById(String id) throws SQLException {
+    // return ps.executeQuery();
+    // }
 
-        // Devuelve una transacción específica por ID.
+    // // ============================================================
+    // // getById(id)
+    // // ============================================================
+    // public ResultSet getById(String id) throws SQLException {
 
-        String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.id = ?
-        """;
+    // // Devuelve una transacción específica por ID.
 
-        Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql);
+    // String sql = """
+    // SELECT
+    // t.id,
+    // t.item_id,
+    // t.requester_id,
+    // t.approver_id,
+    // t.type,
+    // t.quantity,
+    // t.status,
+    // t.notes,
+    // t.created_at,
+    // t.updated_at,
+    // t.processed_at
+    // FROM transactions t
+    // WHERE t.id = ?
+    // """;
 
-        ps.setString(1, id);
+    // Connection conn = DatabaseConnection.getConnection();
+    // PreparedStatement ps = conn.prepareStatement(sql);
 
-        return ps.executeQuery();
-    }
+    // ps.setString(1, id);
+
+    // return ps.executeQuery();
+    // }
 
     // ============================================================
     // getByItem(itemId)
@@ -262,22 +241,22 @@ public class TransactionDAO {
         // Devuelve todas las transacciones asociadas a un item específico.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.item_id = ?
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.item_id = ?
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -295,22 +274,22 @@ public class TransactionDAO {
         // Devuelve todas las transacciones solicitadas por un usuario.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.requester_id = ?
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.requester_id = ?
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -328,22 +307,22 @@ public class TransactionDAO {
         // Devuelve todas las transacciones aprobadas por un usuario.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.approver_id = ?
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.approver_id = ?
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -361,22 +340,22 @@ public class TransactionDAO {
         // Devuelve transacciones en estado PENDING.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.status = 'PENDING'
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.status = 'PENDING'
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -392,22 +371,22 @@ public class TransactionDAO {
         // Devuelve transacciones aprobadas.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.status = 'APPROVED'
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.status = 'APPROVED'
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -423,22 +402,22 @@ public class TransactionDAO {
         // Devuelve transacciones rechazadas.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.status = 'REJECTED'
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.status = 'REJECTED'
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -454,22 +433,22 @@ public class TransactionDAO {
         // Devuelve transacciones completadas.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.status = 'COMPLETED'
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.status = 'COMPLETED'
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -485,22 +464,22 @@ public class TransactionDAO {
         // Devuelve transacciones de entrada (IN).
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.type = 'IN'
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.type = 'IN'
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -516,22 +495,22 @@ public class TransactionDAO {
         // Devuelve transacciones de salida (OUT).
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.type = 'OUT'
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.type = 'OUT'
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -547,22 +526,22 @@ public class TransactionDAO {
         // Devuelve transacciones de ajuste de inventario.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            WHERE t.type = 'ADJUST'
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    WHERE t.type = 'ADJUST'
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -578,21 +557,21 @@ public class TransactionDAO {
         // Devuelve transacciones ordenadas desde las más recientes.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            ORDER BY t.created_at DESC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    ORDER BY t.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -608,78 +587,25 @@ public class TransactionDAO {
         // Devuelve transacciones ordenadas desde las más antiguas.
 
         String sql = """
-            SELECT
-                t.id,
-                t.item_id,
-                t.requester_id,
-                t.approver_id,
-                t.type,
-                t.quantity,
-                t.status,
-                t.notes,
-                t.created_at,
-                t.updated_at,
-                t.processed_at
-            FROM transactions t
-            ORDER BY t.created_at ASC
-        """;
+                    SELECT
+                        t.id,
+                        t.item_id,
+                        t.requester_id,
+                        t.approver_id,
+                        t.type,
+                        t.quantity,
+                        t.status,
+                        t.notes,
+                        t.created_at,
+                        t.updated_at,
+                        t.processed_at
+                    FROM transactions t
+                    ORDER BY t.created_at ASC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
 
         return ps.executeQuery();
-    }
-
-    // ============================================================
-    // create(tx)
-    // ============================================================
-    public boolean create(Transaction tx) throws SQLException {
-
-        // Inserta una nueva transacción en estado inicial.
-
-        String sql = """
-            INSERT INTO transactions (
-                id, item_id, requester_id, approver_id,
-                type, quantity, status, notes,
-                created_at, updated_at, processed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NULL)
-        """;
-
-        Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql);
-
-        ps.setString(1, tx.getId());
-        ps.setString(2, tx.getItemId());
-        ps.setString(3, tx.getRequesterId());
-        ps.setString(4, tx.getApproverId());
-        ps.setString(5, tx.getType());
-        ps.setInt(6, tx.getQuantity());
-        ps.setString(7, tx.getStatus());
-        ps.setString(8, tx.getNotes());
-
-        return ps.executeUpdate() > 0;
-    }
-
-    // ============================================================
-    // updateStatus()
-    // ============================================================
-    public boolean updateStatus(String id, String status) throws SQLException {
-
-        // Actualiza el estado de una transacción.
-
-        String sql = """
-            UPDATE transactions
-            SET status = ?,
-                updated_at = NOW()
-            WHERE id = ?
-        """;
-
-        Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql);
-
-        ps.setString(1, status);
-        ps.setString(2, id);
-
-        return ps.executeUpdate() > 0;
     }
 }

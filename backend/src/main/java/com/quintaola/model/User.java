@@ -1,8 +1,8 @@
 package com.quintaola.model;
 
-import java.sql.Timestamp;
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 
 public class User {
 
@@ -17,45 +17,64 @@ public class User {
 
     private Timestamp createdAt;
 
-    // Getters & Setters
+    public String getId() {
+        return id;
+    }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getEmail() {
+        return email;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getDni() {
+        return dni;
+    }
 
-    public String getDni() { return dni; }
-    public void setDni(String dni) { this.dni = dni; }
+    public String getName() {
+        return name;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getPasswordHash() {
+        return passwordHash;
+    }
 
-    public String getPasswordHash() { return passwordHash; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public String getRoleId() {
+        return roleId;
+    }
 
-    public String getRoleId() { return roleId; }
-    public void setRoleId(String roleId) { this.roleId = roleId; }
+    public String getRoleName() {
+        switch (roleId) {
+            case "role-admin":
+                return "Administrador";
+            case "role-manager":
+                return "Manager";
+            case "role-member":
+                return "Miembro";
+            case "role-Viewwe":
+                return "Espectador";
+            default:
+                return "None";
+        }
+    }
 
-    public boolean isActivo() { return activo; }
-    public void setActivo(boolean activo) { this.activo = activo; }
+    public boolean isActivo() {
+        return activo;
+    }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
 
-    private User mapUser(ResultSet rs) throws SQLException {
+    public static User mapUser(ResultSet rs) throws SQLException {
         User user = new User();
 
-        user.setId(rs.getString("id"));
-        user.setEmail(rs.getString("email"));
-        user.setDni(rs.getString("dni"));
-        user.setName(rs.getString("name"));
-        user.setPasswordHash(rs.getString("password_hash"));
-
-        user.setRoleId(rs.getString("role_id"));
-        user.setActivo(rs.getBoolean("activo"));
-
-        user.setCreatedAt(rs.getTimestamp("created_at"));
+        user.id = rs.getString("id");
+        user.email = rs.getString("email");
+        user.dni = rs.getString("dni");
+        user.name = rs.getString("name");
+        user.passwordHash = rs.getString("password_hash");
+        user.roleId = rs.getString("role_id");
+        user.activo = rs.getBoolean("activo");
+        user.createdAt = rs.getTimestamp("created_at");
 
         return user;
     }

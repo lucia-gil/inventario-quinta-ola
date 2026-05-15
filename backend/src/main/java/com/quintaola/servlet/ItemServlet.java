@@ -18,7 +18,7 @@ import java.util.List;
 public class ItemServlet extends HttpServlet {
 
     private final ItemDAO itemDAO = new ItemDAO();
-    private final Gson gson       = new Gson();
+    private final Gson gson = new Gson();
 
     // ── GET /api/items ────────────────────────────────────────────
     // ── GET /api/items/admin ──────────────────────────────────────
@@ -39,7 +39,7 @@ public class ItemServlet extends HttpServlet {
                     : itemDAO.getAll();
 
             // Traducir status a español antes de mandar al frontend
-            items.forEach(item -> item.setStatus(item.getStatusFrontend()));
+            items.forEach(item -> item.getStatusName());
 
             out.print(gson.toJson(items));
 

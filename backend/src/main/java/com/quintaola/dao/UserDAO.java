@@ -29,12 +29,12 @@ public class UserDAO {
     // ── REGISTER — crear nuevo usuario ───────────────────────────
     public boolean register(User user) throws SQLException {
         String sql = """
-            INSERT INTO users (id, email, dni, name, password_hash, role_id, activo)
-            VALUES (?, ?, ?, ?, ?, 'role-solicitante', 1)
-            """;
+                INSERT INTO users (id, email, dni, name, password_hash, role_id, activo)
+                VALUES (?, ?, ?, ?, ?, 'role-solicitante', 1)
+                """;
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, UUID.randomUUID().toString());
             ps.setString(2, user.getEmail());
@@ -50,14 +50,14 @@ public class UserDAO {
     // ── LOGIN — verificar credenciales ───────────────────────────
     public User login(String email, String password) throws SQLException {
         String sql = """
-            SELECT u.*, r.name AS role_name
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            WHERE u.email = ? AND u.activo = 1
-            """;
+                SELECT u.*, r.name AS role_name
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.email = ? AND u.activo = 1
+                """;
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, email);
 
@@ -67,7 +67,7 @@ public class UserDAO {
 
                     // Verificar contraseña con BCrypt
                     if (BCrypt.checkpw(password, storedHash)) {
-                        return mapRow(rs);
+                        return User.mapUser(rs);
                     }
                 }
             }
@@ -76,21 +76,21 @@ public class UserDAO {
     }
 
     // ── GET ALL — listar todos los usuarios ──────────────────────
-    public List<User> getAll() throws SQLException {
+    public List<User> getAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = """
-            SELECT u.*, r.name AS role_name
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            ORDER BY u.created_at DESC
-            """;
+                SELECT u.*, r.name AS role_name
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                ORDER BY u.created_at DESC
+                """;
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                users.add(mapRow(rs));
+                users.add(User.mapUser(rs));
             }
         }
         return users;
@@ -101,7 +101,7 @@ public class UserDAO {
         String sql = "UPDATE users SET role_id = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, roleId);
             ps.setString(2, userId);
@@ -114,28 +114,13 @@ public class UserDAO {
         String sql = "UPDATE users SET activo = 0 WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userId);
             return ps.executeUpdate() > 0;
         }
     }
 
-    // ── MAP ROW ──────────────────────────────────────────────────
-    private User mapRow(ResultSet rs) throws SQLException {
-        User user = new User();
-        user.setId          (rs.getString ("id"));
-        user.setEmail       (rs.getString ("email"));
-        user.setDni         (rs.getString ("dni"));
-        user.setName        (rs.getString ("name"));
-        user.setPasswordHash(rs.getString ("password_hash"));
-        user.setRoleId      (rs.getString ("role_id"));
-        user.setRoleName    (rs.getString ("role_name"));
-        user.setActivo      (rs.getBoolean("activo"));
-        user.setCreatedAt   (rs.getString ("created_at"));
-        return user;
-    }   
-    
     // ============================================================
     // getAll()
     // ============================================================
@@ -144,16 +129,16 @@ public class UserDAO {
         // Devuelve todos los usuarios sin filtros.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -169,17 +154,17 @@ public class UserDAO {
         // Devuelve solo usuarios activos.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            WHERE u.activo = 1
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    WHERE u.activo = 1
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -195,17 +180,17 @@ public class UserDAO {
         // Devuelve solo usuarios inactivos.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            WHERE u.activo = 0
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    WHERE u.activo = 0
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -221,17 +206,17 @@ public class UserDAO {
         // Devuelve un usuario por ID.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            WHERE u.id = ?
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    WHERE u.id = ?
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -249,17 +234,17 @@ public class UserDAO {
         // Busca usuario por email.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            WHERE u.email = ?
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    WHERE u.email = ?
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -277,17 +262,17 @@ public class UserDAO {
         // Busca usuario por DNI.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            WHERE u.dni = ?
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    WHERE u.dni = ?
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -305,17 +290,17 @@ public class UserDAO {
         // Devuelve usuarios filtrados por rol.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            WHERE u.role_id = ?
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    WHERE u.role_id = ?
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -333,17 +318,17 @@ public class UserDAO {
         // Usuarios ordenados del más reciente al más antiguo.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            ORDER BY u.created_at DESC
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    ORDER BY u.created_at DESC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -359,17 +344,17 @@ public class UserDAO {
         // Usuarios ordenados del más antiguo al más reciente.
 
         String sql = """
-            SELECT
-                u.id,
-                u.email,
-                u.dni,
-                u.name,
-                u.role_id,
-                u.activo,
-                u.created_at
-            FROM users u
-            ORDER BY u.created_at ASC
-        """;
+                    SELECT
+                        u.id,
+                        u.email,
+                        u.dni,
+                        u.name,
+                        u.role_id,
+                        u.activo,
+                        u.created_at
+                    FROM users u
+                    ORDER BY u.created_at ASC
+                """;
 
         Connection conn = DatabaseConnection.getConnection();
         PreparedStatement ps = conn.prepareStatement(sql);

@@ -33,12 +33,13 @@
 // ============================================================
 
 package com.quintaola.dao;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class UsersAnalyticsDAO {
+public class UserAnalyticsDAO {
 
     // ============================================================
     // ACTIVITY LEVEL
@@ -49,12 +50,12 @@ public class UsersAnalyticsDAO {
         // Devuelve los usuarios con mayor cantidad de transacciones totales.
 
         String sql = """
-            SELECT u.id, u.name, COUNT(t.id) AS total_transactions
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-            ORDER BY total_transactions DESC
-        """;
+                    SELECT u.id, u.name, COUNT(t.id) AS total_transactions
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                    ORDER BY total_transactions DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -64,12 +65,12 @@ public class UsersAnalyticsDAO {
         // Devuelve los usuarios con menor actividad en el sistema.
 
         String sql = """
-            SELECT u.id, u.name, COUNT(t.id) AS total_transactions
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-            ORDER BY total_transactions ASC
-        """;
+                    SELECT u.id, u.name, COUNT(t.id) AS total_transactions
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                    ORDER BY total_transactions ASC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -79,14 +80,14 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios que no han tenido actividad en los últimos N días.
 
         String sql = """
-            SELECT u.id, u.name,
-                   DATEDIFF(NOW(), MAX(t.created_at)) AS inactivity_days
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-            HAVING inactivity_days >= ?
-            ORDER BY inactivity_days DESC
-        """;
+                    SELECT u.id, u.name,
+                           DATEDIFF(NOW(), MAX(t.created_at)) AS inactivity_days
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                    HAVING inactivity_days >= ?
+                    ORDER BY inactivity_days DESC
+                """;
 
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setInt(1, days);
@@ -103,12 +104,12 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios con mayor número de solicitudes realizadas.
 
         String sql = """
-            SELECT u.id, u.name, COUNT(t.id) AS request_count
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-            ORDER BY request_count DESC
-        """;
+                    SELECT u.id, u.name, COUNT(t.id) AS request_count
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                    ORDER BY request_count DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -118,13 +119,13 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios con mayor número de aprobaciones realizadas.
 
         String sql = """
-            SELECT u.id, u.name, COUNT(t.id) AS approval_count
-            FROM users u
-            LEFT JOIN transactions t ON t.approver_id = u.id
-            WHERE t.status = 'APPROVED'
-            GROUP BY u.id, u.name
-            ORDER BY approval_count DESC
-        """;
+                    SELECT u.id, u.name, COUNT(t.id) AS approval_count
+                    FROM users u
+                    LEFT JOIN transactions t ON t.approver_id = u.id
+                    WHERE t.status = 'APPROVED'
+                    GROUP BY u.id, u.name
+                    ORDER BY approval_count DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -134,13 +135,13 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios que más rechazos han realizado.
 
         String sql = """
-            SELECT u.id, u.name, COUNT(t.id) AS rejection_count
-            FROM users u
-            LEFT JOIN transactions t ON t.approver_id = u.id
-            WHERE t.status = 'REJECTED'
-            GROUP BY u.id, u.name
-            ORDER BY rejection_count DESC
-        """;
+                    SELECT u.id, u.name, COUNT(t.id) AS rejection_count
+                    FROM users u
+                    LEFT JOIN transactions t ON t.approver_id = u.id
+                    WHERE t.status = 'REJECTED'
+                    GROUP BY u.id, u.name
+                    ORDER BY rejection_count DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -150,12 +151,12 @@ public class UsersAnalyticsDAO {
         // Calcula la tasa de aprobación por usuario.
 
         String sql = """
-            SELECT u.id, u.name,
-                   SUM(CASE WHEN t.status = 'APPROVED' THEN 1 ELSE 0 END) * 1.0 / COUNT(t.id) AS approval_rate
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-        """;
+                    SELECT u.id, u.name,
+                           SUM(CASE WHEN t.status = 'APPROVED' THEN 1 ELSE 0 END) * 1.0 / COUNT(t.id) AS approval_rate
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -165,12 +166,12 @@ public class UsersAnalyticsDAO {
         // Calcula la tasa de rechazo por usuario.
 
         String sql = """
-            SELECT u.id, u.name,
-                   SUM(CASE WHEN t.status = 'REJECTED' THEN 1 ELSE 0 END) * 1.0 / COUNT(t.id) AS rejection_rate
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-        """;
+                    SELECT u.id, u.name,
+                           SUM(CASE WHEN t.status = 'REJECTED' THEN 1 ELSE 0 END) * 1.0 / COUNT(t.id) AS rejection_rate
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -184,14 +185,14 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios con menor tiempo promedio de aprobación.
 
         String sql = """
-            SELECT u.id, u.name,
-                   AVG(TIMESTAMPDIFF(MINUTE, t.created_at, t.processed_at)) AS avg_time
-            FROM users u
-            JOIN transactions t ON t.approver_id = u.id
-            WHERE t.processed_at IS NOT NULL
-            GROUP BY u.id, u.name
-            ORDER BY avg_time ASC
-        """;
+                    SELECT u.id, u.name,
+                           AVG(TIMESTAMPDIFF(MINUTE, t.created_at, t.processed_at)) AS avg_time
+                    FROM users u
+                    JOIN transactions t ON t.approver_id = u.id
+                    WHERE t.processed_at IS NOT NULL
+                    GROUP BY u.id, u.name
+                    ORDER BY avg_time ASC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -201,14 +202,14 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios con mayor tiempo promedio de aprobación.
 
         String sql = """
-            SELECT u.id, u.name,
-                   AVG(TIMESTAMPDIFF(MINUTE, t.created_at, t.processed_at)) AS avg_time
-            FROM users u
-            JOIN transactions t ON t.approver_id = u.id
-            WHERE t.processed_at IS NOT NULL
-            GROUP BY u.id, u.name
-            ORDER BY avg_time DESC
-        """;
+                    SELECT u.id, u.name,
+                           AVG(TIMESTAMPDIFF(MINUTE, t.created_at, t.processed_at)) AS avg_time
+                    FROM users u
+                    JOIN transactions t ON t.approver_id = u.id
+                    WHERE t.processed_at IS NOT NULL
+                    GROUP BY u.id, u.name
+                    ORDER BY avg_time DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -218,13 +219,13 @@ public class UsersAnalyticsDAO {
         // Devuelve el tiempo promedio de aprobación por usuario.
 
         String sql = """
-            SELECT u.id, u.name,
-                   AVG(TIMESTAMPDIFF(MINUTE, t.created_at, t.processed_at)) AS avg_time
-            FROM users u
-            JOIN transactions t ON t.approver_id = u.id
-            WHERE t.processed_at IS NOT NULL
-            GROUP BY u.id, u.name
-        """;
+                    SELECT u.id, u.name,
+                           AVG(TIMESTAMPDIFF(MINUTE, t.created_at, t.processed_at)) AS avg_time
+                    FROM users u
+                    JOIN transactions t ON t.approver_id = u.id
+                    WHERE t.processed_at IS NOT NULL
+                    GROUP BY u.id, u.name
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -238,13 +239,13 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios con mayor tasa de éxito en aprobaciones.
 
         String sql = """
-            SELECT u.id, u.name,
-                   SUM(CASE WHEN t.status = 'APPROVED' THEN 1 ELSE 0 END) * 1.0 / COUNT(t.id) AS success_rate
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-            ORDER BY success_rate DESC
-        """;
+                    SELECT u.id, u.name,
+                           SUM(CASE WHEN t.status = 'APPROVED' THEN 1 ELSE 0 END) * 1.0 / COUNT(t.id) AS success_rate
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                    ORDER BY success_rate DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -254,13 +255,13 @@ public class UsersAnalyticsDAO {
         // Devuelve usuarios con mayor cantidad de solicitudes fallidas o rechazadas.
 
         String sql = """
-            SELECT u.id, u.name,
-                   SUM(CASE WHEN t.status IN ('REJECTED','FAILED') THEN 1 ELSE 0 END) AS failed_requests
-            FROM users u
-            LEFT JOIN transactions t ON t.requester_id = u.id
-            GROUP BY u.id, u.name
-            ORDER BY failed_requests DESC
-        """;
+                    SELECT u.id, u.name,
+                           SUM(CASE WHEN t.status IN ('REJECTED','FAILED') THEN 1 ELSE 0 END) AS failed_requests
+                    FROM users u
+                    LEFT JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY u.id, u.name
+                    ORDER BY failed_requests DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -274,15 +275,15 @@ public class UsersAnalyticsDAO {
         // Devuelve actividad de usuarios agrupada por hora del día.
 
         String sql = """
-            SELECT HOUR(t.created_at) AS hour,
-                   u.id,
-                   u.name,
-                   COUNT(t.id) AS activity_count
-            FROM users u
-            JOIN transactions t ON t.requester_id = u.id
-            GROUP BY hour, u.id, u.name
-            ORDER BY activity_count DESC
-        """;
+                    SELECT HOUR(t.created_at) AS hour,
+                           u.id,
+                           u.name,
+                           COUNT(t.id) AS activity_count
+                    FROM users u
+                    JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY hour, u.id, u.name
+                    ORDER BY activity_count DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -292,15 +293,15 @@ public class UsersAnalyticsDAO {
         // Devuelve actividad de usuarios agrupada por día de la semana.
 
         String sql = """
-            SELECT DAYOFWEEK(t.created_at) AS day_of_week,
-                   u.id,
-                   u.name,
-                   COUNT(t.id) AS activity_count
-            FROM users u
-            JOIN transactions t ON t.requester_id = u.id
-            GROUP BY day_of_week, u.id, u.name
-            ORDER BY activity_count DESC
-        """;
+                    SELECT DAYOFWEEK(t.created_at) AS day_of_week,
+                           u.id,
+                           u.name,
+                           COUNT(t.id) AS activity_count
+                    FROM users u
+                    JOIN transactions t ON t.requester_id = u.id
+                    GROUP BY day_of_week, u.id, u.name
+                    ORDER BY activity_count DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -310,13 +311,13 @@ public class UsersAnalyticsDAO {
         // Devuelve la evolución de actividad de un usuario específico en el tiempo.
 
         String sql = """
-            SELECT DATE(t.created_at) AS date,
-                   COUNT(t.id) AS activity_count
-            FROM transactions t
-            WHERE t.requester_id = ?
-            GROUP BY DATE(t.created_at)
-            ORDER BY date ASC
-        """;
+                    SELECT DATE(t.created_at) AS date,
+                           COUNT(t.id) AS activity_count
+                    FROM transactions t
+                    WHERE t.requester_id = ?
+                    GROUP BY DATE(t.created_at)
+                    ORDER BY date ASC
+                """;
 
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setString(1, userId);

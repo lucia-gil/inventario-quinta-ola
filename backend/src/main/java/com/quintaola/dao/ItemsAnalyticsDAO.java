@@ -32,6 +32,7 @@
 // ============================================================
 
 package com.quintaola.dao;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,13 +50,13 @@ public class ItemsAnalyticsDAO {
         // ordenados por demanda total.
 
         String sql = """
-            SELECT i.id, i.name, COUNT(t.id) AS total_requests
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id AND t.type = 'OUT'
-            GROUP BY i.id, i.name
-            ORDER BY total_requests DESC
-        """;
+                    SELECT i.id, i.name, COUNT(t.id) AS total_requests
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id AND t.type = 'OUT'
+                    GROUP BY i.id, i.name
+                    ORDER BY total_requests DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -65,13 +66,13 @@ public class ItemsAnalyticsDAO {
         // Devuelve los items con menor cantidad de uso (OUT transactions).
 
         String sql = """
-            SELECT i.id, i.name, COUNT(t.id) AS total_requests
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id AND t.type = 'OUT'
-            GROUP BY i.id, i.name
-            ORDER BY total_requests ASC
-        """;
+                    SELECT i.id, i.name, COUNT(t.id) AS total_requests
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id AND t.type = 'OUT'
+                    GROUP BY i.id, i.name
+                    ORDER BY total_requests ASC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -81,15 +82,15 @@ public class ItemsAnalyticsDAO {
         // Devuelve los items con mayor actividad reciente en los últimos días.
 
         String sql = """
-            SELECT i.id, i.name, COUNT(t.id) AS recent_requests
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id
-             AND t.type = 'OUT'
-             AND t.created_at >= NOW() - INTERVAL ? DAY
-            GROUP BY i.id, i.name
-            ORDER BY recent_requests DESC
-        """;
+                    SELECT i.id, i.name, COUNT(t.id) AS recent_requests
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id
+                     AND t.type = 'OUT'
+                     AND t.created_at >= NOW() - INTERVAL ? DAY
+                    GROUP BY i.id, i.name
+                    ORDER BY recent_requests DESC
+                """;
 
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setInt(1, days);
@@ -102,15 +103,15 @@ public class ItemsAnalyticsDAO {
         // Devuelve items con baja actividad reciente comparada con su histórico.
 
         String sql = """
-            SELECT i.id, i.name, COUNT(t.id) AS recent_requests
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id
-             AND t.type = 'OUT'
-             AND t.created_at >= NOW() - INTERVAL ? DAY
-            GROUP BY i.id, i.name
-            ORDER BY recent_requests ASC
-        """;
+                    SELECT i.id, i.name, COUNT(t.id) AS recent_requests
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id
+                     AND t.type = 'OUT'
+                     AND t.created_at >= NOW() - INTERVAL ? DAY
+                    GROUP BY i.id, i.name
+                    ORDER BY recent_requests ASC
+                """;
 
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setInt(1, days);
@@ -127,13 +128,13 @@ public class ItemsAnalyticsDAO {
         // Calcula el consumo promedio diario por item.
 
         String sql = """
-            SELECT i.id, i.name,
-                   COUNT(t.id) / GREATEST(DATEDIFF(NOW(), MIN(t.created_at)), 1) AS avg_daily_out
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id AND t.type = 'OUT'
-            GROUP BY i.id, i.name
-        """;
+                    SELECT i.id, i.name,
+                           COUNT(t.id) / GREATEST(DATEDIFF(NOW(), MIN(t.created_at)), 1) AS avg_daily_out
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id AND t.type = 'OUT'
+                    GROUP BY i.id, i.name
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -143,13 +144,13 @@ public class ItemsAnalyticsDAO {
         // Calcula el consumo promedio semanal por item.
 
         String sql = """
-            SELECT i.id, i.name,
-                   COUNT(t.id) / GREATEST(TIMESTAMPDIFF(WEEK, MIN(t.created_at), NOW()), 1) AS avg_weekly_out
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id AND t.type = 'OUT'
-            GROUP BY i.id, i.name
-        """;
+                    SELECT i.id, i.name,
+                           COUNT(t.id) / GREATEST(TIMESTAMPDIFF(WEEK, MIN(t.created_at), NOW()), 1) AS avg_weekly_out
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id AND t.type = 'OUT'
+                    GROUP BY i.id, i.name
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -163,10 +164,10 @@ public class ItemsAnalyticsDAO {
         // Devuelve los items más recientemente creados.
 
         String sql = """
-            SELECT id, name, created_at
-            FROM items
-            ORDER BY created_at DESC
-        """;
+                    SELECT id, name, created_at
+                    FROM items
+                    ORDER BY created_at DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -176,15 +177,15 @@ public class ItemsAnalyticsDAO {
         // Devuelve items antiguos con poca o ninguna actividad.
 
         String sql = """
-            SELECT i.id, i.name, i.created_at
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id AND t.type = 'OUT'
-            WHERE t.id IS NULL
-               OR i.created_at < NOW() - INTERVAL 90 DAY
-            GROUP BY i.id, i.name, i.created_at
-            ORDER BY i.created_at ASC
-        """;
+                    SELECT i.id, i.name, i.created_at
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id AND t.type = 'OUT'
+                    WHERE t.id IS NULL
+                       OR i.created_at < NOW() - INTERVAL 90 DAY
+                    GROUP BY i.id, i.name, i.created_at
+                    ORDER BY i.created_at ASC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -194,12 +195,12 @@ public class ItemsAnalyticsDAO {
         // Devuelve items que nunca han sido usados en transacciones OUT.
 
         String sql = """
-            SELECT i.id, i.name
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id AND t.type = 'OUT'
-            WHERE t.id IS NULL
-        """;
+                    SELECT i.id, i.name
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id AND t.type = 'OUT'
+                    WHERE t.id IS NULL
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -213,12 +214,12 @@ public class ItemsAnalyticsDAO {
         // Devuelve los tags más usados en el sistema.
 
         String sql = """
-            SELECT tg.name AS tag, COUNT(it.item_id) AS usage_count
-            FROM tags tg
-            LEFT JOIN item_tags it ON it.tag_id = tg.id
-            GROUP BY tg.name
-            ORDER BY usage_count DESC
-        """;
+                    SELECT tg.name AS tag, COUNT(it.item_id) AS usage_count
+                    FROM tags tg
+                    LEFT JOIN item_tags it ON it.tag_id = tg.id
+                    GROUP BY tg.name
+                    ORDER BY usage_count DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -228,14 +229,14 @@ public class ItemsAnalyticsDAO {
         // Devuelve tags asociados a items con mayor consumo.
 
         String sql = """
-            SELECT tg.name AS tag,
-                   SUM(CASE WHEN t.type='OUT' THEN t.quantity ELSE 0 END) AS total_consumption
-            FROM tags tg
-            JOIN item_tags it ON it.tag_id = tg.id
-            JOIN transactions t ON t.item_id = it.item_id
-            GROUP BY tg.name
-            ORDER BY total_consumption DESC
-        """;
+                    SELECT tg.name AS tag,
+                           SUM(CASE WHEN t.type='OUT' THEN t.quantity ELSE 0 END) AS total_consumption
+                    FROM tags tg
+                    JOIN item_tags it ON it.tag_id = tg.id
+                    JOIN transactions t ON t.item_id = it.item_id
+                    GROUP BY tg.name
+                    ORDER BY total_consumption DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -245,11 +246,11 @@ public class ItemsAnalyticsDAO {
         // Devuelve cuántos items están asociados a cada tag.
 
         String sql = """
-            SELECT tg.name AS tag, COUNT(it.item_id) AS item_count
-            FROM tags tg
-            LEFT JOIN item_tags it ON it.tag_id = tg.id
-            GROUP BY tg.name
-        """;
+                    SELECT tg.name AS tag, COUNT(it.item_id) AS item_count
+                    FROM tags tg
+                    LEFT JOIN item_tags it ON it.tag_id = tg.id
+                    GROUP BY tg.name
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -263,13 +264,13 @@ public class ItemsAnalyticsDAO {
         // Estima cuántas veces un item necesita reposición.
 
         String sql = """
-            SELECT i.id, i.name, COUNT(t.id) AS reorder_count
-            FROM items i
-            LEFT JOIN transactions t
-              ON t.item_id = i.id AND t.type = 'IN'
-            GROUP BY i.id, i.name
-            ORDER BY reorder_count DESC
-        """;
+                    SELECT i.id, i.name, COUNT(t.id) AS reorder_count
+                    FROM items i
+                    LEFT JOIN transactions t
+                      ON t.item_id = i.id AND t.type = 'IN'
+                    GROUP BY i.id, i.name
+                    ORDER BY reorder_count DESC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -279,13 +280,13 @@ public class ItemsAnalyticsDAO {
         // Calcula la tasa de rotación de inventario por item.
 
         String sql = """
-            SELECT i.id, i.name,
-                   COUNT(CASE WHEN t.type='OUT' THEN 1 END) /
-                   GREATEST(COUNT(CASE WHEN t.type='IN' THEN 1 END), 1) AS turnover_rate
-            FROM items i
-            LEFT JOIN transactions t ON t.item_id = i.id
-            GROUP BY i.id, i.name
-        """;
+                    SELECT i.id, i.name,
+                           COUNT(CASE WHEN t.type='OUT' THEN 1 END) /
+                           GREATEST(COUNT(CASE WHEN t.type='IN' THEN 1 END), 1) AS turnover_rate
+                    FROM items i
+                    LEFT JOIN transactions t ON t.item_id = i.id
+                    GROUP BY i.id, i.name
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
@@ -295,14 +296,14 @@ public class ItemsAnalyticsDAO {
         // Identifica items con riesgo de desperdicio por baja actividad.
 
         String sql = """
-            SELECT i.id, i.name,
-                   COUNT(t.id) AS activity_score
-            FROM items i
-            LEFT JOIN transactions t ON t.item_id = i.id
-            GROUP BY i.id, i.name
-            HAVING activity_score < 3
-            ORDER BY activity_score ASC
-        """;
+                    SELECT i.id, i.name,
+                           COUNT(t.id) AS activity_score
+                    FROM items i
+                    LEFT JOIN transactions t ON t.item_id = i.id
+                    GROUP BY i.id, i.name
+                    HAVING activity_score < 3
+                    ORDER BY activity_score ASC
+                """;
 
         return conn.prepareStatement(sql).executeQuery();
     }
