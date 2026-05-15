@@ -1,83 +1,80 @@
 package com.quintaola.model;
 
-import java.sql.Timestamp;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-
 public class Transaction {
 
     private String id;
-
     private String itemId;
     private String requesterId;
     private String approverId;
-
-    private String type;     // IN, OUT, ADJUST
+    private String type;
     private int quantity;
-
-    private String status;   // PENDING, APPROVED, etc.
-
+    private String status;
     private String notes;
+    private String createdAt;
+    private String updatedAt;
+    private String processedAt;
 
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
-    private Timestamp processedAt;
+    // Campos extra para el frontend (JOINs)
+    private String itemName;
+    private String itemUnit;
+    private String requesterName;
+    private String approverName;
 
-    // Getters & Setters
+    public Transaction() {}
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getId()                      { return id; }
+    public void setId(String id)               { this.id = id; }
 
-    public String getItemId() { return itemId; }
-    public void setItemId(String itemId) { this.itemId = itemId; }
+    public String getItemId()                  { return itemId; }
+    public void setItemId(String itemId)       { this.itemId = itemId; }
 
-    public String getRequesterId() { return requesterId; }
-    public void setRequesterId(String requesterId) { this.requesterId = requesterId; }
+    public String getRequesterId()                     { return requesterId; }
+    public void setRequesterId(String requesterId)     { this.requesterId = requesterId; }
 
-    public String getApproverId() { return approverId; }
-    public void setApproverId(String approverId) { this.approverId = approverId; }
+    public String getApproverId()                      { return approverId; }
+    public void setApproverId(String approverId)       { this.approverId = approverId; }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public String getType()                    { return type; }
+    public void setType(String type)           { this.type = type; }
 
-    public int getQuantity() { return quantity; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public int getQuantity()                   { return quantity; }
+    public void setQuantity(int quantity)      { this.quantity = quantity; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public String getStatus()                  { return status; }
+    public void setStatus(String status)       { this.status = status; }
 
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
+    public String getNotes()                   { return notes; }
+    public void setNotes(String notes)         { this.notes = notes; }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public String getCreatedAt()               { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
-    public Timestamp getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+    public String getUpdatedAt()               { return updatedAt; }
+    public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
 
-    public Timestamp getProcessedAt() { return processedAt; }
-    public void setProcessedAt(Timestamp processedAt) { this.processedAt = processedAt; }
+    public String getProcessedAt()                     { return processedAt; }
+    public void setProcessedAt(String processedAt)     { this.processedAt = processedAt; }
 
-    private Transaction mapTransaction(ResultSet rs) throws SQLException {
-        Transaction tx = new Transaction();
+    public String getItemName()                        { return itemName; }
+    public void setItemName(String itemName)           { this.itemName = itemName; }
 
-        tx.setId(rs.getString("id"));
+    public String getItemUnit()                        { return itemUnit; }
+    public void setItemUnit(String itemUnit)           { this.itemUnit = itemUnit; }
 
-        tx.setItemId(rs.getString("item_id"));
-        tx.setRequesterId(rs.getString("requester_id"));
-        tx.setApproverId(rs.getString("approver_id"));
+    public String getRequesterName()                           { return requesterName; }
+    public void setRequesterName(String requesterName)         { this.requesterName = requesterName; }
 
-        tx.setType(rs.getString("type"));
-        tx.setQuantity(rs.getInt("quantity"));
+    public String getApproverName()                            { return approverName; }
+    public void setApproverName(String approverName)           { this.approverName = approverName; }
 
-        tx.setStatus(rs.getString("status"));
-
-        tx.setNotes(rs.getString("notes"));
-
-        tx.setCreatedAt(rs.getTimestamp("created_at"));
-        tx.setUpdatedAt(rs.getTimestamp("updated_at"));
-        tx.setProcessedAt(rs.getTimestamp("processed_at"));
-
-        return tx;
+    public String getStatusFrontend() {
+        return switch (this.status) {
+            case "PENDING"         -> "Pendiente";
+            case "APPROVED"        -> "Aprobada";
+            case "REJECTED"        -> "Rechazada";
+            case "COMPLETED"       -> "Entregada";
+            case "WAITING_CHANGES" -> "En Revisión";
+            default                -> this.status;
+        };
     }
 }

@@ -153,41 +153,6 @@ public class ItemDAO {
     }
 
     // ============================================================
-    // getAll()
-    // ============================================================
-    public ResultSet getAll() throws SQLException {
-
-        // Devuelve todos los items del sistema (activos e inactivos),
-        // incluyendo sus tags concatenados en una sola columna.
-        // No aplica filtros ni orden específico.
-
-        String sql = """
-            SELECT
-                i.id,
-                i.name,
-                i.description,
-                i.image_url,
-                i.unit,
-                i.cached_quantity,
-                i.min_quantity,
-                i.status,
-                i.activo,
-                i.created_at,
-                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
-            FROM items i
-            LEFT JOIN item_tags it ON it.item_id = i.id
-            LEFT JOIN tags t ON t.id = it.tag_id
-            GROUP BY
-                i.id, i.name, i.description, i.image_url,
-                i.unit, i.cached_quantity, i.min_quantity,
-                i.status, i.activo, i.created_at
-        """;
-
-        Connection conn = DatabaseConnection.getConnection();
-        PreparedStatement ps = conn.prepareStatement(sql);
-
-        return ps.executeQuery();
-    }
 
     // ============================================================
     // getLowStock()
