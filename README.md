@@ -21,3 +21,11 @@ npm run dev
 ## Levantar backend
 Abrir carpeta backend/ en IntelliJ IDEA
 Configurar Tomcat y correr
+
+## Datos de prueba
+Ejecutar `database/data-prueba.sql` después de `database/inventorydb.sql`
+
+Usuarios de prueba:
+- admin@quintaola.com / admin123 → Administrador
+- lucia@quintaola.com / lucia123 → Solicitante
+- carlos@quintaola.com / carlos123 → Solicitante

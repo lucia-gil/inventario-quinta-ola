@@ -167,12 +167,13 @@ public class AuthServlet extends HttpServlet {
             };
 
             JsonObject response = new JsonObject();
-            response.addProperty("message",  "Login exitoso");
-            response.addProperty("userId",   user.getId());
-            response.addProperty("userName", user.getName());
-            response.addProperty("userRole", user.getRoleName());
-            response.addProperty("roleId",   user.getRoleId());
-            response.addProperty("redirect", redirect);
+            response.addProperty("message",   "Login exitoso");
+            response.addProperty("userId",    user.getId());
+            response.addProperty("userName",  user.getName());
+            response.addProperty("userEmail", user.getEmail());
+            response.addProperty("userRole",  user.getRoleName());
+            response.addProperty("roleId",    user.getRoleId());
+            response.addProperty("redirect",  redirect);
 
             out.print(gson.toJson(response));
 

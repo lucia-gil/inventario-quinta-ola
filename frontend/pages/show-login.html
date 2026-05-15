@@ -143,6 +143,7 @@
                     localStorage.setItem('userName', data.userName);
                     localStorage.setItem('userRole', data.userRole);
                     localStorage.setItem('roleId',   data.roleId);
+                    localStorage.setItem('userEmail', data.userEmail || '');
                     window.location.href = 'http://localhost:5173' + data.redirect;
                 } else {
                     let errorDiv = document.getElementById('login-error');

@@ -81,29 +81,37 @@
     QO.navbar({ active: 'inventory', name: userName, role: userRole });
 
     // ── Datos de ejemplo — reemplazar con fetch('/api/inventory') ──
-    const inventario = [
-      {
-        img: 'https://promart.vteximg.com.br/arquivos/ids/9975675/22662.jpg',
-        name: 'Cemento', tags: ['Construcción', 'Pesado'],
-        stock: 50, unit: 'bolsas', min: 20, status: 'OK'
-      },
-      {
-        img: 'https://promart.vteximg.com.br/arquivos/ids/8887530/119205.jpg',
-        name: 'Pintura Blanca', tags: ['Acabados', 'Líquido'],
-        stock: 8, unit: 'galones', min: 15, status: 'Stock Bajo'
-      },
-      {
-        img: 'https://www.koplastindustrial.com/wp-content/uploads/2023/12/TUBERIAS-PARA-DESAGUE.jpg',
-        name: 'Tubos PVC', tags: ['Plomería'],
-        stock: 0, unit: 'unidades', min: 10, status: 'Sin Stock'
-      },
-    ];
+    async function cargarInventario() {
+      try {
+        const res = await fetch('/api/items');
+        const items = await res.json();
 
-    QO.renderInventoryRows('inventory-tbody', inventario);
+        const inventario = items.map(item => ({
+          img:    item.imageUrl || 'https://via.placeholder.com/100',
+          name:   item.name,
+          tags:   [],
+          stock:  item.cachedQuantity,
+          unit:   item.unit,
+          min:    item.minQuantity,
+          status: item.status
+        }));
+
+        QO.renderInventoryRows('inventory-tbody', inventario);
+        document.getElementById('inventory-count').textContent =
+          `Mostrando 1 a ${inventario.length} de ${inventario.length} items`;
+
+        lucide.createIcons();
+      } catch (err) {
+        console.error('Error cargando inventario:', err);
+      }
+    }
+
+    cargarInventario();
     document.getElementById('inventory-count').textContent =
       `Mostrando 1 a ${inventario.length} de ${inventario.length} items`;
 
-    QO.renderPagination('inventory-pagination', { current: 1, total: 5 });
+    QO.renderPagination('inventory-pagination', { current: 1, total: Math.ceil(inventario.length / 5) });
+
     lucide.createIcons();
   </script>
 </body>
