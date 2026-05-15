@@ -1,8 +1,8 @@
 package org.quintaola.dto;
 
-import java.sql.Timestamp;
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 
 public class Item {
@@ -23,8 +23,6 @@ public class Item {
 
     private List<String> tags;
 
-    // Getters & Setters
-
     public String getId() {
         return id;
     }
@@ -37,98 +35,67 @@ public class Item {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getImageUrl() {
         return imageUrl;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
     public String getUnit() {
         return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
     }
 
     public int getCachedQuantity() {
         return cachedQuantity;
     }
 
-    public void setCachedQuantity(int cachedQuantity) {
-        this.cachedQuantity = cachedQuantity;
-    }
-
     public int getMinQuantity() {
         return minQuantity;
-    }
-
-    public void setMinQuantity(int minQuantity) {
-        this.minQuantity = minQuantity;
     }
 
     public String getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
     public boolean isActivo() {
         return activo;
-    }
-
-    public void setActivo(boolean activo) {
-        this.activo = activo;
     }
 
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public List<String> getTags() {
         return tags;
     }
 
-    public void setTags(List<String> tags) {
-        this.tags = tags;
+    public String getStatusName() {
+        return switch (this.status) {
+            case "OK" -> "OK";
+            case "LOW" -> "Stock Bajo";
+            case "UNAVAILABLE" -> "Sin Stock";
+            default -> this.status;
+        };
     }
 
-    private Item mapItem(ResultSet rs) throws SQLException {
+    public static Item mapItem(ResultSet rs) throws SQLException {
         Item item = new Item();
 
-        item.setId(rs.getString("id"));
-        item.setName(rs.getString("name"));
-        item.setDescription(rs.getString("description"));
-        item.setImageUrl(rs.getString("image_url"));
-        item.setUnit(rs.getString("unit"));
+        item.id = rs.getString("id");
+        item.name = rs.getString("name");
+        item.description = rs.getString("description");
+        item.imageUrl = rs.getString("image_url");
+        item.unit = rs.getString("unit");
 
-        item.setCachedQuantity(rs.getInt("cached_quantity"));
-        item.setMinQuantity(rs.getInt("min_quantity"));
+        item.cachedQuantity = rs.getInt("cached_quantity");
+        item.minQuantity = rs.getInt("min_quantity");
 
-        item.setStatus(rs.getString("status"));
-        item.setActivo(rs.getBoolean("activo"));
+        item.status = rs.getString("status");
+        item.activo = rs.getBoolean("activo");
 
-        item.setCreatedAt(rs.getTimestamp("created_at"));
+        item.createdAt = rs.getTimestamp("created_at");
 
         return item;
     }
