@@ -12,13 +12,16 @@
 <body class="page-body">
 
     <main class="page-main">
-        
+
         <div class="flex justify-between items-center flex-wrap gap-3">
             <div>
-                <h1 class="page-title">Transacciones</h1>
-                <p class="page-subtitle">Solicitudes de entrada y salida de stock</p>
+                <h1 class="page-title" id="page-title">Transacciones</h1>
+                <p class="page-subtitle" id="page-subtitle">Solicitudes de entrada y salida de stock</p>
             </div>
-            <a href="/pages/show-requestform.html" class="btn-page-primary">
+            <!-- Solo Solicitante/Manager/Admin pueden crear solicitudes (SuperAdmin no) -->
+            <a href="/pages/show-requestform.html"
+               data-requires="canCreateRequest"
+               class="btn-page-primary">
                 <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Nueva Transacción
             </a>
         </div>
@@ -38,39 +41,103 @@
                             <th class="th-center">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="transactions-tbody" class="table-body">
-                        </tbody>
+                    <tbody id="transactions-tbody" class="table-body"></tbody>
                 </table>
             </div>
 
             <div class="panel-footer">
-                <p class="panel-count-text" id="transactions-count">Mostrando 1 a 3 de 24 transacciones</p>
+                <p class="panel-count-text" id="transactions-count">Cargando transacciones...</p>
                 <div id="transactions-pagination"></div>
             </div>
         </div>
     </main>
 
+    <script src="/src/auth.js"></script>
     <script src="/src/ui.js"></script>
     <script>
-        // 1. Inyectamos la navbar
-        const userName = localStorage.getItem('userName') || 'Usuario';
-        const userRole = localStorage.getItem('userRole') || '';
-        QO.navbar({ active: 'transactions', name: userName, role: userRole });
+        // 1. GUARDIA — sesión obligatoria
+        if (!Auth.requireLogin()) throw new Error('No auth');
 
-        // 2. Datos de prueba (Reemplazarás esto con: fetch('/api/transacciones_en_curso'))
-        const transaccionesPendientes = [
-            { id: 'TXN-0001', requester: 'Juan Pérez',   item: 'Cemento',        qty: 20, type: 'IN',  date: '2026-04-15', status: 'Pendiente' },
-            { id: 'TXN-0002', requester: 'María López',  item: 'Pintura Blanca', qty: 5,  type: 'OUT', date: '2026-04-14', status: 'Esperando cambios' },
-            { id: 'TXN-0003', requester: 'Carlos Ruiz',  item: 'Tubos PVC',      qty: 10, type: 'OUT', date: '2026-04-13', status: 'Esperando cambios' }
-        ];
-
-        // 3. Renderizamos las filas en la tabla (¡QO hace toda la magia con las etiquetas de colores!)
-        QO.renderTransactionRows('transactions-tbody', transaccionesPendientes);
-
-        // 4. Inyectamos footer y cargamos los íconos
+        // 2. NAVBAR derivada del rol
+        QO.navbar({
+            active:   'transactions',
+            name:     Auth.getUserName(),
+            role:     Auth.getReadableRole(),
+            menuType: Auth.getMenuType(),
+        });
         QO.footer();
-        QO.init();
+
+        // 3. TÍTULO Y SUBTÍTULO contextuales según el rol
+        if (Auth.isViewer()) {
+            document.getElementById('page-title').textContent = 'Mis Solicitudes';
+            document.getElementById('page-subtitle').textContent = 'Todas las solicitudes que has creado';
+        } else if (Auth.canApprove()) {
+            document.getElementById('page-title').textContent = 'Solicitudes';
+            document.getElementById('page-subtitle').textContent = 'Solicitudes activas del sistema (puedes aprobar/rechazar)';
+        } else if (Auth.canDeliver()) {
+            document.getElementById('page-title').textContent = 'Solicitudes aprobadas';
+            document.getElementById('page-subtitle').textContent = 'Listas para entregar desde el depósito';
+        }
+
+        // 4. ENDPOINT según rol
+        //    - Viewer: solo las suyas (/me)
+        //    - Resto: todas (/)
+        async function cargarTransacciones() {
+            try {
+                const endpoint = Auth.isViewer() ? '/api/transactions/me' : '/api/transactions';
+
+                const res = await fetch(endpoint, { credentials: 'include' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                const lista = await res.json();
+
+                // Mapear modelo Java -> formato esperado por ui.js
+                const datos = lista.map(txn => {
+                    const idFull = txn.id || '';
+                    return {
+                        id:        idFull.length > 12
+                                     ? `TXN-${idFull.substring(0, 8).toUpperCase()}`
+                                     : idFull,
+                        fullId:    idFull,  // para los links
+                        requester: txn.requesterName || 'Usuario',
+                        item:      txn.itemName || '—',
+                        qty:       `${txn.quantity || 0} ${txn.itemUnit || ''}`,
+                        type:      txn.type || 'OUT',
+                        date:      txn.createdAt || '',
+                        status:    normalizeStatus(txn.status),
+                    };
+                });
+
+                QO.renderTransactionRows('transactions-tbody', datos);
+
+                document.getElementById('transactions-count').textContent =
+                    `Mostrando ${datos.length} registro(s)`;
+
+                QO.renderPagination('transactions-pagination', {
+                    current: 1,
+                    total:   Math.ceil(datos.length / 10) || 1,
+                });
+
+            } catch (error) {
+                console.error("Error cargando transacciones:", error);
+                document.getElementById('transactions-count').textContent =
+                    `Error: ${error.message}`;
+            }
+            lucide.createIcons();
+        }
+
+        // Normaliza el estado por si el backend devuelve inglés
+        function normalizeStatus(s) {
+            const map = {
+                'PENDING':'Pendiente', 'APPROVED':'Aprobada',
+                'REJECTED':'Rechazada','COMPLETED':'Entregada',
+                'Pendiente':'Pendiente','Aprobada':'Aprobada',
+                'Rechazada':'Rechazada','Entregada':'Entregada',
+            };
+            return map[s] || s || 'Pendiente';
+        }
+
+        cargarTransacciones();
     </script>
-    <script type="module" src="/src/transaction.ts"></script>
 </body>
 </html>

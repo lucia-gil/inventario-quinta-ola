@@ -3,244 +3,265 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Detalle de Solicitud | Quinta Ola</title>
+  <title>Inicio | Quinta Ola</title>
   <link href="/src/style.css" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="page-body">
 
-  <main class="page-main-narrow">
+  <main class="page-main">
 
-    <div class="page-header">
+    <!-- BANNER DE BIENVENIDA — texto dinámico según rol -->
+    <div class="panel-form flex flex-col md:flex-row md:items-center md:justify-between gap-6">
       <div>
-        <h1 class="page-title" id="page-title">Detalle de Solicitud</h1>
-        <p class="page-subtitle" id="page-subtitle">Cargando...</p>
+        <h2 class="page-title mb-2" id="welcome-title">¡Bienvenida!</h2>
+        <p class="text-gray-500 text-base max-w-2xl" id="welcome-subtitle">Cargando...</p>
       </div>
-      <button onclick="window.history.back()" class="btn-ghost">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
-      </button>
+      <div class="flex flex-col sm:flex-row gap-3" id="welcome-actions">
+        <!-- Botones dinámicos -->
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- STAT CARDS — distintos por rol -->
+    <div id="home-stats" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
 
-      <!-- Columna principal -->
-      <div class="md:col-span-2 space-y-6">
+    <!-- ACCESOS RÁPIDOS — distintos por rol -->
+    <div>
+      <h3 class="text-lg font-bold text-secondary mb-4">Accesos Rápidos</h3>
+      <div id="quick-access" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+    </div>
 
-        <!-- Datos generales -->
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-header-title flex items-center gap-2">
-              <i data-lucide="clipboard-list" class="w-5 h-5 text-accent"></i>
-              Información de la Solicitud
-            </h2>
-            <span id="status-badge"></span>
-          </div>
-          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-            <div>
-              <p class="form-label-tiny">ID Solicitud</p>
-              <p class="text-sm font-bold font-mono text-gray-800" id="sol-id">—</p>
-            </div>
-            <div>
-              <p class="form-label-tiny">Fecha y hora</p>
-              <p class="text-sm font-semibold text-gray-700" id="sol-fecha">—</p>
-            </div>
-            <div>
-              <p class="form-label-tiny">Solicitante</p>
-              <div class="flex items-center gap-2 mt-1" id="sol-solicitante-cell"></div>
-            </div>
-            <div>
-              <p class="form-label-tiny">Tipo de movimiento</p>
-              <p class="text-sm mt-1" id="sol-tipo">—</p>
-            </div>
-            <div class="md:col-span-2">
-              <p class="form-label-tiny">Propósito / Uso del material</p>
-              <p class="text-sm text-gray-700 mt-1 leading-relaxed bg-gray-50 rounded-xl p-3"
-                 id="sol-proposito">—</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Material -->
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-header-title flex items-center gap-2">
-              <i data-lucide="package" class="w-5 h-5 text-accent"></i>
-              Material Solicitado
-            </h2>
-          </div>
-          <div class="p-6 flex items-center gap-5">
-            <img id="sol-img" src="" alt=""
-              class="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
-              onerror="this.src='/img/placeholder.png'">
-            <div>
-              <p class="font-bold text-gray-900 text-base" id="sol-material">—</p>
-              <p class="text-sm text-gray-500 mt-1">
-                Cantidad solicitada: <span class="font-semibold text-gray-700" id="sol-cantidad">—</span>
-              </p>
-              <p class="text-sm text-gray-500">
-                Stock disponible: <span class="font-semibold" id="sol-stock">—</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Timeline -->
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-header-title flex items-center gap-2">
-              <i data-lucide="git-branch" class="w-5 h-5 text-accent"></i>
-              Historial de estados
-            </h2>
-          </div>
-          <div class="p-6 space-y-4" id="timeline"></div>
-        </div>
-
+    <!-- ACTIVIDAD RECIENTE (solo si tiene sentido para el rol) -->
+    <div class="panel" id="recent-panel" style="display:none">
+      <div class="panel-header">
+        <h2 class="panel-header-title" id="recent-title">Actividad reciente</h2>
+        <a href="/pages/history.html" class="text-sm font-semibold text-accent hover:text-pink-600 transition flex items-center gap-1">
+          Ver todo <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </a>
       </div>
-
-      <!-- Columna lateral -->
-      <div class="space-y-6">
-
-        <!-- Acciones del aprobador -->
-        <div class="panel-form space-y-4" id="action-panel">
-          <h3 class="font-bold text-gray-800 flex items-center gap-2">
-            <i data-lucide="shield-check" class="w-5 h-5 text-accent"></i>
-            Acción del Aprobador
-          </h3>
-          <div>
-            <label class="form-label-tiny">Comentario</label>
-            <p class="text-[11px] text-gray-400 mb-1">Obligatorio al rechazar. Opcional al aprobar.</p>
-            <textarea id="comentario" rows="4" class="textarea-page"
-              placeholder="Escribe aquí el motivo de rechazo o una nota..."></textarea>
-          </div>
-          <button id="btn-approve" class="w-full btn-page-primary justify-center">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Aprobar
-          </button>
-          <button id="btn-reject"
-            class="w-full bg-red-50 border border-red-200 text-red-600
-                   hover:bg-red-100 px-4 py-2.5 rounded-xl font-semibold text-sm
-                   transition-all flex items-center justify-center gap-2">
-            <i data-lucide="x-circle" class="w-4 h-4"></i> Rechazar
-          </button>
-          <div id="action-error"
-            class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-          </div>
-        </div>
-
-        <!-- Info del solicitante -->
-        <div class="panel-form space-y-3">
-          <h3 class="font-bold text-gray-800 flex items-center gap-2">
-            <i data-lucide="user" class="w-5 h-5 text-accent"></i>
-            Datos del Solicitante
-          </h3>
-          <div id="requester-info" class="space-y-2 text-sm text-gray-600"></div>
-        </div>
-
+      <div class="table-wrapper">
+        <table class="table">
+          <thead class="table-head">
+            <tr>
+              <th class="th">ID</th>
+              <th class="th">Solicitante</th>
+              <th class="th">Material</th>
+              <th class="th-center">Cantidad</th>
+              <th class="th-center">Tipo</th>
+              <th class="th">Fecha</th>
+              <th class="th-center">Estado</th>
+              <th class="th-center">Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="recent-tbody" class="table-body"></tbody>
+        </table>
       </div>
     </div>
 
   </main>
 
+  <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const userRole = localStorage.getItem('userRole') || '';
-    QO.navbar({ active: '...', name: userName, role: userRole });
+    if (!Auth.requireLogin()) throw new Error('No auth');
+
+    QO.navbar({
+      active:   'home',
+      name:     Auth.getUserName(),
+      role:     Auth.getReadableRole(),
+      menuType: Auth.getMenuType(),
+    });
     QO.footer();
 
-    // Leer ID desde URL: /pages/request-detail.html?id=TXN-0002
-    const params = new URLSearchParams(window.location.search);
-    const solId  = params.get('id') || 'TXN-0001';
+    /* ============================================================
+       VISTA POR ROL — cada rol ve un home distinto
+    ============================================================ */
+    const userName = Auth.getUserName().split(' ')[0]; // solo el primer nombre
 
-    // CONECTAR: fetch(`/api/requests/${solId}`, { headers: { Authorization: `Bearer ${token}` } })
-    const solicitud = {
-      id:        solId,
-      fecha:     '2026-04-15 · 10:42 AM',
-      status:    'Pendiente',
-      tipo:      'OUT',
-      proposito: 'Materiales para el taller de verano organizado por el equipo de proyectos comunitarios. Se usarán el sábado 19 de abril.',
-      requester: {
-        name: 'Jean Piere Ipurre', email: 'jp.ipurre@email.com',
-        dni: '72345678', role: 'Solicitante',
-      },
-      material: {
-        name: 'Kit Humanitario Grande',
-        img: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=80&h=80&fit=crop',
-        cantidad: 5, unidad: 'kits', stockActual: 30,
-      },
-      timeline: [
-        { estado: 'Pendiente', fecha: '2026-04-15 10:42', actor: 'Jean Piere Ipurre', nota: 'Solicitud creada.' },
-      ],
-    };
+    // === VIEWER (Solicitante) ===
+    if (Auth.isViewer()) {
+      document.getElementById('welcome-title').textContent = `¡Hola, ${userName}!`;
+      document.getElementById('welcome-subtitle').textContent =
+        'Aquí puedes solicitar materiales y ver el estado de tus pedidos.';
+      document.getElementById('welcome-actions').innerHTML = `
+        <a href="/pages/show-requestform.html" class="btn-page-primary">
+          <i data-lucide="plus-circle" class="w-4 h-4 mr-1"></i> Nueva Solicitud
+        </a>
+        <a href="/pages/transactions.html" class="btn-ghost">
+          <i data-lucide="list" class="w-4 h-4 mr-1"></i> Mis Solicitudes
+        </a>`;
 
-    // Rellenar datos
-    document.getElementById('page-title').textContent    = `Solicitud ${solicitud.id}`;
-    document.getElementById('page-subtitle').textContent = `Creada el ${solicitud.fecha}`;
-    document.getElementById('sol-id').textContent        = solicitud.id;
-    document.getElementById('sol-fecha').textContent     = solicitud.fecha;
-    document.getElementById('sol-proposito').textContent = solicitud.proposito;
-    document.getElementById('sol-tipo').innerHTML        = QO.typeBadge(solicitud.tipo);
-    document.getElementById('status-badge').innerHTML    = QO.statusBadge(solicitud.status);
-    document.getElementById('sol-material').textContent  = solicitud.material.name;
-    document.getElementById('sol-cantidad').textContent  = `${solicitud.material.cantidad} ${solicitud.material.unidad}`;
-    document.getElementById('sol-stock').textContent     = `${solicitud.material.stockActual} ${solicitud.material.unidad}`;
-    document.getElementById('sol-img').src               = solicitud.material.img;
+      renderViewerStats();
+      renderQuickAccess([
+        { icon: 'plus-circle', title: 'Nueva Solicitud',  desc: 'Pedir un material', href: '/pages/show-requestform.html' },
+        { icon: 'clipboard-list', title: 'Mis Solicitudes', desc: 'Ver estado de pedidos', href: '/pages/transactions.html' },
+        { icon: 'package',     title: 'Catálogo',         desc: 'Ver materiales disponibles', href: '/pages/inventory.html' },
+        { icon: 'user-cog',    title: 'Mi Perfil',        desc: 'Editar mis datos',  href: '/pages/profile.html' },
+      ]);
+    }
+    // === MANAGER (Aprobador) ===
+    else if (Auth.isManager()) {
+      document.getElementById('welcome-title').textContent = `¡Hola, ${userName}!`;
+      document.getElementById('welcome-subtitle').textContent =
+        'Revisa las solicitudes pendientes de aprobación.';
+      document.getElementById('welcome-actions').innerHTML = `
+        <a href="/pages/transactions.html" class="btn-page-primary">
+          <i data-lucide="inbox" class="w-4 h-4 mr-1"></i> Ver pendientes
+        </a>`;
 
-    document.getElementById('sol-solicitante-cell').innerHTML =
-      QO.userAvatar(solicitud.requester.name) +
-      `<span class="text-sm font-semibold text-gray-800">${solicitud.requester.name}</span>`;
+      renderManagerStats();
+      renderQuickAccess([
+        { icon: 'inbox',        title: 'Por Aprobar',  desc: 'Solicitudes pendientes', href: '/pages/transactions.html' },
+        { icon: 'package',      title: 'Inventario',   desc: 'Ver stock actual',  href: '/pages/inventory.html' },
+        { icon: 'clipboard-list', title: 'Historial',  desc: 'Solicitudes pasadas', href: '/pages/history.html' },
+        { icon: 'user-cog',     title: 'Mi Perfil',    desc: 'Mis datos',  href: '/pages/profile.html' },
+      ]);
+      mostrarRecientes();
+    }
+    // === MEMBER (Depósito) ===
+    else if (Auth.isMember()) {
+      document.getElementById('welcome-title').textContent = `¡Hola, ${userName}!`;
+      document.getElementById('welcome-subtitle').textContent =
+        'Estas son las solicitudes aprobadas listas para entregar.';
+      document.getElementById('welcome-actions').innerHTML = `
+        <a href="/pages/deposit-view.html" class="btn-page-primary">
+          <i data-lucide="package-check" class="w-4 h-4 mr-1"></i> Por entregar
+        </a>`;
 
-    document.getElementById('requester-info').innerHTML = `
-      <p><span class="font-semibold text-gray-700">Nombre:</span> ${solicitud.requester.name}</p>
-      <p><span class="font-semibold text-gray-700">DNI:</span> <span class="font-mono">${solicitud.requester.dni}</span></p>
-      <p><span class="font-semibold text-gray-700">Correo:</span> ${solicitud.requester.email}</p>
-      <p><span class="font-semibold text-gray-700">Rol:</span> ${solicitud.requester.role}</p>`;
+      renderDepositStats();
+      renderQuickAccess([
+        { icon: 'package-check', title: 'Por Entregar', desc: 'Solicitudes aprobadas',  href: '/pages/deposit-view.html' },
+        { icon: 'package',       title: 'Inventario',   desc: 'Ver y actualizar stock', href: '/pages/inventory.html' },
+        { icon: 'clipboard-list',title: 'Historial',    desc: 'Entregas pasadas', href: '/pages/history.html' },
+        { icon: 'user-cog',      title: 'Mi Perfil',    desc: 'Mis datos',  href: '/pages/profile.html' },
+      ]);
+    }
+    // === ADMIN / SUPERADMIN ===
+    else {
+      document.getElementById('welcome-title').textContent = `Panel de ${Auth.getReadableRole()}`;
+      document.getElementById('welcome-subtitle').textContent =
+        'Resumen general del sistema de inventario.';
+      document.getElementById('welcome-actions').innerHTML = `
+        <a href="/pages/dashboard.html" class="btn-page-primary">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1"></i> Ver Dashboard
+        </a>`;
 
-    const tlColors = {
-      'Pendiente': 'bg-yellow-100 text-yellow-700',
-      'Aprobada':  'bg-green-100 text-green-700',
-      'Rechazada': 'bg-red-100 text-red-700',
-      'Entregada': 'bg-blue-100 text-blue-700',
-    };
-    document.getElementById('timeline').innerHTML = solicitud.timeline.map(t => `
-      <div class="flex gap-3 items-start">
-        <div class="w-2 h-2 rounded-full bg-accent mt-1.5 flex-shrink-0"></div>
-        <div>
-          <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${tlColors[t.estado] || 'bg-gray-100 text-gray-600'}">
-            ${t.estado}
-          </span>
-          <p class="text-xs text-gray-400 mt-0.5">${t.fecha} · ${t.actor}</p>
-          ${t.nota ? `<p class="text-sm text-gray-600 mt-1">${t.nota}</p>` : ''}
-        </div>
-      </div>`).join('');
-
-    // Si ya fue procesada, ocultar acciones
-    if (solicitud.status !== 'Pendiente') {
-      document.getElementById('action-panel').innerHTML = `
-        <div class="text-center py-6 text-gray-400">
-          <i data-lucide="lock" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
-          <p class="text-sm">Esta solicitud ya fue procesada.</p>
-        </div>`;
+      renderAdminStats();
+      renderQuickAccess([
+        { icon: 'layout-dashboard', title: 'Dashboard', desc: 'KPIs y métricas',     href: '/pages/dashboard.html' },
+        { icon: 'users',         title: 'Miembros',    desc: 'Gestionar usuarios',   href: '/pages/admin-users.html' },
+        { icon: 'package',       title: 'Materiales',  desc: 'Gestionar inventario', href: '/pages/inventory.html' },
+        { icon: 'bar-chart-2',   title: 'Análisis',    desc: 'Reportes y gráficos',  href: '/pages/analytics.html' },
+      ]);
+      mostrarRecientes();
     }
 
-    document.getElementById('btn-approve')?.addEventListener('click', () => {
-      const comentario = document.getElementById('comentario').value;
-      // CONECTAR: fetch(`/api/requests/${solId}/approve`, { method: 'PATCH', body: JSON.stringify({ comentario }) })
-      alert(`Solicitud ${solId} aprobada (simulación).`);
-    });
-
-    document.getElementById('btn-reject')?.addEventListener('click', () => {
-      const errEl      = document.getElementById('action-error');
-      const comentario = document.getElementById('comentario').value.trim();
-      errEl.classList.add('hidden');
-      if (!comentario) {
-        errEl.textContent = 'Debes escribir un motivo de rechazo.';
-        errEl.classList.remove('hidden');
-        return;
+    /* ============================================================
+       STATS POR ROL
+    ============================================================ */
+    async function renderViewerStats() {
+      // Datos del solicitante: cuántas creó, cuántas aprobadas, cuántas pendientes
+      try {
+        const res = await fetch('/api/transactions/me', { credentials: 'include' });
+        const lista = res.ok ? await res.json() : [];
+        const total = lista.length;
+        const pend  = lista.filter(t => ['PENDING','Pendiente'].includes(t.status)).length;
+        const apr   = lista.filter(t => ['APPROVED','Aprobada','COMPLETED','Entregada'].includes(t.status)).length;
+        const rej   = lista.filter(t => ['REJECTED','Rechazada'].includes(t.status)).length;
+        QO.renderStatCards('home-stats', [
+          { label: 'Mis solicitudes',  value: total, icon: 'clipboard-list', colorClass: 'stat-icon-blue' },
+          { label: 'Pendientes',       value: pend,  icon: 'clock',          colorClass: 'stat-icon-yellow' },
+          { label: 'Aprobadas',        value: apr,   icon: 'check-circle',   colorClass: 'stat-icon-green' },
+          { label: 'Rechazadas',       value: rej,   icon: 'x-circle',       colorClass: 'stat-icon-orange' },
+        ]);
+      } catch {
+        QO.renderStatCards('home-stats', [
+          { label: 'Mis solicitudes', value: 0, icon: 'clipboard-list', colorClass: 'stat-icon-blue' },
+        ]);
       }
-      // CONECTAR: fetch(`/api/requests/${solId}/reject`, { method: 'PATCH', body: JSON.stringify({ comentario }) })
-      alert(`Solicitud ${solId} rechazada. Motivo: "${comentario}" (simulación).`);
-    });
+    }
+
+    async function renderManagerStats() {
+      try {
+        const res = await fetch('/api/transactions', { credentials: 'include' });
+        const lista = res.ok ? await res.json() : [];
+        const pend = lista.filter(t => ['PENDING','Pendiente'].includes(t.status)).length;
+        const apr  = lista.filter(t => ['APPROVED','Aprobada'].includes(t.status)).length;
+        QO.renderStatCards('home-stats', [
+          { label: 'Por aprobar',  value: pend, icon: 'clock',        colorClass: 'stat-icon-yellow' },
+          { label: 'Aprobadas hoy', value: apr, icon: 'check-circle', colorClass: 'stat-icon-green' },
+          { label: 'Total mes',    value: lista.length, icon: 'bar-chart-2', colorClass: 'stat-icon-blue' },
+        ]);
+      } catch { QO.renderStatCards('home-stats', []); }
+    }
+
+    async function renderDepositStats() {
+      try {
+        const res = await fetch('/api/transactions/approved', { credentials: 'include' });
+        const lista = res.ok ? await res.json() : [];
+        QO.renderStatCards('home-stats', [
+          { label: 'Por entregar',  value: lista.length, icon: 'package',       colorClass: 'stat-icon-yellow' },
+          { label: 'Entregadas hoy', value: 0,            icon: 'package-check', colorClass: 'stat-icon-green' },
+        ]);
+      } catch { QO.renderStatCards('home-stats', []); }
+    }
+
+    async function renderAdminStats() {
+      try {
+        const [rTxn, rItems] = await Promise.all([
+          fetch('/api/transactions', { credentials: 'include' }),
+          fetch('/api/items',        { credentials: 'include' }),
+        ]);
+        const txns  = rTxn.ok   ? await rTxn.json()  : [];
+        const items = rItems.ok ? await rItems.json(): [];
+        const pend  = txns.filter(t => ['PENDING','Pendiente'].includes(t.status)).length;
+        const low   = items.filter(i => ['LOW','Stock Bajo'].includes(i.status)).length;
+        QO.renderStatCards('home-stats', [
+          { label: 'Materiales', value: items.length, icon: 'package',        colorClass: 'stat-icon-blue' },
+          { label: 'Stock bajo', value: low,          icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
+          { label: 'Pendientes', value: pend,         icon: 'clock',          colorClass: 'stat-icon-yellow' },
+          { label: 'Total txns', value: txns.length,  icon: 'bar-chart-2',    colorClass: 'stat-icon-green' },
+        ]);
+      } catch { QO.renderStatCards('home-stats', []); }
+    }
+
+    /* ============================================================
+       ACCESOS RÁPIDOS
+    ============================================================ */
+    function renderQuickAccess(items) {
+      document.getElementById('quick-access').innerHTML = items.map(it => `
+        <a href="${it.href}" class="quick-card">
+          <div class="quick-card-bg-icon"><i data-lucide="${it.icon}" class="w-16 h-16 text-secondary"></i></div>
+          <div class="quick-card-icon"><i data-lucide="${it.icon}" class="w-5 h-5"></i></div>
+          <h3 class="quick-card-title">${it.title}</h3>
+          <p class="quick-card-desc">${it.desc}</p>
+        </a>`).join('');
+      lucide.createIcons();
+    }
+
+    /* ============================================================
+       TABLA DE ACTIVIDAD RECIENTE (admin/manager)
+    ============================================================ */
+    async function mostrarRecientes() {
+      const panel = document.getElementById('recent-panel');
+      panel.style.display = 'block';
+      try {
+        const res = await fetch('/api/transactions', { credentials: 'include' });
+        const lista = res.ok ? await res.json() : [];
+        const datos = lista.slice(0, 5).map(txn => ({
+          id:        (txn.id || '').length > 12 ? `TXN-${txn.id.substring(0, 8).toUpperCase()}` : txn.id,
+          fullId:    txn.id,
+          requester: txn.requesterName || '—',
+          item:      txn.itemName || '—',
+          qty:       `${txn.quantity || 0} ${txn.itemUnit || ''}`,
+          type:      txn.type || 'OUT',
+          date:      txn.createdAt || '',
+          status:    txn.status,
+        }));
+        QO.renderTransactionRows('recent-tbody', datos);
+      } catch {}
+    }
 
     lucide.createIcons();
   </script>

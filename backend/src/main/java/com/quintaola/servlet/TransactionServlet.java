@@ -33,22 +33,41 @@ public class TransactionServlet extends HttpServlet {
         String path = req.getPathInfo();
 
         try {
-            List<Transaction> list;
+            // Si la ruta no es nula y tiene más de una barra (ej: /720135bd-ee66-...)
+            if (path != null && path.split("/").length > 1 &&
+                    !"pending".equals(path.substring(1)) &&
+                    !"approved".equals(path.substring(1)) &&
+                    !"me".equals(path.substring(1))) {
 
-            if ("/pending".equals(path)) {
-                list = dao.getPending();
-            } else if ("/approved".equals(path)) {
-                list = dao.getApproved();
-            } else if ("/me".equals(path)) {
-                HttpSession session = req.getSession(false);
-                String userId = (String) session.getAttribute("userId");
-                list = dao.getByUser(userId);
-            } else {
-                list = dao.getAll();
+                String id = path.split("/")[1];
+                // Aquí llamas a un método en tu DAO que busque por ID único
+                Transaction t = dao.getById(id);
+                if (t != null) {
+                    t.setStatus(t.getStatusFrontend());
+                    out.print(gson.toJson(t)); // Devuelve el objeto individual
+                } else {
+                    res.setStatus(404);
+                    out.print("{\"error\":\"No se encontró la transacción\"}");
+                }
             }
+            // Rutas grupales que ya tenías programadas
+            else {
+                List<Transaction> list;
+                if ("/pending".equals(path)) {
+                    list = dao.getPending();
+                } else if ("/approved".equals(path)) {
+                    list = dao.getApproved();
+                } else if ("/me".equals(path)) {
+                    HttpSession session = req.getSession(false);
+                    String userId = (String) session.getAttribute("userId");
+                    list = dao.getByUser(userId);
+                } else {
+                    list = dao.getAll();
+                }
 
-            list.forEach(t -> t.setStatus(t.getStatusFrontend()));
-            out.print(gson.toJson(list));
+                list.forEach(t -> t.setStatus(t.getStatusFrontend()));
+                out.print(gson.toJson(list));
+            }
 
         } catch (SQLException e) {
             res.setStatus(500);

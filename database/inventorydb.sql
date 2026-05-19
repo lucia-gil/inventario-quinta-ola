@@ -15,6 +15,7 @@ INSERT INTO roles (id, name, is_system) VALUES
     ('role-member',      'Member',          TRUE),
     ('role-manager',     'Manager',              TRUE),
     ('role-admin',       'Administrador',        TRUE);
+    ('role-superadmin', 'SuperAdmin', TRUE);
 
 -- =========================
 -- USERS
@@ -111,3 +112,6 @@ CREATE INDEX idx_item_tags_tag          ON item_tags(tag_id);
 CREATE INDEX idx_users_rol              ON users(role_id);
 CREATE INDEX idx_items_activo           ON items(activo);
 CREATE INDEX idx_users_activo           ON users(activo);
+
+ALTER TABLE transactions 
+ADD COLUMN delivered_at TIMESTAMP NULL AFTER processed_at;

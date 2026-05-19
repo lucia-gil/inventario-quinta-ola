@@ -12,23 +12,23 @@
 
   <main class="page-main">
 
-    <!-- CABECERA -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Lista de Materiales</h1>
         <p class="page-subtitle">Listado de materiales y stock actual en tiempo real.</p>
       </div>
-      <a href="/pages/admin-items.html" class="btn-page-primary">
+      <!-- Solo admin/superadmin pueden añadir material -->
+      <a href="/pages/admin-items.html"
+         data-requires="canManageItems"
+         class="btn-page-primary">
         <i data-lucide="plus" class="w-4 h-4"></i> Añadir Material
       </a>
     </div>
 
-    <!-- BARRA DE BÚSQUEDA Y FILTROS -->
     <div class="search-bar">
       <div class="search-input-wrap">
         <i data-lucide="search" class="input-icon-left"></i>
-        <input type="text" id="search-input" placeholder="Buscar materiales..."
-          class="input-icon" />
+        <input type="text" id="search-input" placeholder="Buscar materiales..." class="input-icon" />
       </div>
       <div class="flex gap-3">
         <select id="filter-tag" class="select-page w-auto">
@@ -47,7 +47,6 @@
       </div>
     </div>
 
-    <!-- TABLA DE INVENTARIO -->
     <div class="table-panel">
       <div class="table-wrapper">
         <table class="table">
@@ -60,59 +59,71 @@
               <th class="th">Estado</th>
             </tr>
           </thead>
-          <tbody id="inventory-tbody" class="table-body">
-            <!-- filas inyectadas por JS -->
-          </tbody>
+          <tbody id="inventory-tbody" class="table-body"></tbody>
         </table>
       </div>
 
       <div class="panel-footer">
-        <p class="panel-count-text" id="inventory-count">Mostrando 0 items</p>
+        <p class="panel-count-text" id="inventory-count">Cargando ítems...</p>
         <div id="inventory-pagination"></div>
       </div>
     </div>
 
   </main>
 
+  <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const userRole = localStorage.getItem('userRole') || '';
-    QO.navbar({ active: 'inventory', name: userName, role: userRole });
+    // 1. GUARDIA — sesión obligatoria
+    if (!Auth.requireLogin()) throw new Error('No auth');
 
-    // ── Datos de ejemplo — reemplazar con fetch('/api/inventory') ──
+    // 2. NAVBAR derivada del rol
+    QO.navbar({
+      active:   'inventory',
+      name:     Auth.getUserName(),
+      role:     Auth.getReadableRole(),
+      menuType: Auth.getMenuType(),
+    });
+    QO.footer();
+
+    // 3. CARGAR INVENTARIO — sin lógica de rol aquí, el atributo data-requires
+    //    en el botón ya lo oculta automáticamente vía auth.js
     async function cargarInventario() {
       try {
-        const res = await fetch('/api/items');
+        const res = await fetch('/api/items', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const items = await res.json();
 
         const inventario = items.map(item => ({
-          img:    item.imageUrl || 'https://via.placeholder.com/100',
+          img:    item.imageUrl || '/img/placeholder.png',
           name:   item.name,
-          tags:   [],
+          tags:   item.category ? [item.category] : [],
           stock:  item.cachedQuantity,
-          unit:   item.unit,
+          unit:   item.unit || 'unid.',
           min:    item.minQuantity,
-          status: item.status
+          status: item.status || 'OK',
         }));
 
         QO.renderInventoryRows('inventory-tbody', inventario);
-        document.getElementById('inventory-count').textContent =
-          `Mostrando 1 a ${inventario.length} de ${inventario.length} items`;
 
-        lucide.createIcons();
+        document.getElementById('inventory-count').textContent =
+          `Mostrando ${inventario.length} de ${inventario.length} items`;
+
+        QO.renderPagination('inventory-pagination', {
+          current: 1,
+          total:   Math.ceil(inventario.length / 5) || 1,
+        });
+
       } catch (err) {
         console.error('Error cargando inventario:', err);
+        document.getElementById('inventory-count').textContent =
+          `Error: ${err.message}`;
       }
+      lucide.createIcons();
     }
 
     cargarInventario();
-    document.getElementById('inventory-count').textContent =
-      `Mostrando 1 a ${inventario.length} de ${inventario.length} items`;
-
-    QO.renderPagination('inventory-pagination', { current: 1, total: Math.ceil(inventario.length / 5) });
-
-    lucide.createIcons();
   </script>
 </body>
 </html>

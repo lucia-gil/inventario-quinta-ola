@@ -14,7 +14,7 @@
     <div class="flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden relative">
 
         <div class="hidden md:flex md:w-1/2 relative">
-            <img 
+            <img
                 src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80"
                 alt="Equipo trabajando"
                 class="absolute inset-0 w-full h-full object-cover"
@@ -32,23 +32,23 @@
         </div>
 
         <div class="w-full md:w-1/2 p-8 md:p-14 flex flex-col justify-center relative">
-            
+
             <a href="../index.html" class="absolute top-6 right-6 text-sm text-gray-400 hover:text-purple-600 flex items-center gap-1 transition-colors">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al inicio
             </a>
 
             <div class="max-w-md w-full mx-auto">
-                
+
                 <div class="text-center mb-10">
                     <img src="../img/QuintaOlaLogo.png" alt="Logo Quinta Ola" class="h-16 w-auto mb-6 mx-auto object-contain block">
-                    
+
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">Iniciar Sesión</h1>
                     <p class="text-gray-500 text-sm">
                         Accede a tu cuenta para gestionar el inventario
                     </p>
                 </div>
 
-                <form class="space-y-5">
+                <form class="space-y-5" id="login-form">
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1 text-left">Correo electrónico</label>
@@ -57,7 +57,8 @@
                                 <i data-lucide="mail" class="h-5 w-5 text-gray-400"></i>
                             </div>
                             <input type="email" required
-                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all sm:text-sm bg-gray-50 focus:bg-white" 
+                                id="email-input"
+                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all sm:text-sm bg-gray-50 focus:bg-white"
                                 placeholder="ejemplo@email.com">
                         </div>
                     </div>
@@ -69,14 +70,15 @@
                                 <i data-lucide="lock" class="h-5 w-5 text-gray-400"></i>
                             </div>
                             <input type="password" required
-                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all sm:text-sm bg-gray-50 focus:bg-white" 
+                                id="password-input"
+                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all sm:text-sm bg-gray-50 focus:bg-white"
                                 placeholder="••••••••">
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between mt-4">
                         <div class="flex items-center">
-                            <input id="remember-me" name="remember-me" type="checkbox" 
+                            <input id="remember-me" name="remember-me" type="checkbox"
                                 class="h-4 w-4 text-pink-500 focus:ring-pink-500 border-gray-300 rounded cursor-pointer">
                             <label for="remember-me" class="ml-2 block text-sm text-gray-600 cursor-pointer">
                                 Recordarme
@@ -84,27 +86,18 @@
                         </div>
 
                         <div class="text-sm">
-                            <a href="/pages/show-signup.html" class="font-medium text-purple-600 hover:text-purple-500 transition-colors">
+                            <a href="#" class="font-medium text-purple-600 hover:text-purple-500 transition-colors">
                                 ¿Olvidaste tu contraseña?
                             </a>
                         </div>
                     </div>
 
-                    <button type="submit" 
+                    <button type="submit"
                         class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-colors mt-6">
                         Ingresar al sistema
                     </button>
 
                 </form>
-
-                <div class="mt-8 relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-200"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-3 bg-white text-gray-500">¿Eres nuevo aquí?</span>
-                    </div>
-                </div>
 
                 <div class="mt-6 text-center">
                     <p class="text-sm text-gray-600">
@@ -119,14 +112,16 @@
         </div>
     </div>
 
+    <!-- auth.js no es estrictamente necesario aquí pero usamos su ROLES para redirección -->
+    <script src="/src/auth.js"></script>
     <script>
         lucide.createIcons();
 
-        document.querySelector('form').addEventListener('submit', async function(e) {
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const email    = document.querySelector('input[type="email"]').value;
-            const password = document.querySelector('input[type="password"]').value;
+            const email    = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
 
             try {
                 const res = await fetch('/api/auth/login', {
@@ -139,19 +134,29 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    localStorage.setItem('userId',   data.userId);
-                    localStorage.setItem('userName', data.userName);
-                    localStorage.setItem('userRole', data.userRole);
-                    localStorage.setItem('roleId',   data.roleId);
-                    localStorage.setItem('userEmail', data.userEmail || '');
-                    window.location.href = 'http://localhost:5173' + data.redirect;
+                    // GUARDAR TODOS LOS DATOS DE SESIÓN
+                    localStorage.setItem('userId',    data.userId   || '');
+                    localStorage.setItem('userName',  data.userName || '');
+                    localStorage.setItem('userRole',  data.userRole || data.roleId || 'role-viewer');
+                    localStorage.setItem('userEmail', data.userEmail || email);
+                    localStorage.setItem('userDni',   data.userDni  || data.dni || '');
+
+                    // REDIRIGIR SEGÚN ROL (usando Auth.ROLES)
+                    const roleId = data.userRole || data.roleId || 'role-viewer';
+                    const destino = (Auth && Auth.ROLES && Auth.ROLES[roleId])
+                        ? Auth.ROLES[roleId].landing
+                        : '/pages/home.html';
+
+                    // Si el backend devuelve un redirect específico, respetarlo
+                    const finalDestino = data.redirect || destino;
+                    window.location.href = finalDestino;
                 } else {
                     let errorDiv = document.getElementById('login-error');
                     if (!errorDiv) {
                         errorDiv = document.createElement('div');
                         errorDiv.id = 'login-error';
                         errorDiv.className = 'bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mt-3';
-                        document.querySelector('form').appendChild(errorDiv);
+                        document.getElementById('login-form').appendChild(errorDiv);
                     }
                     errorDiv.textContent = data.error || 'Correo o contraseña incorrectos';
                 }

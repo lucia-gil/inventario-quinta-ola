@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nueva Transacción | Quinta Ola</title>
+  <title>Nueva Solicitud | Quinta Ola</title>
   <link href="/src/style.css" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -14,8 +14,8 @@
 
     <div class="page-header">
       <div>
-        <h1 class="page-title">Nueva Transacción</h1>
-        <p class="page-subtitle">Registra un nuevo movimiento de entrada o salida de material.</p>
+        <h1 class="page-title">Nueva Solicitud</h1>
+        <p class="page-subtitle">Pide los materiales que necesitas para tu proyecto.</p>
       </div>
       <button onclick="window.history.back()" class="btn-ghost">
         <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
@@ -23,48 +23,52 @@
     </div>
 
     <div class="panel-form">
-      <form action="#" method="POST" class="space-y-6">
+      <form id="request-form" class="space-y-6">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Solicitante (informativo, viene de sesión) -->
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3">
+          <i data-lucide="user-check" class="w-5 h-5 text-blue-600"></i>
           <div>
-            <label for="id_transaccion" class="form-label">ID Transacción</label>
-            <input type="text" id="id_transaccion" name="id_transaccion"
-              class="input-page" placeholder="Ej. TXN-0001">
-          </div>
-          <div>
-            <label for="solicitante" class="form-label">Solicitante</label>
-            <div class="relative">
-              <i data-lucide="user" class="input-icon-left"></i>
-              <input type="text" id="solicitante" name="solicitante"
-                class="input-icon" placeholder="Nombre del solicitante">
-            </div>
+            <p class="text-xs text-blue-600 font-bold uppercase tracking-wider">Solicitante</p>
+            <p class="text-sm font-semibold text-blue-800" id="requester-display">—</p>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label for="material" class="form-label">Material</label>
-            <div class="relative">
-              <i data-lucide="box" class="input-icon-left"></i>
-              <input type="text" id="material" name="material"
-                class="input-icon" placeholder="Nombre o código del material">
-            </div>
-          </div>
-          <div>
-            <label for="cantidad" class="form-label">Cantidad</label>
-            <input type="number" id="cantidad" name="cantidad" min="1"
-              class="input-page" placeholder="0">
-          </div>
-        </div>
-
+        <!-- Material -->
         <div>
-          <label for="tipo" class="form-label">Tipo de Movimiento</label>
-          <select id="tipo" name="tipo" class="select-page">
-            <option value="" disabled selected>Selecciona el tipo...</option>
-            <option value="entrada">Entrada (+)</option>
-            <option value="salida">Salida (-)</option>
+          <label for="material" class="form-label">Material *</label>
+          <select id="material" name="material" class="select-page" required>
+            <option value="" disabled selected>Selecciona un material...</option>
           </select>
         </div>
+
+        <!-- Cantidad -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label for="cantidad" class="form-label">Cantidad *</label>
+            <input type="number" id="cantidad" name="cantidad" min="1" value="1"
+              class="input-page" required>
+          </div>
+          <!-- Fecha tentativa de necesidad -->
+          <div>
+            <label for="needed-by" class="form-label">¿Para cuándo lo necesitas? *</label>
+            <input type="date" id="needed-by" name="needed-by"
+              class="input-page" required>
+            <p class="text-[11px] text-gray-400 mt-1">Esta fecha ayuda a priorizar.</p>
+          </div>
+        </div>
+
+        <!-- Propósito -->
+        <div>
+          <label for="proposito" class="form-label">Propósito / Uso del material *</label>
+          <textarea id="proposito" name="proposito" rows="4" class="textarea-page"
+            placeholder="Describe para qué necesitas este material..."
+            required></textarea>
+        </div>
+
+        <!-- Mensajes -->
+        <div id="form-error" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3"></div>
+        <div id="form-success" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3"></div>
 
         <hr class="border-gray-100">
 
@@ -73,7 +77,7 @@
             Cancelar
           </button>
           <button type="submit" class="btn-page-primary">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> Registrar Transacción
+            <i data-lucide="send" class="w-4 h-4"></i> Enviar Solicitud
           </button>
         </div>
 
@@ -81,9 +85,100 @@
     </div>
   </main>
 
+  <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    QO.navbar({ active: 'transactions', name: 'Alvaro Gómez', role: 'Administrador' });
+    if (!Auth.requireLogin()) throw new Error('No auth');
+    // Solo quienes pueden crear solicitudes
+    if (!Auth.canCreateRequest()) {
+      window.location.href = '/pages/403.html';
+    }
+
+    QO.navbar({
+      active:   'transactions',
+      name:     Auth.getUserName(),
+      role:     Auth.getReadableRole(),
+      menuType: Auth.getMenuType(),
+    });
+    QO.footer();
+
+    // 1. Mostrar solicitante (siempre el usuario logueado)
+    document.getElementById('requester-display').textContent =
+      `${Auth.getUserName()} (${Auth.getUserEmail() || Auth.getReadableRole()})`;
+
+    // 2. Cargar materiales en el select
+    async function cargarMateriales() {
+      try {
+        const res = await fetch('/api/items', { credentials: 'include' });
+        if (!res.ok) throw new Error('No se pudo cargar el catálogo');
+        const items = await res.json();
+        const select = document.getElementById('material');
+        items
+          .filter(it => it.status !== 'UNAVAILABLE' && it.activo !== 0)
+          .forEach(it => {
+            const opt = document.createElement('option');
+            opt.value = it.id;
+            opt.textContent = `${it.name} — Disponible: ${it.cachedQuantity} ${it.unit || ''}`;
+            select.appendChild(opt);
+          });
+      } catch (err) {
+        console.warn('Error cargando materiales:', err);
+      }
+    }
+    cargarMateriales();
+
+    // 3. Fecha mínima = hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('needed-by').setAttribute('min', hoy);
+
+    // 4. Submit del formulario
+    document.getElementById('request-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('form-error');
+      const okEl  = document.getElementById('form-success');
+      errEl.classList.add('hidden');
+      okEl.classList.add('hidden');
+
+      const itemId    = document.getElementById('material').value;
+      const cantidad  = parseInt(document.getElementById('cantidad').value, 10);
+      const neededBy  = document.getElementById('needed-by').value;
+      const proposito = document.getElementById('proposito').value.trim();
+
+      if (!itemId || !cantidad || !neededBy || !proposito) {
+        errEl.textContent = 'Completa todos los campos.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            itemId:   itemId,
+            quantity: cantidad,
+            notes:    proposito,
+            neededBy: neededBy,
+            type:     'OUT',
+          }),
+        });
+
+        if (res.ok) {
+          okEl.textContent = '¡Solicitud enviada! Recibirás una notificación cuando sea revisada.';
+          okEl.classList.remove('hidden');
+          setTimeout(() => window.location.href = '/pages/transactions.html', 1500);
+        } else {
+          const d = await res.json().catch(() => ({}));
+          errEl.textContent = d.error || `Error ${res.status}`;
+          errEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        errEl.textContent = `Error de conexión: ${err.message}`;
+        errEl.classList.remove('hidden');
+      }
+    });
+
     lucide.createIcons();
   </script>
 </body>

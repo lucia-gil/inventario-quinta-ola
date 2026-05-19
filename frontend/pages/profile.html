@@ -12,141 +12,199 @@
 
   <main class="page-main-narrow">
 
-    <div class="flex flex-col md:flex-row gap-8">
-
-      <!-- COLUMNA IZQUIERDA: AVATAR + ESTADO -->
-      <div class="md:w-1/3 space-y-6">
-
-        <div class="panel-form text-center relative">
-          <div class="relative w-32 h-32 mx-auto mb-4">
-            <div class="profile-avatar overflow-hidden">
-              <span id="userInitials">AG</span>
-            </div>
-            <label for="avatar-upload"
-              class="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg border border-gray-100 cursor-pointer hover:text-accent transition-colors">
-              <i data-lucide="camera" class="w-5 h-5"></i>
-              <input type="file" id="avatar-upload" class="hidden" accept="image/*" />
-            </label>
-          </div>
-
-          <h2 class="profile-name" id="profile-name">Alvaro Gómez</h2>
-          <p class="text-gray-500 text-sm mb-6" id="profile-email">alvaro@email.com</p>
-
-          <div class="pt-6 border-t border-gray-100">
-            <a href="/pages/show-login.html" class="btn-logout">
-              <i data-lucide="log-out" class="w-4 h-4"></i> Cerrar Sesión
-            </a>
-          </div>
-        </div>
-
-        <div class="panel-form">
-          <h3 class="form-label-tiny mb-4">Estado del Perfil</h3>
-          <div class="flex items-center gap-3">
-            <div class="h-2.5 w-2.5 rounded-full bg-green-500"></div>
-            <span class="text-sm font-medium text-gray-700">Cuenta Activa</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- COLUMNA DERECHA: INFO + SEGURIDAD -->
-      <div class="md:w-2/3 space-y-6">
-
-        <div class="panel">
-          <div class="panel-header">
-            <h3 class="font-bold text-gray-900 flex items-center gap-2">
-              <i data-lucide="user-cog" class="w-5 h-5 text-accent"></i>
-              Información Personal
-            </h3>
-            <span class="role-manager" id="profile-role">Manager</span>
-          </div>
-          <div class="p-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <div class="space-y-1">
-                <label class="form-label-tiny">Nombre</label>
-                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2" id="profile-firstname">Alvaro</p>
-              </div>
-              <div class="space-y-1">
-                <label class="form-label-tiny">Apellido</label>
-                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2" id="profile-lastname">Gomez</p>
-              </div>
-              <div class="md:col-span-2 space-y-1">
-                <label class="form-label-tiny">Correo Electrónico</label>
-                <p class="text-sm font-semibold text-gray-800 border-b border-gray-50 pb-2" id="profile-email2">alvaro@email.com</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <h3 class="font-bold text-gray-900 flex items-center gap-2">
-              <i data-lucide="lock" class="w-5 h-5 text-accent"></i>
-              Seguridad
-            </h3>
-          </div>
-          <form class="p-8 space-y-5">
-            <div>
-              <label class="form-label-tiny">Contraseña actual</label>
-              <input type="password" placeholder="••••••••" class="input-page mt-1" />
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="form-label-tiny">Nueva contraseña</label>
-                <input type="password" placeholder="Mín. 8 caracteres" class="input-page mt-1" />
-              </div>
-              <div>
-                <label class="form-label-tiny">Confirmar nueva contraseña</label>
-                <input type="password" placeholder="Repite la contraseña" class="input-page mt-1" />
-              </div>
-            </div>
-            <button type="submit" class="btn-submit mt-2">Actualizar Contraseña</button>
-          </form>
-        </div>
-
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Mi Perfil</h1>
+        <p class="page-subtitle">Información personal y de cuenta</p>
       </div>
     </div>
+
+    <!-- Card del avatar y rol -->
+    <div class="panel-form text-center py-8">
+      <div id="profile-avatar" class="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold"></div>
+      <h2 class="text-2xl font-bold text-gray-800" id="profile-name">—</h2>
+      <p class="text-sm text-gray-500 mt-1" id="profile-email">—</p>
+      <div class="mt-3" id="profile-role-badge"></div>
+    </div>
+
+    <!-- Card de información detallada -->
+    <div class="panel-form mt-6">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="id-card" class="w-5 h-5 text-accent"></i>
+        Información Personal
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+        <div>
+          <p class="form-label-tiny">Nombre Completo</p>
+          <p class="text-sm font-semibold text-gray-700" id="info-name">—</p>
+        </div>
+        <div>
+          <p class="form-label-tiny">DNI</p>
+          <p class="text-sm font-semibold text-gray-700 font-mono" id="info-dni">—</p>
+        </div>
+        <div>
+          <p class="form-label-tiny">Correo electrónico</p>
+          <p class="text-sm font-semibold text-gray-700" id="info-email">—</p>
+        </div>
+        <div>
+          <p class="form-label-tiny">Rol en el sistema</p>
+          <p class="text-sm font-semibold text-gray-700" id="info-role">—</p>
+        </div>
+        <div>
+          <p class="form-label-tiny">ID de Usuario</p>
+          <p class="text-xs font-mono text-gray-500" id="info-id">—</p>
+        </div>
+        <div>
+          <p class="form-label-tiny">Estado</p>
+          <p class="text-sm font-semibold text-green-600">
+            <i data-lucide="check-circle" class="w-4 h-4 inline"></i> Activo
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card de seguridad — botón para cambiar contraseña -->
+    <div class="panel-form mt-6">
+      <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="lock" class="w-5 h-5 text-accent"></i>
+        Seguridad
+      </h3>
+      <button id="btn-change-password" class="btn-page-primary">
+        <i data-lucide="key" class="w-4 h-4"></i> Cambiar contraseña
+      </button>
+
+      <!-- Formulario inline (se muestra al hacer click) -->
+      <div id="password-form" class="hidden mt-4 space-y-4">
+        <div>
+          <label class="form-label-tiny">Contraseña actual</label>
+          <input type="password" id="current-pwd" class="input-page" />
+        </div>
+        <div>
+          <label class="form-label-tiny">Nueva contraseña</label>
+          <input type="password" id="new-pwd" class="input-page" />
+        </div>
+        <div>
+          <label class="form-label-tiny">Confirmar nueva contraseña</label>
+          <input type="password" id="confirm-pwd" class="input-page" />
+        </div>
+        <div class="flex gap-3">
+          <button id="btn-save-pwd" class="btn-page-primary">Guardar</button>
+          <button id="btn-cancel-pwd" class="btn-ghost">Cancelar</button>
+        </div>
+        <div id="pwd-error" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3"></div>
+      </div>
+    </div>
+
   </main>
 
-  <footer class="bg-gray-950 text-gray-500 py-8 mt-auto border-t border-gray-800">
-    <div class="max-w-4xl mx-auto px-6 text-center text-[10px] uppercase tracking-widest">
-      © 2026 Quinta Ola • Sistema de Gestión
-    </div>
-  </footer>
-
+  <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    const userName  = localStorage.getItem('userName')  || 'Usuario';
-    const userRole  = localStorage.getItem('userRole')  || '';
-    const userEmail = localStorage.getItem('userEmail') || '';
+    if (!Auth.requireLogin()) throw new Error('No auth');
 
-    QO.navbar({ active: '', name: userName, role: userRole });
-    lucide.createIcons();
+    QO.navbar({
+      active:   '',
+      name:     Auth.getUserName(),
+      role:     Auth.getReadableRole(),
+      menuType: Auth.getMenuType(),
+    });
+    QO.footer();
 
-    // Rellenar datos del perfil
-    const nameParts = userName.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName  = nameParts.slice(1).join(' ') || '';
-    const initials  = (firstName[0] || '') + (lastName[0] || '');
+    // 1. Datos del localStorage como fallback inmediato
+    document.getElementById('profile-name').textContent = Auth.getUserName();
+    document.getElementById('profile-email').textContent = Auth.getUserEmail() || '—';
+    document.getElementById('profile-role-badge').innerHTML = QO.roleBadge(Auth.getReadableRole());
+    document.getElementById('profile-avatar').outerHTML = `
+      <div id="profile-avatar" class="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold ${avatarColor(Auth.getUserName())}">
+        ${initials(Auth.getUserName())}
+      </div>`;
 
-    document.getElementById('userInitials').textContent  = initials.toUpperCase();
-    document.getElementById('profile-name').textContent  = userName;
-    document.getElementById('profile-email').textContent = userEmail;
-    document.getElementById('profile-firstname').textContent = firstName;
-    document.getElementById('profile-lastname').textContent  = lastName;
-    document.getElementById('profile-email2').textContent   = userEmail;
-    document.getElementById('profile-role').textContent     = userRole;
+    document.getElementById('info-name').textContent  = Auth.getUserName();
+    document.getElementById('info-email').textContent = Auth.getUserEmail() || '—';
+    document.getElementById('info-dni').textContent   = Auth.getUserDni()   || '—';
+    document.getElementById('info-role').textContent  = Auth.getReadableRole();
+    document.getElementById('info-id').textContent    = Auth.getUserId();
 
-    document.getElementById('avatar-upload').addEventListener('change', function(e) {
-      if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const el = document.querySelector('.profile-avatar');
-          el.innerHTML = `<img src="${ev.target.result}" class="w-full h-full object-cover">`;
-        };
-        reader.readAsDataURL(e.target.files[0]);
+    // 2. Refrescar desde la BD (si hay endpoint)
+    async function refrescarPerfil() {
+      try {
+        const res = await fetch(`/api/users/${Auth.getUserId()}`, { credentials: 'include' });
+        if (!res.ok) return;
+        const u = await res.json();
+        if (u.email) {
+          document.getElementById('info-email').textContent = u.email;
+          document.getElementById('profile-email').textContent = u.email;
+          localStorage.setItem('userEmail', u.email);
+        }
+        if (u.dni) {
+          document.getElementById('info-dni').textContent = u.dni;
+          localStorage.setItem('userDni', u.dni);
+        }
+      } catch {}
+    }
+    refrescarPerfil();
+
+    // 3. Cambiar contraseña
+    document.getElementById('btn-change-password').addEventListener('click', () => {
+      document.getElementById('password-form').classList.remove('hidden');
+      document.getElementById('btn-change-password').style.display = 'none';
+    });
+    document.getElementById('btn-cancel-pwd').addEventListener('click', () => {
+      document.getElementById('password-form').classList.add('hidden');
+      document.getElementById('btn-change-password').style.display = 'inline-flex';
+    });
+    document.getElementById('btn-save-pwd').addEventListener('click', async () => {
+      const cur   = document.getElementById('current-pwd').value;
+      const nuevo = document.getElementById('new-pwd').value;
+      const conf  = document.getElementById('confirm-pwd').value;
+      const err   = document.getElementById('pwd-error');
+      err.classList.add('hidden');
+
+      if (!cur || !nuevo || !conf) {
+        err.textContent = 'Completa todos los campos';
+        err.classList.remove('hidden'); return;
+      }
+      if (nuevo !== conf) {
+        err.textContent = 'Las contraseñas no coinciden';
+        err.classList.remove('hidden'); return;
+      }
+      if (nuevo.length < 6) {
+        err.textContent = 'La contraseña debe tener al menos 6 caracteres';
+        err.classList.remove('hidden'); return;
+      }
+
+      try {
+        const res = await fetch('/api/users/me/password', {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current: cur, newPassword: nuevo }),
+        });
+        if (res.ok) {
+          alert('Contraseña actualizada');
+          location.reload();
+        } else {
+          const d = await res.json().catch(() => ({}));
+          err.textContent = d.error || 'No se pudo actualizar';
+          err.classList.remove('hidden');
+        }
+      } catch (e) {
+        err.textContent = `Error: ${e.message}`;
+        err.classList.remove('hidden');
       }
     });
+
+    // Helpers
+    function initials(name) {
+      return (name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    }
+    function avatarColor(name) {
+      const colors = ['bg-blue-100 text-blue-600','bg-pink-100 text-pink-600',
+                      'bg-emerald-100 text-emerald-600','bg-yellow-100 text-yellow-600'];
+      return colors[(name || 'U').charCodeAt(0) % colors.length];
+    }
+
+    lucide.createIcons();
   </script>
 </body>
 </html>

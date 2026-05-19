@@ -30,20 +30,21 @@ public class TransactionDAO {
     }
 
     public Transaction getById(String id) throws SQLException {
-        String sql = """
-            SELECT t.*, i.name AS item_name, i.unit AS item_unit,
-                   u.name AS requester_name, a.name AS approver_name
-            FROM transactions t
-            JOIN items i ON t.item_id = i.id
-            JOIN users u ON t.requester_id = u.id
-            LEFT JOIN users a ON t.approver_id = a.id
-            WHERE t.id = ?
-            """;
-        try (Connection conn = DatabaseConnection.getConnection();
+        String sql = "SELECT t.*, u.name AS requester_name, a.name AS approver_name, i.name AS item_name, i.unit AS item_unit " +
+                "FROM transactions t " +
+                "JOIN users u ON t.requester_id = u.id " +
+                "LEFT JOIN users a ON t.approver_id = a.id " +
+                "JOIN items i ON t.item_id = i.id " +
+                "WHERE t.id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection(); // O como manejes tu conexión
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next()) {
+                    return mapRow(rs); // Reutiliza tu método mapRow actual
+                }
             }
         }
         return null;
