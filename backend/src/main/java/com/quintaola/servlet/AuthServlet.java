@@ -126,7 +126,7 @@ public class AuthServlet extends HttpServlet {
         }
     }
 
-    // ── LOGIN ─────────────────────────────────────────────────────
+    // ── LOGIN CORREGIDO ───────────────────────────────────────────
     private void handleLogin(HttpServletRequest req,
                              HttpServletResponse res,
                              PrintWriter out) throws IOException {
@@ -159,11 +159,12 @@ public class AuthServlet extends HttpServlet {
             session.setAttribute("roleId",    user.getRoleId());
             session.setMaxInactiveInterval(30 * 60); // 30 minutos
 
-            // Determinar redirección según rol
+            // ── AQUÍ SE DETERMINA LA REDIRECCIÓN SEGÚN ROL ──
             String redirect = switch (user.getRoleId()) {
-                case "role-deposito"    -> "/pages/deposit-view.html";
-                case "role-superadmin"  -> "/pages/superadmin-permissions.html";
-                default                 -> "/pages/home.html";
+                case "role-deposito"                -> "/pages/deposit-view.html";
+                case "role-superadmin"              -> "/pages/superadmin-permissions.html";
+                case "role-manager", "role-admin"   -> "/pages/dashboard.html"; // <-- Agregado para Coordinadora y Admin
+                default                             -> "/pages/home.html";      // Solicitantes y otros roles
             };
 
             JsonObject response = new JsonObject();

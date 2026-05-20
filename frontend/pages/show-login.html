@@ -15,7 +15,7 @@
 
         <div class="hidden md:flex md:w-1/2 relative">
             <img
-                src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80"
+                src="../img/chicas.png"
                 alt="Equipo trabajando"
                 class="absolute inset-0 w-full h-full object-cover"
             />
@@ -141,15 +141,20 @@
                     localStorage.setItem('userEmail', data.userEmail || email);
                     localStorage.setItem('userDni',   data.userDni  || data.dni || '');
 
-                    // REDIRIGIR SEGÚN ROL (usando Auth.ROLES)
+                    // DETERMINAR EL DESTINO DIRECTO DESDE EL FRONTEND PARA EVITAR CACHÉ
+                    // DETERMINAR EL DESTINO DIRECTO
                     const roleId = data.userRole || data.roleId || 'role-viewer';
-                    const destino = (Auth && Auth.ROLES && Auth.ROLES[roleId])
-                        ? Auth.ROLES[roleId].landing
-                        : '/pages/home.html';
+                    let finalDestino = 'home.html'; 
 
-                    // Si el backend devuelve un redirect específico, respetarlo
-                    const finalDestino = data.redirect || destino;
+                    if (roleId === 'role-manager' || roleId === 'role-admin' || roleId === 'role-superadmin') {
+                        finalDestino = 'dashboard.html'; // Al estar en /pages/, quitamos el prefijo si da conflicto
+                    } else if (roleId === 'role-deposito') {
+                        finalDestino = 'deposit-view.html';
+                    }
+
+                    // Si el backend trae un redirect funcional lo usa, si no, forzamos la ruta limpia
                     window.location.href = finalDestino;
+
                 } else {
                     let errorDiv = document.getElementById('login-error');
                     if (!errorDiv) {

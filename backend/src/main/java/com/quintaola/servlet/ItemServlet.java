@@ -1,7 +1,6 @@
 package com.quintaola.servlet;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.quintaola.dao.ItemDAO;
 import com.quintaola.model.Item;
 import jakarta.servlet.annotation.WebServlet;
@@ -9,8 +8,13 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -20,27 +24,26 @@ public class ItemServlet extends HttpServlet {
     private final ItemDAO itemDAO = new ItemDAO();
     private final Gson gson       = new Gson();
 
-    // ── GET /api/items ────────────────────────────────────────────
-    // ── GET /api/items/admin ──────────────────────────────────────
+    private static final String DB_URL  = "jdbc:mysql://localhost:3306/inventorydb";
+    private static final String DB_USER = "root";
+    private static final String DB_PASS = "lucia1234";
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
         res.setHeader("Access-Control-Allow-Origin", "*");
 
         PrintWriter out = res.getWriter();
-        String pathInfo = req.getPathInfo(); // null o "/admin"
+        String pathInfo = req.getPathInfo();
 
         try {
             List<Item> items = (pathInfo != null && pathInfo.equals("/admin"))
                     ? itemDAO.getAllAdmin()
                     : itemDAO.getAll();
 
-            // Traducir status a español antes de mandar al frontend
             items.forEach(item -> item.setStatus(item.getStatusFrontend()));
-
             out.print(gson.toJson(items));
 
         } catch (SQLException e) {
@@ -50,19 +53,15 @@ public class ItemServlet extends HttpServlet {
         out.flush();
     }
 
-    // ── POST /api/items ───────────────────────────────────────────
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
         res.setHeader("Access-Control-Allow-Origin", "*");
-
         PrintWriter out = res.getWriter();
 
         try {
-            // Leer el JSON que manda el frontend
             Item item = gson.fromJson(req.getReader(), Item.class);
 
             if (item.getName() == null || item.getName().isBlank()) {
@@ -72,9 +71,17 @@ public class ItemServlet extends HttpServlet {
                 return;
             }
 
+            if (item.getId() == null || item.getId().isBlank()) {
+                item.setId(java.util.UUID.randomUUID().toString());
+            }
+
             boolean creado = itemDAO.create(item);
 
             if (creado) {
+                // El campo "category" ahora se llena automáticamente gracias a Gson
+                if (item.getCategory() != null && !item.getCategory().isBlank()) {
+                    guardarRelacionTag(item.getId(), item.getCategory());
+                }
                 res.setStatus(201);
                 out.print("{\"message\":\"Material creado correctamente\"}");
             } else {
@@ -82,25 +89,21 @@ public class ItemServlet extends HttpServlet {
                 out.print("{\"error\":\"No se pudo crear el material\"}");
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             res.setStatus(500);
             out.print("{\"error\":\"Error al crear material: " + e.getMessage() + "\"}");
         }
         out.flush();
     }
 
-    // ── PUT /api/items/{id} ───────────────────────────────────────
-    // ── PUT /api/items/{id}/disable ───────────────────────────────
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
-
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
         res.setHeader("Access-Control-Allow-Origin", "*");
-
         PrintWriter out = res.getWriter();
-        String pathInfo = req.getPathInfo(); // "/uuid" o "/uuid/disable"
+        String pathInfo = req.getPathInfo();
 
         try {
             if (pathInfo == null) {
@@ -111,11 +114,8 @@ public class ItemServlet extends HttpServlet {
             }
 
             String[] parts = pathInfo.split("/");
-            // parts[0] = "", parts[1] = id, parts[2] = "disable" (opcional)
-
             String id = parts[1];
 
-            // Deshabilitar ítem
             if (parts.length == 3 && parts[2].equals("disable")) {
                 boolean deshabilitado = itemDAO.disable(id);
                 if (deshabilitado) {
@@ -128,26 +128,63 @@ public class ItemServlet extends HttpServlet {
                 return;
             }
 
-            // Actualizar ítem
             Item item = gson.fromJson(req.getReader(), Item.class);
             item.setId(id);
 
             boolean actualizado = itemDAO.update(item);
             if (actualizado) {
+                // Guardamos o actualizamos la etiqueta asociada
+                if (item.getCategory() != null && !item.getCategory().isBlank()) {
+                    guardarRelacionTag(id, item.getCategory());
+                }
                 out.print("{\"message\":\"Material actualizado correctamente\"}");
             } else {
                 res.setStatus(404);
                 out.print("{\"error\":\"Material no encontrado\"}");
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             res.setStatus(500);
             out.print("{\"error\":\"Error al actualizar: " + e.getMessage() + "\"}");
         }
         out.flush();
     }
 
-    // ── OPTIONS — para CORS ───────────────────────────────────────
+    private void guardarRelacionTag(String itemId, String categoryName) {
+        String selectTagSql = "SELECT id FROM tags WHERE name = ?";
+        String deleteOldSql = "DELETE FROM item_tags WHERE item_id = ?";
+        String insertTagSql = "INSERT INTO item_tags (item_id, tag_id) VALUES (?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
+            String tagId = null;
+            try (PreparedStatement ps = conn.prepareStatement(selectTagSql)) {
+                ps.setString(1, categoryName);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        tagId = rs.getString("id");
+                    }
+                }
+            }
+
+            if (tagId != null) {
+                try (PreparedStatement psDelete = conn.prepareStatement(deleteOldSql)) {
+                    psDelete.setString(1, itemId);
+                    psDelete.executeUpdate();
+                }
+                try (PreparedStatement psInsert = conn.prepareStatement(insertTagSql)) {
+                    psInsert.setString(1, itemId);
+                    psInsert.setString(2, tagId);
+                    psInsert.executeUpdate();
+                    System.out.println("ÉXITO: Relación guardada en item_tags para el item: " + itemId + " con tag: " + tagId);
+                }
+            } else {
+                System.out.println("⚠️ ALERTA: No se encontró ningún tag en la BD con el nombre: '" + categoryName + "'");
+            }
+        } catch (SQLException e) {
+            System.err.println("ERROR CRÍTICO SQL en guardarRelacionTag: " + e.getMessage());
+        }
+    }
+
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse res) {
         res.setHeader("Access-Control-Allow-Origin", "*");

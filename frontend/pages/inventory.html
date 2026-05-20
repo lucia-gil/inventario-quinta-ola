@@ -13,7 +13,6 @@
 
   <main class="page-main">
 
-    <!-- HEADER -->
     <div class="page-header">
       <div>
         <h1 class="page-title" id="inventory-title">
@@ -25,9 +24,7 @@
         </p>
       </div>
 
-      <!-- SOLO ADMIN/SUPERADMIN -->
       <a href="/pages/admin-items.html"
-         data-requires="canManageItems"
          class="btn-page-primary"
          id="btn-add-material">
 
@@ -36,7 +33,6 @@
       </a>
     </div>
 
-    <!-- SEARCH -->
     <div class="search-bar">
 
       <div class="search-input-wrap">
@@ -50,15 +46,14 @@
         />
       </div>
 
-      <!-- FILTROS SOLO ADMIN -->
       <div class="flex gap-3" id="filters-admin">
 
         <select id="filter-tag" class="select-page w-auto">
           <option value="">Todas las Etiquetas</option>
-          <option>Construcción</option>
-          <option>Acabados</option>
-          <option>Líquidos</option>
-          <option>Plomería</option>
+          <option value="Construcción">Construcción</option>
+          <option value="Acabados">Acabados</option>
+          <option value="Líquidos">Líquidos</option>
+          <option value="Plomería">Plomería</option>
         </select>
 
         <select id="filter-stock" class="select-page w-auto">
@@ -71,18 +66,13 @@
       </div>
     </div>
 
-    <!-- ===================================================== -->
-    <!-- VIEWER MODE — CATÁLOGO -->
-    <!-- ===================================================== -->
-
     <div id="viewer-catalog-view" class="hidden">
 
       <div
         id="catalog-container"
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
       >
-        <!-- cards -->
-      </div>
+        </div>
 
       <div class="panel-footer mt-8">
         <p class="panel-count-text" id="catalog-count">
@@ -93,10 +83,6 @@
       </div>
 
     </div>
-
-    <!-- ===================================================== -->
-    <!-- ADMIN / MANAGER / DEPOSIT MODE — TABLA -->
-    <!-- ===================================================== -->
 
     <div id="inventory-table-view">
 
@@ -113,6 +99,7 @@
                 <th class="th">Stock</th>
                 <th class="th">Mínimo</th>
                 <th class="th">Estado</th>
+                <th class="th th-action-crud text-center !text-center" style="text-align: center !important; width: 180px;">Acciones</th>
               </tr>
             </thead>
 
@@ -145,7 +132,7 @@
   </main>
 
   <div id="item-modal"
-     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+       class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
 
     <div class="bg-white rounded-2xl p-6 w-full max-w-xl relative">
 
@@ -160,10 +147,6 @@
     </div>
 
   </div>
-
-  <!-- ===================================================== -->
-  <!-- SCRIPTS -->
-  <!-- ===================================================== -->
 
   <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
@@ -183,18 +166,9 @@
     // =====================================================
 
     const roleId = Auth.getRoleId();
-
-    const isViewer =
-      roleId === 'role-viewer';
-      console.log('ROLE ID:', roleId);
-      console.log('IS VIEWER:', isViewer);
-
-    const isManager =
-      roleId === 'role-manager';
-
-    const isAdmin =
-      roleId === 'role-admin' ||
-      roleId === 'role-superadmin';
+    const isViewer = roleId === 'role-viewer';
+    const isManager = roleId === 'role-manager';
+    const isAdmin = roleId === 'role-admin' || roleId === 'role-superadmin';
 
     // =====================================================
     // NAVBAR
@@ -212,279 +186,220 @@
     // =====================================================
     // CONFIGURAR UI SEGÚN ROL
     // =====================================================
-
     function configureInventoryByRole() {
-
-      const tableView =
-        document.getElementById('inventory-table-view');
-
-      const catalogView =
-        document.getElementById('viewer-catalog-view');
-
-      const filtersAdmin =
-        document.getElementById('filters-admin');
-
-      const title =
-        document.getElementById('inventory-title');
-
-      const subtitle =
-        document.getElementById('inventory-subtitle');
-
-      // ============================================
-      // VIEWER
-      // ============================================
+      const tableView = document.getElementById('inventory-table-view');
+      const catalogView = document.getElementById('viewer-catalog-view');
+      const filtersAdmin = document.getElementById('filters-admin');
+      const title = document.getElementById('inventory-title');
+      const subtitle = document.getElementById('inventory-subtitle');
+      
+      // Capturamos el botón de añadir material
+      const btnAddMaterial = document.getElementById('btn-add-material');
 
       if (isViewer) {
-
-        // Mostrar cards
         catalogView.classList.remove('hidden');
-
-        // Ocultar tabla
         tableView.classList.add('hidden');
-
-        // Ocultar filtros admin
-        filtersAdmin.classList.add('hidden');
-
-        // Cambiar textos
-        title.textContent =
-          'Catálogo de Materiales';
-
-        subtitle.textContent =
-          'Selecciona materiales y agrégalos a tu solicitud.';
-
-      }
-
-      // ============================================
-      // ADMIN / MANAGER / DEPOSIT
-      // ============================================
-
-      else {
-
+        title.textContent = 'Catálogo de Materiales';
+        subtitle.textContent = 'Selecciona materiales y agrégalos a tu solicitud.';
+        
+        // Si es Viewer (Solicitante), ocultamos el botón obligatoriamente
+        if (btnAddMaterial) btnAddMaterial.classList.add('hidden');
+      } else {
+        // Entra aquí si es Admin, SuperAdmin o Manager (María Aprobadora)
         catalogView.classList.add('hidden');
-
         tableView.classList.remove('hidden');
-
+        
+        // ACTIVACIÓN COMPLETA PARA EL MANAGER:
+        // Si el usuario es Administrador o es Manager (Coordinadora), forzamos la aparición del botón
+        if (btnAddMaterial) {
+          btnAddMaterial.classList.remove('hidden');
+          btnAddMaterial.style.setProperty('display', 'inline-flex', 'important'); // Asegura que Tailwind no lo pise
+        }
       }
     }
 
     // =====================================================
-    // CARGAR INVENTARIO
+    // RENDERIZAR VISTAS (TABLA O CARDS)
+    // =====================================================
+    function renderizarData(listaItems) {
+      if (isViewer) {
+        QO.renderCatalogCards('catalog-container', listaItems);
+        document.getElementById('catalog-count').textContent = `Mostrando ${listaItems.length} materiales disponibles`;
+        
+        // Asignar eventos de solicitud directa a los botones de las cards
+        const cards = document.querySelectorAll("#catalog-container > div");
+        cards.forEach((card, index) => {
+          if (listaItems[index]) {
+            const item = listaItems[index];
+            const botonCard = card.querySelector("button");
+            if (botonCard) {
+              botonCard.setAttribute("onclick", `QO.addToCart('${item.id}')`);
+            }
+          }
+        });
+
+        QO.renderPagination('catalog-pagination', {
+          current: 1,
+          total: Math.ceil(listaItems.length / 8) || 1,
+        });
+      } else {
+        QO.renderInventoryRows('inventory-tbody', listaItems);
+        document.getElementById('inventory-count').textContent = `Mostrando ${listaItems.length} de ${window.inventoryData.length} items`;
+
+        // Inyectar columnas de acción centradas y botones estilizados
+        const filas = document.querySelectorAll("#inventory-tbody tr");
+        filas.forEach((fila, index) => {
+          if (listaItems[index]) {
+            const item = listaItems[index];
+            let celdaAccion = fila.querySelector(".td-action-crud");
+            if (!celdaAccion) {
+              celdaAccion = document.createElement("td");
+              fila.appendChild(celdaAccion);
+            }
+            // Mantenemos la simetría con text-center y justify-center
+            celdaAccion.className = "px-4 py-3 text-center td-action-crud flex justify-center gap-2 items-center";
+            celdaAccion.innerHTML = `
+              <a href="/pages/admin-items.html?id=${item.id}" class="border border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-600 hover:text-purple-700 px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                <span>Editar</span>
+              </a>
+              <button onclick="eliminarLogicoMaterial('${item.id}')" class="border border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700 px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Desactivar</span>
+              </button>
+            `;
+          }
+        });
+
+        QO.renderPagination('inventory-pagination', {
+          current: 1,
+          total: Math.ceil(listaItems.length / 5) || 1,
+        });
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // =====================================================
+    // FILTRADO EN TIEMPO REAL (TEXTO + TAGS + STOCK)
+    // =====================================================
+    function filtrarInventario() {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const tagSeleccionado = document.getElementById('filter-tag').value;
+      const stockSeleccionado = document.getElementById('filter-stock').value;
+
+      if (!window.inventoryData) return;
+
+      const resultadoFiltrado = window.inventoryData.filter(item => {
+        const matchesTexto = item.name.toLowerCase().includes(query) || item.sku.toLowerCase().includes(query);
+        const matchesTag = !tagSeleccionado || item.tags.includes(tagSeleccionado);
+        const matchesStock = !stockSeleccionado || item.status === stockSeleccionado;
+
+        return matchesTexto && matchesTag && matchesStock;
+      });
+
+      renderizarData(resultadoFiltrado);
+    }
+
+    // LISTENERS DE BÚSQUEDA Y FILTROS
+    document.getElementById('search-input').addEventListener('input', filtrarInventario);
+    document.getElementById('filter-tag').addEventListener('change', filtrarInventario);
+    document.getElementById('filter-stock').addEventListener('change', filtrarInventario);
+
+    // =====================================================
+    // CARGAR INVENTARIO DESDE LA API
     // =====================================================
 
     async function cargarInventario() {
-
       try {
-
-        const res = await fetch('/api/items', {
-          credentials: 'include'
-        });
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
+        const res = await fetch('/api/items', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const items = await res.json();
 
-        // ============================================
-        // NORMALIZAR DATA
-        // ============================================
+        const inventario = items.map(item => {
+            // 🌟 Asegurar que siempre tengamos un arreglo de tags de forma segura
+            let listaTagsOriginal = [];
+            if (Array.isArray(item.tags)) {
+                listaTagsOriginal = item.tags;
+            } else if (item.category) {
+                listaTagsOriginal = [item.category];
+            }
 
-        const inventario = items.map(item => ({
+            return {
+                id: item.id,
+                img: item.imageUrl || '/img/placeholder.png',
+                name: item.name,
+                sku: item.sku || 'N/A',
+                
+                // 🌟 CORRECCIÓN CRÍTICA: Ahora lee el arreglo de tags real del backend
+                tags: listaTagsOriginal, 
+                
+                stock: item.cachedQuantity,
+                unit: item.unit || 'unid.',
+                min: item.minQuantity,
+                status: item.status || 'OK',
+            };
+        });
 
-          id: item.id,
+          window.inventoryData = inventario;
+          renderizarData(inventario);
 
-          img:
-            item.imageUrl ||
-            '/img/placeholder.png',
-
-          name:
-            item.name,
-
-          sku:
-            item.sku || 'N/A',
-
-          tags:
-            item.category
-              ? [item.category]
-              : [],
-
-          stock:
-            item.cachedQuantity,
-
-          unit:
-            item.unit || 'unid.',
-
-          min:
-            item.minQuantity,
-
-          status:
-            item.status || 'OK',
-
-        }));
-
-        window.inventoryData = inventario;
-
-        // ============================================
-        // VIEWER → CATÁLOGO
-        // ============================================
-
+      } catch (err) {
+        console.error('Error cargando inventario:', err);
+        const errorMessage = `Error: ${err.message}`;
         if (isViewer) {
-
-          QO.renderCatalogCards(
-            'catalog-container',
-            inventario
-          );
-
-          document.getElementById('catalog-count').textContent =
-            `Mostrando ${inventario.length} materiales disponibles`;
-
-          QO.renderPagination('catalog-pagination', {
-            current: 1,
-            total: Math.ceil(inventario.length / 8) || 1,
-          });
-
-        }
-
-        // ============================================
-        // ADMIN / MANAGER / DEPOSIT → TABLA
-        // ============================================
-
-        else {
-
-          QO.renderInventoryRows(
-            'inventory-tbody',
-            inventario
-          );
-
-          document.getElementById('inventory-count').textContent =
-            `Mostrando ${inventario.length} de ${inventario.length} items`;
-
-          QO.renderPagination('inventory-pagination', {
-            current: 1,
-            total: Math.ceil(inventario.length / 5) || 1,
-          });
-
-        }
-
-      }
-
-      catch (err) {
-
-        console.error(
-          'Error cargando inventario:',
-          err
-        );
-
-        const errorMessage =
-          `Error: ${err.message}`;
-
-        if (isViewer) {
-
-          document.getElementById('catalog-count').textContent =
-            errorMessage;
-
+          document.getElementById('catalog-count').textContent = errorMessage;
         } else {
-
-          document.getElementById('inventory-count').textContent =
-            errorMessage;
-
+          document.getElementById('inventory-count').textContent = errorMessage;
         }
-
       }
-
-      lucide.createIcons();
     }
 
     // =====================================================
-    // CARRITO — VIEWER
+    // CARRITO / DETALLES — VIEWER
     // =====================================================
 
     QO.addToCart = function(itemId) {
-
       if (!isViewer) return;
-
-      window.location.href =
-        `/pages/show-requestform.html?item=${itemId}`;
-
+      window.location.href = `/pages/show-requestform.html?item=${itemId}`;
     };
 
     QO.showItemDetails = function(itemId) {
-
-      const item =
-        window.inventoryData.find(
-          i => i.id === itemId
-        );
-
+      const item = window.inventoryData.find(i => i.id === itemId);
       if (!item) return;
 
-      const modal =
-        document.getElementById('item-modal');
-
-      const content =
-        document.getElementById('item-modal-content');
+      const modal = document.getElementById('item-modal');
+      const content = document.getElementById('item-modal-content');
 
       content.innerHTML = `
-        <img
-          src="${item.img}"
-          class="w-full h-64 object-cover rounded-xl mb-4"
-        >
-
-        <h2 class="text-2xl font-bold mb-2">
-          ${item.name}
-        </h2>
-
-        <p class="text-gray-500 mb-3">
-          SKU: ${item.sku}
-        </p>
-
+        <img src="${item.img}" class="w-full h-64 object-cover rounded-xl mb-4">
+        <h2 class="text-2xl font-bold mb-2">${item.name}</h2>
+        <p class="text-gray-500 mb-3">SKU: ${item.sku}</p>
         <div class="space-y-2 mb-4">
-
-          <p>
-            <strong>Stock:</strong>
-            ${item.stock} ${item.unit}
-          </p>
-
-          <p>
-            <strong>Stock mínimo:</strong>
-            ${item.min}
-          </p>
-
-          <p>
-            <strong>Estado:</strong>
-            ${item.status}
-          </p>
-
+          <p><strong>Stock:</strong> ${item.stock} ${item.unit}</p>
+          <p><strong>Stock mínimo:</strong> ${item.min}</p>
+          <p><strong>Estado:</strong> ${item.status}</p>
         </div>
-
-        <button
-          onclick="QO.addToCart('${item.id}')"
-          class="btn-page-primary w-full">
-
+        <button onclick="QO.addToCart('${item.id}')" class="btn-page-primary w-full">
           Solicitar Material
-
         </button>
       `;
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-
       lucide.createIcons();
     };
 
     QO.closeItemModal = function() {
-
-      const modal =
-        document.getElementById('item-modal');
-
+      const modal = document.getElementById('item-modal');
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-
     };
+
     // =====================================================
-    // ACCIONES CRUD DESDE LA INTERFAZ WEB (CONEXIÓN A SERVLETS)
+    // ACCIONES CRUD (CONEXIÓN A SERVLETS)
     // =====================================================
 
-    // ── 1. ELIMINACIÓN LÓGICA (DISABLE) — Solo para Administradores ──
     async function eliminarLogicoMaterial(itemId) {
         if (!confirm("¿Está segura de que desea realizar la desactivación lógica de este material?")) return;
 
@@ -496,7 +411,7 @@
 
             if (res.ok) {
                 alert("¡Material desactivado con éxito! Ha sido removido del catálogo activo.");
-                cargarInventario(); // Recargar la tabla automáticamente en vivo
+                cargarInventario();
             } else {
                 const errData = await res.json().catch(() => ({}));
                 alert(`Error al desactivar: ${errData.error || 'No autorizado o error interno'}`);
@@ -507,7 +422,6 @@
         }
     }
 
-    // ── 2. AGREGAR SOLICITUD DE TRANSACCIÓN (CREATE) — Para Solicitantes ──
     async function iniciarSolicitudDirecta(itemId, itemName) {
         const cantidad = prompt(`¿Cuántas unidades de "${itemName}" requiere solicitar?`);
         if (!cantidad || isNaN(cantidad) || parseInt(cantidad) <= 0) {
@@ -516,7 +430,7 @@
         }
 
         const notas = prompt("Ingrese una breve justificación o destino para el material:") || "";
-        const userId = localStorage.getItem("userId"); // Recuperado del Login exitoso
+        const userId = localStorage.getItem("userId");
 
         const solicitudPayload = {
             itemId: itemId,
@@ -546,70 +460,9 @@
     }
 
     // =====================================================
-    // INIT & INTERCEPCIÓN DE RENDERIZADO
+    // INIT
     // =====================================================
-
     configureInventoryByRole();
-    
-    // Envolvemos cargarInventario para agregarle dinámicamente los botones tras el renderizado de ui.js
-    const funcionOriginalCargar = cargarInventario;
-    cargarInventario = async function() {
-        await funcionOriginalCargar();
-        
-        // 🛠️ INYECCIÓN DE BOTÓN "DESACTIVAR" EN LA TABLA DEL ADMIN
-        if (!isViewer) {
-            const filas = document.querySelectorAll("#inventory-tbody tr");
-            filas.forEach((fila, index) => {
-                if (window.inventoryData && window.inventoryData[index]) {
-                    const item = window.inventoryData[index];
-                    
-                    // Si la fila no tiene columna de acción, agregamos una celda al final
-                    let celdaAccion = fila.querySelector(".td-action-crud");
-                    if (!celdaAccion) {
-                        celdaAccion = document.createElement("td");
-                        celdaAccion.className = "px-4 py-3 text-right td-action-crud";
-                        fila.appendChild(celdaAccion);
-                    }
-                    
-                    celdaAccion.innerHTML = `
-                        <button onclick="eliminarLogicoMaterial('${item.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-xl text-xs font-semibold transition-colors shadow-sm">
-                            Desactivar
-                        </button>
-                    `;
-                }
-            });
-            
-            // Aseguramos que la cabecera tenga la columna extra de acciones
-            const headerRow = document.querySelector(".table-head tr");
-            if (headerRow && !headerRow.querySelector(".th-action-crud")) {
-                const th = document.createElement("th");
-                th.className = "th text-right th-action-crud";
-                th.textContent = "Acciones";
-                headerRow.appendChild(th);
-            }
-        }
-        
-        // 🛠️ INYECCIÓN DE INTERRUPTOR DE SOLICITUD DIRECTA EN LAS CARDS DEL VIEWER
-        else {
-            // Buscamos todos los botones que gatillan abrir detalles o agregar en el catálogo
-            // y les mapeamos nuestra función transaccional
-            const cards = document.querySelectorAll("#catalog-container > div");
-            cards.forEach((card, index) => {
-                if (window.inventoryData && window.inventoryData[index]) {
-                    const item = window.inventoryData[index];
-                    const botonCard = card.querySelector("button");
-                    if (botonCard) {
-                        // Cambiamos su comportamiento por defecto para que solicite directo usando prompt
-                        botonCard.setAttribute("onclick", `iniciarSolicitudDirecta('${item.id}', '${item.name.replace(/'/g, "\\'")}')`);
-                    }
-                }
-            });
-        }
-        
-        lucide.createIcons();
-    };
-
-    // Ejecutamos la carga inicial con los interceptores listos
     cargarInventario();
 
   </script>

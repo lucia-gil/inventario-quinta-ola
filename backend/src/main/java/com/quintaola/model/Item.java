@@ -15,6 +15,7 @@ public class Item {
     private boolean activo;
     private String createdAt;
     private List<String> tags;
+    private String category;
 
     public Item() {}
 
@@ -51,6 +52,13 @@ public class Item {
     public List<String> getTags()             { return tags; }
     public void setTags(List<String> tags)    { this.tags = tags; }
 
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
     public String getStatusFrontend() {
         return switch (this.status) {
             case "OK"          -> "OK";

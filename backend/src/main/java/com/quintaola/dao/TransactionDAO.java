@@ -118,14 +118,48 @@ public class TransactionDAO {
             (id, item_id, requester_id, type, quantity, status, notes)
             VALUES (?, ?, ?, 'OUT', ?, 'PENDING', ?)
             """;
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, UUID.randomUUID().toString());
-            ps.setString(2, t.getItemId());
-            ps.setString(3, t.getRequesterId());
-            ps.setInt   (4, t.getQuantity());
-            ps.setString(5, t.getNotes());
-            return ps.executeUpdate() > 0;
+
+        String txId = UUID.randomUUID().toString();
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, txId);
+                    ps.setString(2, t.getItemId());
+                    ps.setString(3, t.getRequesterId());
+                    ps.setInt   (4, t.getQuantity());
+                    ps.setString(5, t.getNotes());
+                    ps.executeUpdate();
+                }
+
+                // CAMBIO: Alerta automática para Managers y Admins
+                String sqlManagers = "SELECT id FROM users WHERE role_id IN ('role-manager', 'role-admin') AND activo = 1";
+                try (PreparedStatement psM = conn.prepareStatement(sqlManagers);
+                     ResultSet rsM = psM.executeQuery()) {
+                    while (rsM.next()) {
+                        String managerId = rsM.getString("id");
+                        if (!managerId.equals(t.getRequesterId())) {
+                            crearNotificacion(
+                                    conn,
+                                    managerId,
+                                    "new_request",
+                                    "Nueva Solicitud Pendiente",
+                                    "Se ha registrado un nuevo requerimiento de materiales esperando tu revisión.",
+                                    txId
+                            );
+                        }
+                    }
+                }
+
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
     }
 
@@ -136,12 +170,49 @@ public class TransactionDAO {
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND status = 'PENDING'
             """;
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, approverId);
-            ps.setString(2, notes);
-            ps.setString(3, id);
-            return ps.executeUpdate() > 0;
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                boolean ok = false;
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, approverId);
+                    ps.setString(2, notes);
+                    ps.setString(3, id);
+                    ok = ps.executeUpdate() > 0;
+                }
+
+                if (ok) {
+                    // CAMBIO: Obtener solicitante para notificarle la aprobación
+                    String sqlGetReq = "SELECT requester_id FROM transactions WHERE id = ?";
+                    String requesterId = null;
+                    try (PreparedStatement psR = conn.prepareStatement(sqlGetReq)) {
+                        psR.setString(1, id);
+                        try (ResultSet rsR = psR.executeQuery()) {
+                            if (rsR.next()) requesterId = rsR.getString("requester_id");
+                        }
+                    }
+
+                    if (requesterId != null) {
+                        crearNotificacion(
+                                conn,
+                                requesterId,
+                                "request_approved",
+                                "¡Tu solicitud fue Aprobada!",
+                                "Tu requerimiento de materiales ha sido aprobado y pasará a preparación.",
+                                id
+                        );
+                    }
+                }
+
+                conn.commit();
+                return ok;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
     }
 
@@ -152,12 +223,49 @@ public class TransactionDAO {
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND status = 'PENDING'
             """;
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, approverId);
-            ps.setString(2, notes);
-            ps.setString(3, id);
-            return ps.executeUpdate() > 0;
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                boolean ok = false;
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, approverId);
+                    ps.setString(2, notes);
+                    ps.setString(3, id);
+                    ok = ps.executeUpdate() > 0;
+                }
+
+                if (ok) {
+                    // CAMBIO: Obtener solicitante para notificarle el rechazo
+                    String sqlGetReq = "SELECT requester_id FROM transactions WHERE id = ?";
+                    String requesterId = null;
+                    try (PreparedStatement psR = conn.prepareStatement(sqlGetReq)) {
+                        psR.setString(1, id);
+                        try (ResultSet rsR = psR.executeQuery()) {
+                            if (rsR.next()) requesterId = rsR.getString("requester_id");
+                        }
+                    }
+
+                    if (requesterId != null) {
+                        crearNotificacion(
+                                conn,
+                                requesterId,
+                                "request_rejected",
+                                "Solicitud Rechazada",
+                                "Tu requerimiento ha sido observado o rechazado. Revisa los comentarios.",
+                                id
+                        );
+                    }
+                }
+
+                conn.commit();
+                return ok;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
     }
 
@@ -245,5 +353,22 @@ public class TransactionDAO {
         try { t.setRequesterName(rs.getString("requester_name")); } catch (Exception ignored) {}
         try { t.setApproverName (rs.getString("approver_name")); } catch (Exception ignored) {}
         return t;
+    }
+
+    // CAMBIO: Único método añadido para insertar las notificaciones compartiendo la conexión activa
+    private void crearNotificacion(Connection conn, String userId, String type, String title, String message, String relatedId) throws SQLException {
+        String sql = """
+            INSERT INTO notifications (id, user_id, type, title, message, related_id, is_read)
+            VALUES (?, ?, ?, ?, ?, ?, 0)
+            """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, UUID.randomUUID().toString());
+            ps.setString(2, userId);
+            ps.setString(3, type);
+            ps.setString(4, title);
+            ps.setString(5, message);
+            ps.setString(6, relatedId);
+            ps.executeUpdate();
+        }
     }
 }

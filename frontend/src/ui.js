@@ -447,6 +447,20 @@ const QO = (() => {
     if (window.lucide) lucide.createIcons();
   }
 
+  /* ============================================================
+     PROCESADOR DE STOCK PARA EL CATÁLOGO
+  ============================================================ */
+  function obtenerEtiquetaStock(status) {
+    const estado = (status || '').toUpperCase();
+    if (estado === 'UNAVAILABLE' || estado === 'SIN STOCK') {
+      return `<span class="px-2 py-1 text-[10px] font-bold uppercase rounded-full bg-red-100 text-red-800 whitespace-nowrap">Sin Stock</span>`;
+    } else if (estado === 'LOW' || estado === 'STOCK BAJO') {
+      return `<span class="px-2 py-1 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">Bajo Stock</span>`;
+    } else {
+      return `<span class="px-2 py-1 text-[10px] font-bold uppercase rounded-full bg-green-100 text-green-800 whitespace-nowrap">OK</span>`;
+    }
+  }
+
   function renderCatalogCards(containerId, data) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -459,33 +473,29 @@ const QO = (() => {
         <div class="catalog-card-body">
           <div class="flex justify-between items-start mb-2">
             <h3 class="catalog-card-title">${item.name}</h3>
-            ${stockBadge(item.status === 'low' ? 'Stock Bajo' : 'OK').replace('stock-ok', 'badge badge-success text-[10px] uppercase').replace('stock-low', 'badge badge-warning text-[10px] uppercase')}
+            ${obtenerEtiquetaStock(item.status)}
           </div>
           <p class="catalog-card-sku">SKU: ${item.sku}</p>
           <button
             class="catalog-card-btn"
             data-id="${item.id}"
             onclick="QO.addToCart && QO.addToCart('${item.id}')">
-
             <i data-lucide="clipboard-plus" class="w-4 h-4"></i>
             Solicitar material
-
           </button>
 
           <button
             class="catalog-card-btn-secondary mt-2 flex items-center justify-center gap-2"
             onclick="QO.showItemDetails('${item.id}')">
-
             <i data-lucide="info" class="w-4 h-4"></i>
-
             <span>Ver detalles</span>
-
           </button>
         </div>
       </div>`).join('');
     if (window.lucide) lucide.createIcons();
   }
-
+  
+  
   function renderPagination(containerId, { current = 1, total = 1, onPage } = {}) {
     const container = document.getElementById(containerId);
     if (!container) return;

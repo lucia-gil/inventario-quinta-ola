@@ -12,7 +12,6 @@
 
   <main class="page-main-narrow">
 
-    <!-- CABECERA -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Añadir Nuevo Material</h1>
@@ -23,7 +22,6 @@
       </button>
     </div>
 
-    <!-- FORMULARIO -->
     <div class="panel-form">
       <form action="#" method="POST" class="space-y-6">
 
@@ -31,12 +29,17 @@
           <div>
             <label for="nombre" class="form-label">Nombre del Material</label>
             <input type="text" id="nombre" name="nombre" class="input-page"
-              placeholder="Ej. Kit de Ayuda Humanitaria">
+              placeholder="Ej. Kit de Ayuda Humanitaria" required>
           </div>
           <div>
-            <label for="tags" class="form-label">Etiquetas (Tags)</label>
-            <input type="text" id="tags" name="tags" class="input-page"
-              placeholder="Ej. Donaciones, Kits (separados por coma)">
+            <label for="tags" class="form-label">Etiqueta (Categoría)</label>
+            <select id="tags" name="tags" class="select-page" required>
+              <option value="" disabled selected>Seleccionar etiqueta...</option>
+              <option value="Construcción">Construcción</option>
+              <option value="Acabados">Acabados</option>
+              <option value="Líquidos">Líquidos</option>
+              <option value="Plomería">Plomería</option>
+            </select>
           </div>
         </div>
 
@@ -48,7 +51,7 @@
           </div>
           <div>
             <label for="unidad" class="form-label">Unidad</label>
-            <select id="unidad" name="unidad" class="select-page">
+            <select id="unidad" name="unidad" class="select-page" required>
               <option value="" disabled selected>Seleccionar...</option>
               <option value="unidades">Unidades</option>
               <option value="cajas">Cajas</option>
@@ -95,13 +98,110 @@
     </div>
   </main>
 
+  <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const userRole = localStorage.getItem('userRole') || '';
-    QO.navbar({ active: 'inventory', name: userName, role: userRole });
-    lucide.createIcons();
+    if (!Auth.requireLogin()) throw new Error('No auth');
+    
+    const userName = Auth.getUserName() || 'Usuario';
+    const userRole = Auth.getReadableRole() || '';
+    
+    if (Auth.getRoleId() === 'role-viewer') {
+      alert("Acceso denegado: No posees privilegios de Administrador.");
+      window.location.href = "/pages/dashboard.html";
+    }
+
+    QO.navbar({ active: 'inventory', name: userName, role: userRole, menuType: Auth.getMenuType() });
+    QO.footer();
+
+    // ── MODO DETECTAR SI ES EDICIÓN U/UPDATE ──────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    const itemId = urlParams.get('id'); 
+    const isEditMode = !!itemId;
+
+    if (isEditMode) {
+      document.querySelector('.page-title').textContent = "Editar Material Existente";
+      document.querySelector('.page-subtitle').textContent = "Modifica los parámetros del material en la base de datos.";
+      const submitBtn = document.querySelector('button[type="submit"]');
+      submitBtn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Actualizar Cambios`;
+    }
+
+    // Función para auto-rellenar el formulario en modo Edición
+    async function cargarDatosPreviaEdicion() {
+      if (!isEditMode) return;
+      try {
+        const res = await fetch(`/api/items?id=${itemId}`, { credentials: 'include' });
+        if (!res.ok) throw new Error("No se pudo recuperar la data del ítem.");
+        
+        const items = await res.json();
+        const item = Array.isArray(items) ? items.find(i => i.id == itemId) : items;
+
+        if (item) {
+          document.getElementById('nombre').value = item.name || '';
+          document.getElementById('tags').value = item.category || ''; // Al ser select, buscará la opción idéntica
+          document.getElementById('stock').value = item.cachedQuantity || 0;
+          document.getElementById('unidad').value = item.unit || 'unidades';
+          document.getElementById('minimo').value = item.minQuantity || 0;
+          document.getElementById('imagen').value = item.imageUrl || '';
+          document.getElementById('descripcion').value = item.description || '';
+          
+          if(isEditMode) {
+            document.getElementById('stock').setAttribute("disabled", "true");
+            document.getElementById('stock').title = "El stock físico se altera mediante transacciones formalizadas.";
+          }
+        }
+      } catch (err) {
+        console.error("Error cargando material para edición:", err);
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    cargarDatosPreviaEdicion();
+
+    // ── CAPTURA Y ENVÍO DEL FORMULARIO CRUD (POST O PUT) ──────────────────
+    document.querySelector('form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const payload = {
+        name: document.getElementById('nombre').value.trim(),
+        category: document.getElementById('tags').value, // Lee la opción seleccionada del select
+        cachedQuantity: parseInt(document.getElementById('stock').value) || 0,
+        unit: document.getElementById('unidad').value,
+        minQuantity: parseInt(document.getElementById('minimo').value) || 0,
+        imageUrl: document.getElementById('imagen').value.trim() || '/img/placeholder.png',
+        description: document.getElementById('descripcion').value.trim()
+      };
+
+      if (!payload.name || !payload.unit || !payload.category) {
+        alert("Por favor, complete los campos obligatorios: Nombre, Etiqueta y Unidad.");
+        return;
+      }
+
+      const endpoint = isEditMode ? `/api/items/${itemId}` : '/api/items';
+      const httpMethod = isEditMode ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: httpMethod,
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          alert(isEditMode ? "¡Material actualizado correctamente!" : "¡Material registrado con éxito!");
+          window.location.href = "/pages/inventory.html";
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(`Error en la operación: ${errData.error || 'Consulte al administrador del backend.'}`);
+        }
+      } catch (error) {
+        console.error("Error en submit:", error);
+        alert("Fallo de comunicación con el Servlet.");
+      }
+    });
   </script>
+
   <script type="module" src="/src/admin-item.ts"></script>
 </body>
 </html>

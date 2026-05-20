@@ -254,20 +254,20 @@ WHERE id LIKE 'user-demo-%';
 
 -- Viewer:
 -- solicitante@quintaola.com
--- demo1234
+-- admin123
 
 -- Member:
 -- deposito@quintaola.com
--- demo1234
+-- admin123
 
 -- Manager:
 -- coordinadora@quintaola.com
--- demo1234
+-- admin123
 
 -- Admin:
 -- admin.demo@quintaola.com
--- demo1234
+-- admin123
 
 -- SuperAdmin:
 -- superadmin@quintaola.com
--- demo1234
+-- admin123

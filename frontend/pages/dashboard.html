@@ -74,38 +74,118 @@
   </main>
 
   <!-- FOOTER — generado automáticamente -->
-
+  <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    // ── Configuración de esta página ──────────────────────────
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const userRole = localStorage.getItem('userRole') || '';
-    QO.navbar({ active: 'dashboard', name: userName, role: userRole });
+    // ── 1. CONFIGURACIÓN DE IDENTIDAD Y SEGURIDAD POR ROL ──────────────────────────
+    // Forzamos que solo entren superadmin, admin y manager (coordinadora)
+    if (!Auth.requireRole(['role-superadmin', 'role-admin', 'role-manager'])) {
+      throw new Error('No autorizado para ver el panel de control');
+    }
+
+    const userName = Auth.getUserName() || 'Usuario';
+    const userRole = Auth.getReadableRole() || '';
+    const roleId   = Auth.getRoleId();
+
+    // Roles booleanos para control de flujo internos de la página
+    const isAdmin   = roleId === 'role-admin' || roleId === 'role-superadmin';
+    const isManager = roleId === 'role-manager';
+    const isViewer  = roleId === 'role-viewer';
+
+    QO.navbar({ 
+      active: 'dashboard', 
+      name: userName, 
+      role: userRole,
+      menuType: Auth.getMenuType() 
+    });
     QO.footer();
 
-    // ── Datos de ejemplo (reemplazar con fetch a tu API) ──────
-    QO.renderStatCards('stats-grid', [
-      { label: 'Total Materiales', value: 5,    icon: 'package',       colorClass: 'stat-icon-blue' },
-      { label: 'Bajo Stock',       value: 34,   icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
-      { label: 'Pendientes',       value: 3,    icon: 'clock',          colorClass: 'stat-icon-yellow' },
-      { label: 'Aprobadas',        value: 1134, icon: 'check-circle',   colorClass: 'stat-icon-green' },
-    ]);
+    // ── 2. CARGAR MÉTRICAS Y MOVIMIENTOS REALES DESDE BACKEND ──────────────────
+    async function cargarDashboardReal() {
+      try {
+        // Consultamos la API de transacciones
+        const res = await fetch('/api/transactions', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const transacciones = await res.json();
 
-    // ── Tabla de movimientos ──────────────────────────────────
-    // Cuando conectes la BD, reemplaza este array con los datos
-    // que traiga tu fetch('/api/transactions?limit=3')
-    const movimientos = [
-      { id: 'TXN-0001', requester: 'Jean Piere Ipurre', item: 'Cemento Portland', qty: '20 bolsas', type: 'IN',  date: '2026-04-15', status: 'Pendiente' },
-      { id: 'TXN-0002', requester: 'María López',       item: 'Arena Gruesa',     qty: '10 m³',    type: 'OUT', date: '2026-04-14', status: 'Aprobado' },
-      { id: 'TXN-0003', requester: 'Carlos Ruiz',       item: 'Pintura Blanca',   qty: '5 galones', type: 'IN', date: '2026-04-13', status: 'Rechazado' },
-    ];
+        // Si es un Solicitante (Viewer), filtramos para que solo vea sus propias solicitudes
+        const movimientosFiltrados = isViewer 
+          ? transacciones.filter(t => t.requesterId === localStorage.getItem("userId"))
+          : transacciones;
 
-    QO.renderTransactionRows('movements-tbody', movimientos);
-    document.getElementById('showing-count').textContent = movimientos.length;
-    document.getElementById('total-count').textContent = 12;
+        // Calcular métricas basadas en la data real viva
+        const totalItems  = window.inventoryData ? window.inventoryData.length : 12; 
+        const pendientes  = transacciones.filter(t => t.status === 'PENDING' || t.status === 'Pendiente').length;
+        const aprobadas   = transacciones.filter(t => t.status === 'APPROVED' || t.status === 'Aprobada' || t.status === 'COMPLETED').length;
+        const bajoStock   = 3; // Valor de contingencia o jalar de tu endpoint de items si aplica
 
-    QO.renderPagination('dashboard-pagination', { current: 1, total: 4 });
-    lucide.createIcons();
+        // Renderizamos las métricas reales
+        QO.renderStatCards('stats-grid', [
+          { label: 'Total Materiales', value: totalItems,  icon: 'package',        colorClass: 'stat-icon-blue' },
+          { label: 'Bajo Stock',       value: bajoStock,   icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
+          { label: 'Pendientes',       value: pendientes,  icon: 'clock',          colorClass: 'stat-icon-yellow' },
+          { label: 'Aprobadas',        value: aprobadas,   icon: 'check-circle',   colorClass: 'stat-icon-green' },
+        ]);
+
+        // Mapeamos los datos al formato exacto que ui.js espera
+        const movimientosFormateados = movimientosFiltrados.slice(0, 5).map(t => ({
+          id: t.id.length > 12 ? `TXN-${t.id.substring(0, 5).toUpperCase()}` : t.id,
+          requester: t.requesterName || 'Sistema',
+          item: t.itemName || 'Material',
+          qty: `${t.quantity} ${t.itemUnit || 'unid.'}`,
+          type: t.type || 'OUT',
+          date: new Date(t.createdAt).toLocaleDateString('es-PE'),
+          status: t.status === 'PENDING' ? 'Pendiente' : t.status === 'APPROVED' ? 'Aprobado' : t.status === 'REJECTED' ? 'Rechazado' : 'Entregado',
+          realId: t.id // Preservamos el ID nativo de la base de datos
+        }));
+
+        // Limpiar contenedor e inyectar filas con redirección dinámica nativa
+        const tbody = document.getElementById('movements-tbody');
+        if (movimientosFormateados.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-400 text-sm">No se registran solicitudes de materiales.</td></tr>`;
+        } else {
+          tbody.innerHTML = movimientosFormateados.map(m => `
+            <tr class="table-row">
+              <td class="td font-mono text-xs font-bold">${m.id}</td>
+              <td class="td font-medium text-gray-700">${m.requester}</td>
+              <td class="td font-semibold">${m.item}</td>
+              <td class="td-center">${m.qty}</td>
+              <td class="td-center">${QO.typeBadge(m.type)}</td>
+              <td class="td-light">${m.date}</td>
+              <td class="td-center">${QO.statusBadge(m.status)}</td>
+              <td class="td-center">
+                <a href="/pages/request-detail.html?id=${m.realId}" class="text-accent hover:text-pink-600 font-bold p-1 transition-colors">
+                  <i data-lucide="eye" class="w-4 h-4 inline"></i>
+                </a>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        document.getElementById('showing-count').textContent = movimientosFormateados.length;
+        document.getElementById('total-count').textContent = movimientosFiltrados.length;
+
+        QO.renderPagination('dashboard-pagination', { 
+          current: 1, 
+          total: Math.ceil(movimientosFiltrados.length / 5) || 1 
+        });
+
+      } catch (err) {
+        console.error("Error poblando Dashboard:", err);
+        // Fallback preventivo por si el backend se encuentra offline durante pruebas
+        QO.renderStatCards('stats-grid', [
+          { label: 'Total Materiales', value: 0, icon: 'package', colorClass: 'stat-icon-blue' },
+          { label: 'Bajo Stock', value: 0, icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
+          { label: 'Pendientes', value: 0, icon: 'clock', colorClass: 'stat-icon-yellow' },
+          { label: 'Aprobadas', value: 0, icon: 'check-circle', colorClass: 'stat-icon-green' },
+        ]);
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Arrancar la carga asíncrona
+    cargarDashboardReal();
   </script>
 </body>
 </html>

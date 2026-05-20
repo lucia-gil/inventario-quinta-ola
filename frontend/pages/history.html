@@ -12,14 +12,18 @@
 
   <main class="page-main">
 
-    <div class="page-header">
+    <div class="page-header flex justify-between items-center w-full">
       <div>
         <h1 class="page-title" id="page-title">Historial</h1>
         <p class="page-subtitle" id="page-subtitle">Cargando...</p>
       </div>
+      <a href="/pages/analytics.html" 
+         id="btn-go-analytics" 
+         class="btn-page-primary hidden flex items-center gap-2">
+        <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Ver Análisis Visual
+      </a>
     </div>
 
-    <!-- FILTROS -->
     <div class="search-bar">
       <div class="search-input-wrap">
         <i data-lucide="search" class="input-icon-left"></i>
@@ -77,13 +81,27 @@
     });
     QO.footer();
 
-    // Título y subtítulo según rol
+    // Título, subtítulo y VISIBILIDAD DEL BOTÓN según rol
+    const btnAnalytics = document.getElementById('btn-go-analytics');
+    
     if (Auth.isViewer()) {
       document.getElementById('page-title').textContent = 'Mi Historial';
       document.getElementById('page-subtitle').textContent = 'Todas las solicitudes que has hecho';
+      
+      // Si es un solicitante (Viewer), nos aseguramos de mantenerlo oculto
+      if (btnAnalytics) {
+        btnAnalytics.classList.add('hidden');
+        btnAnalytics.style.display = 'none';
+      }
     } else {
       document.getElementById('page-title').textContent = 'Historial Completo';
       document.getElementById('page-subtitle').textContent = 'Todas las solicitudes del sistema';
+      
+      // Si es Coordinador/Manager o Admin, mostramos el botón
+      if (btnAnalytics) {
+        btnAnalytics.classList.remove('hidden');
+        btnAnalytics.style.display = 'inline-flex';
+      }
     }
 
     const STATUS_MAP = {
@@ -135,6 +153,9 @@
       document.getElementById('history-count').textContent =
         `Mostrando ${datos.length} de ${todasLasTxns.length} solicitudes`;
     }
+
+    // Inicializar iconos de Lucide cargados dinámicamente
+    QO.init();
 
     cargar();
   </script>

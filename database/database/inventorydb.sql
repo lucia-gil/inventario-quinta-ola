@@ -137,3 +137,10 @@ CREATE TABLE IF NOT EXISTS notifications (
     REFERENCES users(id)
     ON DELETE CASCADE
 );
+
+ALTER TABLE users ADD COLUMN avatar_url VARCHAR(500) DEFAULT NULL AFTER created_at;
+INSERT IGNORE INTO tags (id, name, created_by) VALUES
+    ('tag-construccion', 'Construcción', NULL),
+    ('tag-acabados',     'Acabados',     NULL),
+    ('tag-liquidos',     'Líquidos',     NULL),
+    ('tag-plomeria',     'Plomería',     NULL);
