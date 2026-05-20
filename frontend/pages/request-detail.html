@@ -228,11 +228,12 @@
       document.getElementById('sol-cantidad').textContent  = `${txn.quantity || 0} ${txn.itemUnit || 'unidad(es)'}`;
 
       // ── Material ──────────────────────────────────────────
+      // ── Material ──────────────────────────────────────────
       document.getElementById('sol-material').textContent     = txn.itemName || 'Material';
       document.getElementById('sol-material-desc').textContent = `Unidad: ${txn.itemUnit || 'unidades'}`;
-      if (txn.itemImageUrl) document.getElementById('sol-img').src = txn.itemImageUrl;
-
-      document.getElementById('sol-img').src = solicitud.itemImg || '/img/placeholder.png';
+      
+      // ✅ Usamos 'txn.itemImageUrl' que es la variable real que viene de tu backend
+      document.getElementById('sol-img').src = txn.itemImageUrl || '/img/placeholder.png';
 
       // ── Timeline ──────────────────────────────────────────
       renderizarTimeline(txn);

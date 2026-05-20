@@ -481,11 +481,135 @@
 
     };
     // =====================================================
-    // INIT
+    // ACCIONES CRUD DESDE LA INTERFAZ WEB (CONEXIÓN A SERVLETS)
+    // =====================================================
+
+    // ── 1. ELIMINACIÓN LÓGICA (DISABLE) — Solo para Administradores ──
+    async function eliminarLogicoMaterial(itemId) {
+        if (!confirm("¿Está segura de que desea realizar la desactivación lógica de este material?")) return;
+
+        try {
+            const res = await fetch(`/api/items/${itemId}/disable`, {
+                method: "PUT",
+                credentials: "include"
+            });
+
+            if (res.ok) {
+                alert("¡Material desactivado con éxito! Ha sido removido del catálogo activo.");
+                cargarInventario(); // Recargar la tabla automáticamente en vivo
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert(`Error al desactivar: ${errData.error || 'No autorizado o error interno'}`);
+            }
+        } catch (error) {
+            console.error("Error en disable fetch:", error);
+            alert("No se pudo conectar con el servidor.");
+        }
+    }
+
+    // ── 2. AGREGAR SOLICITUD DE TRANSACCIÓN (CREATE) — Para Solicitantes ──
+    async function iniciarSolicitudDirecta(itemId, itemName) {
+        const cantidad = prompt(`¿Cuántas unidades de "${itemName}" requiere solicitar?`);
+        if (!cantidad || isNaN(cantidad) || parseInt(cantidad) <= 0) {
+            alert("Por favor, ingrese una cantidad numérica válida superior a cero.");
+            return;
+        }
+
+        const notas = prompt("Ingrese una breve justificación o destino para el material:") || "";
+        const userId = localStorage.getItem("userId"); // Recuperado del Login exitoso
+
+        const solicitudPayload = {
+            itemId: itemId,
+            requesterId: userId,
+            quantity: parseInt(cantidad),
+            notes: notas
+        };
+
+        try {
+            const res = await fetch("/api/transactions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(solicitPayload)
+            });
+
+            if (res.ok) {
+                alert("¡Su solicitud ha sido registrada con éxito y enviada al pool de pendientes del Administrador!");
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert(`No se pudo procesar el pedido: ${errData.error || 'Error desconocido'}`);
+            }
+        } catch (error) {
+            console.error("Error en POST transaction:", error);
+            alert("Error de red al procesar la solicitud.");
+        }
+    }
+
+    // =====================================================
+    // INIT & INTERCEPCIÓN DE RENDERIZADO
     // =====================================================
 
     configureInventoryByRole();
+    
+    // Envolvemos cargarInventario para agregarle dinámicamente los botones tras el renderizado de ui.js
+    const funcionOriginalCargar = cargarInventario;
+    cargarInventario = async function() {
+        await funcionOriginalCargar();
+        
+        // 🛠️ INYECCIÓN DE BOTÓN "DESACTIVAR" EN LA TABLA DEL ADMIN
+        if (!isViewer) {
+            const filas = document.querySelectorAll("#inventory-tbody tr");
+            filas.forEach((fila, index) => {
+                if (window.inventoryData && window.inventoryData[index]) {
+                    const item = window.inventoryData[index];
+                    
+                    // Si la fila no tiene columna de acción, agregamos una celda al final
+                    let celdaAccion = fila.querySelector(".td-action-crud");
+                    if (!celdaAccion) {
+                        celdaAccion = document.createElement("td");
+                        celdaAccion.className = "px-4 py-3 text-right td-action-crud";
+                        fila.appendChild(celdaAccion);
+                    }
+                    
+                    celdaAccion.innerHTML = `
+                        <button onclick="eliminarLogicoMaterial('${item.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-xl text-xs font-semibold transition-colors shadow-sm">
+                            Desactivar
+                        </button>
+                    `;
+                }
+            });
+            
+            // Aseguramos que la cabecera tenga la columna extra de acciones
+            const headerRow = document.querySelector(".table-head tr");
+            if (headerRow && !headerRow.querySelector(".th-action-crud")) {
+                const th = document.createElement("th");
+                th.className = "th text-right th-action-crud";
+                th.textContent = "Acciones";
+                headerRow.appendChild(th);
+            }
+        }
+        
+        // 🛠️ INYECCIÓN DE INTERRUPTOR DE SOLICITUD DIRECTA EN LAS CARDS DEL VIEWER
+        else {
+            // Buscamos todos los botones que gatillan abrir detalles o agregar en el catálogo
+            // y les mapeamos nuestra función transaccional
+            const cards = document.querySelectorAll("#catalog-container > div");
+            cards.forEach((card, index) => {
+                if (window.inventoryData && window.inventoryData[index]) {
+                    const item = window.inventoryData[index];
+                    const botonCard = card.querySelector("button");
+                    if (botonCard) {
+                        // Cambiamos su comportamiento por defecto para que solicite directo usando prompt
+                        botonCard.setAttribute("onclick", `iniciarSolicitudDirecta('${item.id}', '${item.name.replace(/'/g, "\\'")}')`);
+                    }
+                }
+            });
+        }
+        
+        lucide.createIcons();
+    };
 
+    // Ejecutamos la carga inicial con los interceptores listos
     cargarInventario();
 
   </script>
