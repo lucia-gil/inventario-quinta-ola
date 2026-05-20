@@ -26,6 +26,23 @@ Configurar Tomcat y correr
 Ejecutar `database/data-prueba.sql` después de `database/inventorydb.sql`
 
 Usuarios de prueba:
-- admin@quintaola.com / admin123 → Administrador
-- lucia@quintaola.com / lucia123 → Solicitante
-- carlos@quintaola.com / carlos123 → Solicitante
+
+- Viewer:
+solicitante@quintaola.com
+admin123
+
+- Member:
+deposito@quintaola.com
+admin123
+
+- Manager:
+oordinadora@quintaola.com
+admin123
+
+- Admin:
+admin.demo@quintaola.com
+admin123
+
+- SuperAdmin:
+superadmin@quintaola.com
+admin123
