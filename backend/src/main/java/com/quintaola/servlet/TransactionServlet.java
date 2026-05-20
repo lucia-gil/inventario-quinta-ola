@@ -21,13 +21,25 @@ public class TransactionServlet extends HttpServlet {
     private final TransactionDAO dao = new TransactionDAO();
     private final Gson gson          = new Gson();
 
+    // Agregamos el nuevo metodo
+    private void aplicarCORS(HttpServletRequest req, HttpServletResponse res) {
+        String origin = req.getHeader("Origin");
+        if (origin == null || origin.isEmpty()) {
+            origin = "http://localhost:5173";
+        }
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
 
+        aplicarCORS(req, res);                                // ← AGREGAR esta línea
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
 
         PrintWriter out = res.getWriter();
         String path = req.getPathInfo();
@@ -57,11 +69,22 @@ public class TransactionServlet extends HttpServlet {
                     list = dao.getPending();
                 } else if ("/approved".equals(path)) {
                     list = dao.getApproved();
+
                 } else if ("/me".equals(path)) {
                     HttpSession session = req.getSession(false);
+
+                    // AGREGADO: validar sesión ANTES de usarla
+                    if (session == null || session.getAttribute("userId") == null) {
+                        res.setStatus(401);
+                        out.print("{\"error\":\"Sesión expirada. Vuelve a iniciar sesión.\"}");
+                        out.flush();
+                        return;
+                    }
+
                     String userId = (String) session.getAttribute("userId");
                     list = dao.getByUser(userId);
-                } else {
+                }
+                else {
                     list = dao.getAll();
                 }
 
@@ -71,7 +94,14 @@ public class TransactionServlet extends HttpServlet {
 
         } catch (SQLException e) {
             res.setStatus(500);
-            out.print("{\"error\":\"" + e.getMessage() + "\"}");
+            String msg = e.getMessage() != null ? e.getMessage().replace("\"", "'") : "Error SQL";
+            out.print("{\"error\":\"SQL: " + msg + "\"}");
+            e.printStackTrace();   // AGREGADO: imprime en consola de Tomcat
+        } catch (Exception e) {     // AGREGADO: captura TODO otro tipo de error
+            res.setStatus(500);
+            String msg = e.getMessage() != null ? e.getMessage().replace("\"", "'") : e.getClass().getSimpleName();
+            out.print("{\"error\":\"" + e.getClass().getSimpleName() + ": " + msg + "\"}");
+            e.printStackTrace();
         }
         out.flush();
     }
@@ -80,9 +110,9 @@ public class TransactionServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
 
+        aplicarCORS(req, res);                                // ← AGREGAR
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
 
         PrintWriter out = res.getWriter();
 
@@ -121,9 +151,9 @@ public class TransactionServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
 
+        aplicarCORS(req, res);                                // ← AGREGAR
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
 
         PrintWriter out = res.getWriter();
         String path = req.getPathInfo();
@@ -174,9 +204,7 @@ public class TransactionServlet extends HttpServlet {
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse res) {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        aplicarCORS(req, res);
         res.setStatus(200);
     }
 }

@@ -75,26 +75,47 @@
 
   </main>
 
-  <script src="/src/ui.js"></script>
+  <script src="/src/auth.js"></script> <script src="/src/ui.js"></script>
   <script>
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const userRole = localStorage.getItem('userRole') || '';
-    QO.navbar({ active: 'home', name: userName, role: userRole });
-    QO.footer();
-
-    QO.renderStatCards('home-stats', [
-      { label: 'Transacciones del mes', value: 128, icon: 'arrow-right-left', colorClass: 'stat-icon-blue' },
-      { label: 'Items en inventario',   value: 54,  icon: 'package',          colorClass: 'stat-icon-pink' },
-      { label: 'Solicitudes Aprobadas', value: 42,  icon: 'check-circle',     colorClass: 'stat-icon-green' },
-    ]);
-
-    lucide.createIcons();
-
-    const rolActual = 'default'; // CONECTAR: reemplazar con el rol real de la sesión
-    if (rolActual !== 'superadmin') {
-      document.getElementById('card-permisos').style.display = 'none';
+    // 1. Guardia de seguridad: Si no está logueado, redirige
+    if (!Auth.requireLogin()) {
+      throw new Error('No auth');
     }
 
+    // 2. Obtener los datos formateados y reales mediante el módulo Auth
+    const userName = Auth.getUserName();
+    const userRole = Auth.getReadableRole();
+    const roleId = Auth.getRoleId();
+    const menuType = Auth.getMenuType(); 
+
+    // 3. Cargar Navbar con la estructura unificada
+    QO.navbar({ 
+      active: 'home', 
+      name: userName, 
+      role: userRole,
+      menuType: menuType // Esto activa el set de enlaces correcto en ui.js
+    });
+    QO.footer();
+
+    // 4. Lógica para ocultar el panel de estadísticas globales a los Viewers
+    const statsContainer = document.getElementById('home-stats');
+    if (roleId === 'role-viewer' || roleId === 'role-member') {
+      if (statsContainer) statsContainer.style.display = 'none'; 
+    } else {
+      QO.renderStatCards('home-stats', [
+        { label: 'Transacciones del mes', value: 128, icon: 'arrow-right-left', colorClass: 'stat-icon-blue' },
+        { label: 'Items en inventario',   value: 54,  icon: 'package',          colorClass: 'stat-icon-pink' },
+        { label: 'Solicitudes Aprobadas', value: 42,  icon: 'check-circle',     colorClass: 'stat-icon-green' },
+      ]);
+    }
+
+    // 5. Ocultar la tarjeta de "Permisos" a quienes NO sean admin/superadmin
+    if (roleId !== 'role-superadmin' && roleId !== 'role-admin') {
+      const cardPermisos = document.getElementById('card-permisos');
+      if (cardPermisos) cardPermisos.style.display = 'none';
+    }
+
+    lucide.createIcons();
   </script>
 </body>
 </html>

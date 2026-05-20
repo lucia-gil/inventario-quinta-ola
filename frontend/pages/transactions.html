@@ -86,10 +86,23 @@
             try {
                 const endpoint = Auth.isViewer() ? '/api/transactions/me' : '/api/transactions';
 
-                const res = await fetch(endpoint, { credentials: 'include' });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const res = await fetch(endpoint, {
+                    credentials: 'include',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!res.ok) {
+                    let detalle = `HTTP ${res.status}`;
+                    try {
+                        const errData = await res.json();
+                        if (errData.error) detalle += ` — ${errData.error}`;
+                    } catch {}
+                    console.error('[Transactions] Backend respondió:', detalle);
+                    throw new Error(detalle);
+                }
 
                 const lista = await res.json();
+                console.log('[Transactions] Recibidas:', lista.length, 'transacciones');
 
                 // Mapear modelo Java -> formato esperado por ui.js
                 const datos = lista.map(txn => {

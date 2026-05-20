@@ -6,21 +6,24 @@ import java.sql.SQLException;
 
 public class DatabaseConnection {
 
-    private static final String URL      = "jdbc:mysql://localhost:3306/inventorydb?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true";;
+    private static final String URL      = "jdbc:mysql://localhost:3306/inventorydb?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true";
     private static final String USER     = "root";
     private static final String PASSWORD = "lucia1234";
 
-    private static Connection connection = null;
-
-    public static Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            } catch (ClassNotFoundException e) {
-                throw new SQLException("MySQL Driver no encontrado", e);
-            }
+    static {
+        // Cargar el driver UNA sola vez al iniciar la clase
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("MySQL Driver no encontrado", e);
         }
-        return connection;
+    }
+
+    /**
+     * Devuelve una conexión NUEVA cada vez.
+     * El que llama es responsable de cerrarla (try-with-resources lo hace).
+     */
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 }

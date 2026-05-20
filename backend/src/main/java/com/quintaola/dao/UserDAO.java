@@ -14,7 +14,7 @@ public class UserDAO {
     public boolean register(User user) throws SQLException {
         String sql = """
             INSERT INTO users (id, email, dni, name, password_hash, role_id, activo)
-            VALUES (?, ?, ?, ?, ?, 'role-solicitante', 1)
+            VALUES (?, ?, ?, ?, ?, 'role-viewer', 1)
             """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

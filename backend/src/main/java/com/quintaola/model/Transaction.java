@@ -17,6 +17,7 @@ public class Transaction {
     // Campos extra para el frontend (JOINs)
     private String itemName;
     private String itemUnit;
+    private String itemImg;
     private String requesterName;
     private String approverName;
 
@@ -77,4 +78,6 @@ public class Transaction {
             default                -> this.status;
         };
     }
+    public String getItemImg() { return itemImg; }
+    public void setItemImg(String itemImg) { this.itemImg = itemImg; }
 }

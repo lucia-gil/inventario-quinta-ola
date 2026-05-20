@@ -3,59 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inicio | Quinta Ola</title>
+  <title>Detalle de Solicitud | Quinta Ola</title>
   <link href="/src/style.css" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="page-body">
 
-  <main class="page-main">
+  <main class="page-main-narrow">
 
-    <!-- BANNER DE BIENVENIDA — texto dinámico según rol -->
-    <div class="panel-form flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- HEADER: título dinámico + botón volver                   -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div class="page-header">
       <div>
-        <h2 class="page-title mb-2" id="welcome-title">¡Bienvenida!</h2>
-        <p class="text-gray-500 text-base max-w-2xl" id="welcome-subtitle">Cargando...</p>
+        <h1 class="page-title" id="page-title">Detalle de Solicitud</h1>
+        <p class="page-subtitle" id="page-subtitle">Cargando información...</p>
       </div>
-      <div class="flex flex-col sm:flex-row gap-3" id="welcome-actions">
-        <!-- Botones dinámicos -->
-      </div>
+      <button onclick="window.history.back()" class="btn-ghost">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver
+      </button>
     </div>
 
-    <!-- STAT CARDS — distintos por rol -->
-    <div id="home-stats" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- LAYOUT en 2 columnas                                     -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-    <!-- ACCESOS RÁPIDOS — distintos por rol -->
-    <div>
-      <h3 class="text-lg font-bold text-secondary mb-4">Accesos Rápidos</h3>
-      <div id="quick-access" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
-    </div>
+      <!-- ─────────── COLUMNA IZQUIERDA (2/3): info principal ─────────── -->
+      <div class="md:col-span-2 space-y-6">
 
-    <!-- ACTIVIDAD RECIENTE (solo si tiene sentido para el rol) -->
-    <div class="panel" id="recent-panel" style="display:none">
-      <div class="panel-header">
-        <h2 class="panel-header-title" id="recent-title">Actividad reciente</h2>
-        <a href="/pages/history.html" class="text-sm font-semibold text-accent hover:text-pink-600 transition flex items-center gap-1">
-          Ver todo <i data-lucide="chevron-right" class="w-4 h-4"></i>
-        </a>
+        <!-- ▶ INFO DE LA SOLICITUD -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-header-title flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="w-5 h-5 text-accent"></i>
+              Información de la Solicitud
+            </h2>
+            <span id="status-badge"></span>
+          </div>
+          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            <div>
+              <p class="form-label-tiny">ID Solicitud</p>
+              <p class="text-sm font-bold font-mono text-gray-800" id="sol-id">—</p>
+            </div>
+            <div>
+              <p class="form-label-tiny">Fecha de creación</p>
+              <p class="text-sm font-semibold text-gray-700" id="sol-fecha">—</p>
+            </div>
+            <div>
+              <p class="form-label-tiny">Tipo de movimiento</p>
+              <p class="text-sm mt-1" id="sol-tipo">—</p>
+            </div>
+            <div>
+              <p class="form-label-tiny">Cantidad solicitada</p>
+              <p class="text-sm font-semibold text-gray-700" id="sol-cantidad">—</p>
+            </div>
+            <div class="md:col-span-2">
+              <p class="form-label-tiny">Propósito / Uso del material</p>
+              <p class="text-sm text-gray-700 mt-1 leading-relaxed bg-gray-50 rounded-xl p-3" id="sol-proposito">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ▶ MATERIAL SOLICITADO -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-header-title flex items-center gap-2">
+              <i data-lucide="package" class="w-5 h-5 text-accent"></i>
+              Material Solicitado
+            </h2>
+          </div>
+          <div class="p-6 flex items-center gap-5">
+            <img id="sol-img" src="/img/placeholder.png" alt="" class="w-20 h-20 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0" onerror="this.src='/img/placeholder.png'">
+            <div class="flex-1">
+              <p class="font-bold text-gray-900 text-lg" id="sol-material">—</p>
+              <p class="text-sm text-gray-500 mt-1" id="sol-material-desc">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ▶ TIMELINE -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-header-title flex items-center gap-2">
+              <i data-lucide="git-branch" class="w-5 h-5 text-accent"></i>
+              Historial de la solicitud
+            </h2>
+          </div>
+          <div class="p-6 space-y-4" id="timeline"></div>
+        </div>
+
       </div>
-      <div class="table-wrapper">
-        <table class="table">
-          <thead class="table-head">
-            <tr>
-              <th class="th">ID</th>
-              <th class="th">Solicitante</th>
-              <th class="th">Material</th>
-              <th class="th-center">Cantidad</th>
-              <th class="th-center">Tipo</th>
-              <th class="th">Fecha</th>
-              <th class="th-center">Estado</th>
-              <th class="th-center">Detalle</th>
-            </tr>
-          </thead>
-          <tbody id="recent-tbody" class="table-body"></tbody>
-        </table>
+
+      <!-- ─────────── COLUMNA DERECHA (1/3): paneles adaptativos ─────────── -->
+      <div class="space-y-6">
+
+        <!-- ▶ Panel principal de estado/acción/aprobación -->
+        <div class="panel-form" id="result-panel">
+          <p class="text-sm text-gray-400 text-center py-6">Cargando...</p>
+        </div>
+
+        <!-- ▶ Panel "siguientes pasos" (opcional, según estado) -->
+        <div class="panel-form" id="next-steps-panel" style="display:none"></div>
+
       </div>
     </div>
 
@@ -64,206 +115,472 @@
   <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
+    /* ════════════════════════════════════════════════════════════
+       1. GUARDIA + NAVBAR
+    ════════════════════════════════════════════════════════════ */
     if (!Auth.requireLogin()) throw new Error('No auth');
 
     QO.navbar({
-      active:   'home',
+      active:   'transactions',
       name:     Auth.getUserName(),
       role:     Auth.getReadableRole(),
       menuType: Auth.getMenuType(),
     });
     QO.footer();
 
-    /* ============================================================
-       VISTA POR ROL — cada rol ve un home distinto
-    ============================================================ */
-    const userName = Auth.getUserName().split(' ')[0]; // solo el primer nombre
+    /* ════════════════════════════════════════════════════════════
+       2. ID DESDE LA URL
+    ════════════════════════════════════════════════════════════ */
+    const params    = new URLSearchParams(window.location.search);
+    const txnIdReal = params.get('id');
 
-    // === VIEWER (Solicitante) ===
-    if (Auth.isViewer()) {
-      document.getElementById('welcome-title').textContent = `¡Hola, ${userName}!`;
-      document.getElementById('welcome-subtitle').textContent =
-        'Aquí puedes solicitar materiales y ver el estado de tus pedidos.';
-      document.getElementById('welcome-actions').innerHTML = `
-        <a href="/pages/show-requestform.html" class="btn-page-primary">
-          <i data-lucide="plus-circle" class="w-4 h-4 mr-1"></i> Nueva Solicitud
-        </a>
-        <a href="/pages/transactions.html" class="btn-ghost">
-          <i data-lucide="list" class="w-4 h-4 mr-1"></i> Mis Solicitudes
-        </a>`;
-
-      renderViewerStats();
-      renderQuickAccess([
-        { icon: 'plus-circle', title: 'Nueva Solicitud',  desc: 'Pedir un material', href: '/pages/show-requestform.html' },
-        { icon: 'clipboard-list', title: 'Mis Solicitudes', desc: 'Ver estado de pedidos', href: '/pages/transactions.html' },
-        { icon: 'package',     title: 'Catálogo',         desc: 'Ver materiales disponibles', href: '/pages/inventory.html' },
-        { icon: 'user-cog',    title: 'Mi Perfil',        desc: 'Editar mis datos',  href: '/pages/profile.html' },
-      ]);
-    }
-    // === MANAGER (Aprobador) ===
-    else if (Auth.isManager()) {
-      document.getElementById('welcome-title').textContent = `¡Hola, ${userName}!`;
-      document.getElementById('welcome-subtitle').textContent =
-        'Revisa las solicitudes pendientes de aprobación.';
-      document.getElementById('welcome-actions').innerHTML = `
-        <a href="/pages/transactions.html" class="btn-page-primary">
-          <i data-lucide="inbox" class="w-4 h-4 mr-1"></i> Ver pendientes
-        </a>`;
-
-      renderManagerStats();
-      renderQuickAccess([
-        { icon: 'inbox',        title: 'Por Aprobar',  desc: 'Solicitudes pendientes', href: '/pages/transactions.html' },
-        { icon: 'package',      title: 'Inventario',   desc: 'Ver stock actual',  href: '/pages/inventory.html' },
-        { icon: 'clipboard-list', title: 'Historial',  desc: 'Solicitudes pasadas', href: '/pages/history.html' },
-        { icon: 'user-cog',     title: 'Mi Perfil',    desc: 'Mis datos',  href: '/pages/profile.html' },
-      ]);
-      mostrarRecientes();
-    }
-    // === MEMBER (Depósito) ===
-    else if (Auth.isMember()) {
-      document.getElementById('welcome-title').textContent = `¡Hola, ${userName}!`;
-      document.getElementById('welcome-subtitle').textContent =
-        'Estas son las solicitudes aprobadas listas para entregar.';
-      document.getElementById('welcome-actions').innerHTML = `
-        <a href="/pages/deposit-view.html" class="btn-page-primary">
-          <i data-lucide="package-check" class="w-4 h-4 mr-1"></i> Por entregar
-        </a>`;
-
-      renderDepositStats();
-      renderQuickAccess([
-        { icon: 'package-check', title: 'Por Entregar', desc: 'Solicitudes aprobadas',  href: '/pages/deposit-view.html' },
-        { icon: 'package',       title: 'Inventario',   desc: 'Ver y actualizar stock', href: '/pages/inventory.html' },
-        { icon: 'clipboard-list',title: 'Historial',    desc: 'Entregas pasadas', href: '/pages/history.html' },
-        { icon: 'user-cog',      title: 'Mi Perfil',    desc: 'Mis datos',  href: '/pages/profile.html' },
-      ]);
-    }
-    // === ADMIN / SUPERADMIN ===
-    else {
-      document.getElementById('welcome-title').textContent = `Panel de ${Auth.getReadableRole()}`;
-      document.getElementById('welcome-subtitle').textContent =
-        'Resumen general del sistema de inventario.';
-      document.getElementById('welcome-actions').innerHTML = `
-        <a href="/pages/dashboard.html" class="btn-page-primary">
-          <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1"></i> Ver Dashboard
-        </a>`;
-
-      renderAdminStats();
-      renderQuickAccess([
-        { icon: 'layout-dashboard', title: 'Dashboard', desc: 'KPIs y métricas',     href: '/pages/dashboard.html' },
-        { icon: 'users',         title: 'Miembros',    desc: 'Gestionar usuarios',   href: '/pages/admin-users.html' },
-        { icon: 'package',       title: 'Materiales',  desc: 'Gestionar inventario', href: '/pages/inventory.html' },
-        { icon: 'bar-chart-2',   title: 'Análisis',    desc: 'Reportes y gráficos',  href: '/pages/analytics.html' },
-      ]);
-      mostrarRecientes();
+    if (!txnIdReal) {
+      document.getElementById('page-subtitle').textContent =
+        'No se especificó un identificador de solicitud válido.';
+      throw new Error('Sin ID');
     }
 
-    /* ============================================================
-       STATS POR ROL
-    ============================================================ */
-    async function renderViewerStats() {
-      // Datos del solicitante: cuántas creó, cuántas aprobadas, cuántas pendientes
+    const solIdCorto = txnIdReal.length > 12
+      ? `TXN-${txnIdReal.substring(0, 8).toUpperCase()}`
+      : txnIdReal;
+
+    /* ════════════════════════════════════════════════════════════
+       3. HELPERS
+    ════════════════════════════════════════════════════════════ */
+    const STATUS_MAP = {
+      'PENDING':'Pendiente', 'APPROVED':'Aprobada',
+      'REJECTED':'Rechazada','COMPLETED':'Entregada',
+      'Pendiente':'Pendiente','Aprobada':'Aprobada',
+      'Rechazada':'Rechazada','Entregada':'Entregada',
+    };
+    const normalizeStatus = (s) => STATUS_MAP[s] || s || 'Pendiente';
+
+    function formatearFecha(d) {
+      if (!d) return '—';
       try {
-        const res = await fetch('/api/transactions/me', { credentials: 'include' });
-        const lista = res.ok ? await res.json() : [];
-        const total = lista.length;
-        const pend  = lista.filter(t => ['PENDING','Pendiente'].includes(t.status)).length;
-        const apr   = lista.filter(t => ['APPROVED','Aprobada','COMPLETED','Entregada'].includes(t.status)).length;
-        const rej   = lista.filter(t => ['REJECTED','Rechazada'].includes(t.status)).length;
-        QO.renderStatCards('home-stats', [
-          { label: 'Mis solicitudes',  value: total, icon: 'clipboard-list', colorClass: 'stat-icon-blue' },
-          { label: 'Pendientes',       value: pend,  icon: 'clock',          colorClass: 'stat-icon-yellow' },
-          { label: 'Aprobadas',        value: apr,   icon: 'check-circle',   colorClass: 'stat-icon-green' },
-          { label: 'Rechazadas',       value: rej,   icon: 'x-circle',       colorClass: 'stat-icon-orange' },
-        ]);
-      } catch {
-        QO.renderStatCards('home-stats', [
-          { label: 'Mis solicitudes', value: 0, icon: 'clipboard-list', colorClass: 'stat-icon-blue' },
-        ]);
+        const fecha = new Date(d);
+        if (isNaN(fecha)) return d;
+        return fecha.toLocaleDateString('es-PE', {
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      } catch { return d; }
+    }
+
+    function avatarHTML(name) {
+      const initials = (name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+      const colors = ['bg-blue-100 text-blue-600','bg-emerald-100 text-emerald-600','bg-purple-100 text-purple-600','bg-pink-100 text-pink-600'];
+      const color = colors[(name || 'U').charCodeAt(0) % colors.length];
+      return `<div class="w-10 h-10 rounded-full ${color} flex items-center justify-center text-sm font-bold flex-shrink-0">${initials}</div>`;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       4. FETCH DEL DETALLE
+    ════════════════════════════════════════════════════════════ */
+    async function cargarDetalle() {
+      try {
+        const res = await fetch(`/api/transactions/${txnIdReal}`, {
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' },
+        });
+
+        if (res.status === 401) {
+          mostrarError('Tu sesión expiró. Inicia sesión otra vez.');
+          setTimeout(() => window.location.href = '/pages/show-login.html', 2000);
+          return;
+        }
+
+        if (!res.ok) {
+          let detalle = `HTTP ${res.status}`;
+          try {
+            const errData = await res.json();
+            if (errData.error) detalle += ` — ${errData.error}`;
+          } catch {}
+          throw new Error(detalle);
+        }
+
+        const txn = await res.json();
+        console.log('[Detail] Datos recibidos:', txn);
+
+        const statusEs = normalizeStatus(txn.status);
+        renderizarTodo({ ...txn, statusEs });
+
+      } catch (err) {
+        console.error('[Detail] Error:', err);
+        mostrarError(err.message);
       }
     }
 
-    async function renderManagerStats() {
+    /* ════════════════════════════════════════════════════════════
+       5. RENDERIZAR — todo en una función orquestadora
+    ════════════════════════════════════════════════════════════ */
+    function renderizarTodo(txn) {
+      // ── Header ────────────────────────────────────────────
+      document.getElementById('page-title').textContent    = `Solicitud ${solIdCorto}`;
+      document.getElementById('page-subtitle').textContent = `Registrada el ${formatearFecha(txn.createdAt)}`;
+
+      // ── Info básica ───────────────────────────────────────
+      document.getElementById('sol-id').textContent        = solIdCorto;
+      document.getElementById('sol-fecha').textContent     = formatearFecha(txn.createdAt);
+      document.getElementById('sol-proposito').textContent = txn.notes || 'Sin observaciones registradas.';
+      document.getElementById('sol-tipo').innerHTML        = QO.typeBadge(txn.type || 'OUT');
+      document.getElementById('status-badge').innerHTML    = QO.statusBadge(txn.statusEs);
+      document.getElementById('sol-cantidad').textContent  = `${txn.quantity || 0} ${txn.itemUnit || 'unidad(es)'}`;
+
+      // ── Material ──────────────────────────────────────────
+      document.getElementById('sol-material').textContent     = txn.itemName || 'Material';
+      document.getElementById('sol-material-desc').textContent = `Unidad: ${txn.itemUnit || 'unidades'}`;
+      if (txn.itemImageUrl) document.getElementById('sol-img').src = txn.itemImageUrl;
+
+      document.getElementById('sol-img').src = solicitud.itemImg || '/img/placeholder.png';
+
+      // ── Timeline ──────────────────────────────────────────
+      renderizarTimeline(txn);
+
+      // ── Panel principal (varía mucho según rol y estado) ──
+      renderizarPanelResultado(txn);
+
+      // ── Next steps (solo para viewer en ciertos estados) ──
+      renderizarNextSteps(txn);
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       6. TIMELINE — los hitos cambian según el estado actual
+    ════════════════════════════════════════════════════════════ */
+    function renderizarTimeline(txn) {
+      const colores = {
+        'Pendiente': { dot: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-700' },
+        'Aprobada':  { dot: 'bg-green-500',  badge: 'bg-green-100 text-green-700' },
+        'Rechazada': { dot: 'bg-red-500',    badge: 'bg-red-100 text-red-700' },
+        'Entregada': { dot: 'bg-blue-500',   badge: 'bg-blue-100 text-blue-700' },
+      };
+
+      let hitos = [
+        {
+          estado: 'Pendiente',
+          fecha:  formatearFecha(txn.createdAt),
+          actor:  txn.requesterName || 'Solicitante',
+          nota:   'Solicitud creada y enviada a revisión.',
+        }
+      ];
+
+      if (txn.statusEs === 'Aprobada' || txn.statusEs === 'Entregada') {
+        hitos.push({
+          estado: 'Aprobada',
+          fecha:  formatearFecha(txn.processedAt) || 'Reciente',
+          actor:  txn.approverName || 'Coordinadora',
+          nota:   txn.notes && txn.statusEs === 'Aprobada'
+                    ? `Comentario: "${txn.notes}"`
+                    : 'Solicitud aprobada para entrega.',
+        });
+      }
+
+      if (txn.statusEs === 'Rechazada') {
+        hitos.push({
+          estado: 'Rechazada',
+          fecha:  formatearFecha(txn.processedAt) || 'Reciente',
+          actor:  txn.approverName || 'Coordinadora',
+          nota:   `Motivo: ${txn.notes || 'Sin comentario'}`,
+        });
+      }
+
+      if (txn.statusEs === 'Entregada') {
+        hitos.push({
+          estado: 'Entregada',
+          fecha:  formatearFecha(txn.deliveredAt || txn.processedAt),
+          actor:  'Encargado de Depósito',
+          nota:   'Material entregado físicamente.',
+        });
+      }
+
+      document.getElementById('timeline').innerHTML = hitos.map((h, idx) => {
+        const c = colores[h.estado] || { dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-600' };
+        const isLast = idx === hitos.length - 1;
+        return `
+          <div class="flex gap-3 items-start">
+            <div class="flex flex-col items-center flex-shrink-0">
+              <div class="w-3 h-3 rounded-full ${c.dot} mt-1.5"></div>
+              ${!isLast ? '<div class="w-0.5 h-full bg-gray-200 mt-1"></div>' : ''}
+            </div>
+            <div class="flex-1 pb-4">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${c.badge}">${h.estado}</span>
+                <span class="text-xs text-gray-400">${h.fecha}</span>
+              </div>
+              <p class="text-xs text-gray-500 mb-1">Por: <strong>${h.actor}</strong></p>
+              ${h.nota ? `<p class="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg">${h.nota}</p>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       7. PANEL RESULTADO — VARÍA MUCHO según rol + estado
+       Aquí está la lógica que pediste: NO mostrar datos del
+       solicitante si soy yo misma. Sí mostrar info del aprobador.
+    ════════════════════════════════════════════════════════════ */
+    function renderizarPanelResultado(txn) {
+      const panel = document.getElementById('result-panel');
+
+      // ─── CASO A: Soy VIEWER (Lucía mirando SU solicitud) ───
+      if (Auth.isViewer()) {
+
+        // A1: Pendiente → "En revisión"
+        if (txn.statusEs === 'Pendiente') {
+          panel.innerHTML = `
+            <div class="text-center py-6">
+              <div class="w-14 h-14 rounded-full bg-yellow-50 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="clock" class="w-7 h-7 text-yellow-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-800 text-base mb-2">En revisión</h3>
+              <p class="text-sm text-gray-500 leading-relaxed max-w-[240px] mx-auto">
+                Tu solicitud está siendo evaluada por la coordinadora. Te avisaremos cuando haya respuesta.
+              </p>
+            </div>`;
+          return;
+        }
+
+        // A2: Aprobada → datos del aprobador
+        if (txn.statusEs === 'Aprobada') {
+          panel.innerHTML = `
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-4">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i>
+              ¡Solicitud Aprobada!
+            </h3>
+            <div class="bg-green-50 border border-green-100 rounded-xl p-4 mb-4">
+              <p class="text-[10px] uppercase tracking-wider font-bold text-green-700 mb-2">Aprobada por</p>
+              <div class="flex items-center gap-3">
+                ${avatarHTML(txn.approverName || 'Coordinadora')}
+                <div>
+                  <p class="font-bold text-gray-800 text-sm">${txn.approverName || 'Coordinadora'}</p>
+                  <p class="text-xs text-gray-500">${formatearFecha(txn.processedAt)}</p>
+                </div>
+              </div>
+            </div>
+            ${txn.notes ? `
+              <div class="mb-2">
+                <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Comentario</p>
+                <p class="text-sm text-gray-600 italic bg-gray-50 p-3 rounded-lg">"${txn.notes}"</p>
+              </div>` : ''}
+            <p class="text-xs text-gray-400 text-center mt-4">
+              El encargado de depósito coordinará la entrega.
+            </p>`;
+          return;
+        }
+
+        // A3: Rechazada → motivo DESTACADO
+        if (txn.statusEs === 'Rechazada') {
+          panel.innerHTML = `
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-4">
+              <i data-lucide="x-octagon" class="w-5 h-5 text-red-500"></i>
+              Solicitud Rechazada
+            </h3>
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+              <p class="text-[10px] uppercase tracking-wider font-bold text-red-700 mb-2">Motivo del rechazo</p>
+              <p class="text-sm text-red-800 leading-relaxed font-medium">
+                ${txn.notes || 'No se proporcionó un motivo específico.'}
+              </p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+              <p class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-2">Rechazada por</p>
+              <div class="flex items-center gap-3">
+                ${avatarHTML(txn.approverName || 'Coordinadora')}
+                <div>
+                  <p class="font-semibold text-gray-800 text-sm">${txn.approverName || 'Coordinadora'}</p>
+                  <p class="text-xs text-gray-500">${formatearFecha(txn.processedAt)}</p>
+                </div>
+              </div>
+            </div>`;
+          return;
+        }
+
+        // A4: Entregada → resumen del proceso completo
+        if (txn.statusEs === 'Entregada') {
+          panel.innerHTML = `
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-4">
+              <i data-lucide="package-check" class="w-5 h-5 text-blue-500"></i>
+              Material Entregado
+            </h3>
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+              <p class="text-[10px] uppercase tracking-wider font-bold text-blue-700 mb-2">Aprobada por</p>
+              <div class="flex items-center gap-3">
+                ${avatarHTML(txn.approverName || 'Coordinadora')}
+                <div>
+                  <p class="font-bold text-gray-800 text-sm">${txn.approverName || 'Coordinadora'}</p>
+                  <p class="text-xs text-gray-500">${formatearFecha(txn.processedAt)}</p>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 text-center">
+              Tu solicitud completó todo el proceso satisfactoriamente. 🎉
+            </p>`;
+          return;
+        }
+      }
+
+      // ─── CASO B: APROBADOR (Manager) ───
+      if (Auth.canApprove() && txn.statusEs === 'Pendiente') {
+        // Aquí van los botones Aprobar/Rechazar (lo dejamos para más adelante)
+        panel.innerHTML = `
+          <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3">
+            <i data-lucide="shield-check" class="w-5 h-5 text-accent"></i>
+            Acción del Aprobador
+          </h3>
+          <div>
+            <label class="form-label-tiny">Comentario</label>
+            <p class="text-[11px] text-gray-400 mb-1">Obligatorio al rechazar.</p>
+            <textarea id="comentario" rows="3" class="textarea-page" placeholder="Motivo o nota..."></textarea>
+          </div>
+          <button id="btn-approve" class="w-full btn-page-primary justify-center mt-3">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Aprobar
+          </button>
+          <button id="btn-reject" class="w-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 mt-2">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Rechazar
+          </button>
+          <div id="action-error" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mt-3"></div>
+        `;
+        configurarBotonesAprobador();
+        return;
+      }
+
+      // ─── CASO C: DEPÓSITO mirando aprobada ───
+      if (Auth.canDeliver() && txn.statusEs === 'Aprobada') {
+        panel.innerHTML = `
+          <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3">
+            <i data-lucide="package-check" class="w-5 h-5 text-accent"></i>
+            Entrega del Material
+          </h3>
+          <p class="text-sm text-gray-500 mb-4">Esta solicitud está aprobada y lista para entrega física.</p>
+          <button id="btn-deliver" class="w-full btn-page-primary justify-center">
+            <i data-lucide="truck" class="w-4 h-4"></i> Marcar como Entregada
+          </button>`;
+        document.getElementById('btn-deliver').addEventListener('click', () => {
+          if (confirm('¿Confirmas que entregaste el material físicamente?')) {
+            ejecutarAccion('deliver', '');
+          }
+        });
+        return;
+      }
+
+      // ─── CASO D: Admin/Manager viendo solicitud ya procesada ───
+      // Muestra info del solicitante + del aprobador
+      panel.innerHTML = `
+        <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-4">
+          <i data-lucide="users" class="w-5 h-5 text-accent"></i>
+          Información
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">Solicitante</p>
+            <div class="flex items-center gap-3">
+              ${avatarHTML(txn.requesterName)}
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">${txn.requesterName || '—'}</p>
+                <p class="text-xs text-gray-500">${formatearFecha(txn.createdAt)}</p>
+              </div>
+            </div>
+          </div>
+          ${txn.approverName ? `
+            <div class="border-t border-gray-100 pt-4">
+              <p class="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">
+                ${txn.statusEs === 'Rechazada' ? 'Rechazada por' : 'Aprobada por'}
+              </p>
+              <div class="flex items-center gap-3">
+                ${avatarHTML(txn.approverName)}
+                <div>
+                  <p class="font-semibold text-gray-800 text-sm">${txn.approverName}</p>
+                  <p class="text-xs text-gray-500">${formatearFecha(txn.processedAt)}</p>
+                </div>
+              </div>
+            </div>` : ''}
+        </div>`;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       8. NEXT STEPS — info útil contextual (solo viewer)
+    ════════════════════════════════════════════════════════════ */
+    function renderizarNextSteps(txn) {
+      const panel = document.getElementById('next-steps-panel');
+
+      if (Auth.isViewer() && txn.statusEs === 'Pendiente') {
+        panel.style.display = 'block';
+        panel.innerHTML = `
+          <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3">
+            <i data-lucide="info" class="w-4 h-4 text-accent"></i>
+            ¿Qué sigue?
+          </h3>
+          <ul class="text-xs text-gray-600 space-y-2.5">
+            <li class="flex gap-2"><span class="text-accent font-bold">1.</span> La coordinadora revisa tu solicitud.</li>
+            <li class="flex gap-2"><span class="text-accent font-bold">2.</span> Recibirás una notificación con la decisión.</li>
+            <li class="flex gap-2"><span class="text-accent font-bold">3.</span> Si se aprueba, el depósito coordinará la entrega.</li>
+          </ul>`;
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       9. ACCIONES del aprobador (aprobar/rechazar)
+    ════════════════════════════════════════════════════════════ */
+    function configurarBotonesAprobador() {
+      document.getElementById('btn-approve').addEventListener('click', () => {
+        const notas = document.getElementById('comentario').value;
+        ejecutarAccion('approve', notas);
+      });
+      document.getElementById('btn-reject').addEventListener('click', () => {
+        const notas = document.getElementById('comentario').value.trim();
+        const err   = document.getElementById('action-error');
+        err.classList.add('hidden');
+        if (!notas) {
+          err.textContent = 'Debes indicar un motivo para rechazar la solicitud.';
+          err.classList.remove('hidden');
+          return;
+        }
+        ejecutarAccion('reject', notas);
+      });
+    }
+
+    async function ejecutarAccion(accion, notas) {
       try {
-        const res = await fetch('/api/transactions', { credentials: 'include' });
-        const lista = res.ok ? await res.json() : [];
-        const pend = lista.filter(t => ['PENDING','Pendiente'].includes(t.status)).length;
-        const apr  = lista.filter(t => ['APPROVED','Aprobada'].includes(t.status)).length;
-        QO.renderStatCards('home-stats', [
-          { label: 'Por aprobar',  value: pend, icon: 'clock',        colorClass: 'stat-icon-yellow' },
-          { label: 'Aprobadas hoy', value: apr, icon: 'check-circle', colorClass: 'stat-icon-green' },
-          { label: 'Total mes',    value: lista.length, icon: 'bar-chart-2', colorClass: 'stat-icon-blue' },
-        ]);
-      } catch { QO.renderStatCards('home-stats', []); }
+        const res = await fetch(`/api/transactions/${txnIdReal}/${accion}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes: notas }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          alert('Operación realizada correctamente.');
+          window.location.reload();
+        } else {
+          alert(`Error: ${data.error || 'No se pudo procesar la operación.'}`);
+        }
+      } catch (err) {
+        alert(`Error de conexión: ${err.message}`);
+      }
     }
 
-    async function renderDepositStats() {
-      try {
-        const res = await fetch('/api/transactions/approved', { credentials: 'include' });
-        const lista = res.ok ? await res.json() : [];
-        QO.renderStatCards('home-stats', [
-          { label: 'Por entregar',  value: lista.length, icon: 'package',       colorClass: 'stat-icon-yellow' },
-          { label: 'Entregadas hoy', value: 0,            icon: 'package-check', colorClass: 'stat-icon-green' },
-        ]);
-      } catch { QO.renderStatCards('home-stats', []); }
+    /* ════════════════════════════════════════════════════════════
+       10. ERROR
+    ════════════════════════════════════════════════════════════ */
+    function mostrarError(mensaje) {
+      document.getElementById('page-subtitle').textContent = mensaje;
+      document.getElementById('result-panel').innerHTML = `
+        <div class="text-center py-6 text-red-500">
+          <i data-lucide="alert-triangle" class="w-10 h-10 mx-auto mb-2"></i>
+          <p class="text-sm font-bold">No se pudo cargar la solicitud</p>
+          <p class="text-xs text-gray-400 mt-1">${mensaje}</p>
+          <button onclick="window.history.back()" class="btn-ghost mt-4">Volver</button>
+        </div>`;
+      if (window.lucide) lucide.createIcons();
     }
 
-    async function renderAdminStats() {
-      try {
-        const [rTxn, rItems] = await Promise.all([
-          fetch('/api/transactions', { credentials: 'include' }),
-          fetch('/api/items',        { credentials: 'include' }),
-        ]);
-        const txns  = rTxn.ok   ? await rTxn.json()  : [];
-        const items = rItems.ok ? await rItems.json(): [];
-        const pend  = txns.filter(t => ['PENDING','Pendiente'].includes(t.status)).length;
-        const low   = items.filter(i => ['LOW','Stock Bajo'].includes(i.status)).length;
-        QO.renderStatCards('home-stats', [
-          { label: 'Materiales', value: items.length, icon: 'package',        colorClass: 'stat-icon-blue' },
-          { label: 'Stock bajo', value: low,          icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
-          { label: 'Pendientes', value: pend,         icon: 'clock',          colorClass: 'stat-icon-yellow' },
-          { label: 'Total txns', value: txns.length,  icon: 'bar-chart-2',    colorClass: 'stat-icon-green' },
-        ]);
-      } catch { QO.renderStatCards('home-stats', []); }
-    }
-
-    /* ============================================================
-       ACCESOS RÁPIDOS
-    ============================================================ */
-    function renderQuickAccess(items) {
-      document.getElementById('quick-access').innerHTML = items.map(it => `
-        <a href="${it.href}" class="quick-card">
-          <div class="quick-card-bg-icon"><i data-lucide="${it.icon}" class="w-16 h-16 text-secondary"></i></div>
-          <div class="quick-card-icon"><i data-lucide="${it.icon}" class="w-5 h-5"></i></div>
-          <h3 class="quick-card-title">${it.title}</h3>
-          <p class="quick-card-desc">${it.desc}</p>
-        </a>`).join('');
-      lucide.createIcons();
-    }
-
-    /* ============================================================
-       TABLA DE ACTIVIDAD RECIENTE (admin/manager)
-    ============================================================ */
-    async function mostrarRecientes() {
-      const panel = document.getElementById('recent-panel');
-      panel.style.display = 'block';
-      try {
-        const res = await fetch('/api/transactions', { credentials: 'include' });
-        const lista = res.ok ? await res.json() : [];
-        const datos = lista.slice(0, 5).map(txn => ({
-          id:        (txn.id || '').length > 12 ? `TXN-${txn.id.substring(0, 8).toUpperCase()}` : txn.id,
-          fullId:    txn.id,
-          requester: txn.requesterName || '—',
-          item:      txn.itemName || '—',
-          qty:       `${txn.quantity || 0} ${txn.itemUnit || ''}`,
-          type:      txn.type || 'OUT',
-          date:      txn.createdAt || '',
-          status:    txn.status,
-        }));
-        QO.renderTransactionRows('recent-tbody', datos);
-      } catch {}
-    }
-
-    lucide.createIcons();
+    /* ════════════════════════════════════════════════════════════
+       11. ARRANCAR
+    ════════════════════════════════════════════════════════════ */
+    cargarDetalle();
   </script>
 </body>
 </html>

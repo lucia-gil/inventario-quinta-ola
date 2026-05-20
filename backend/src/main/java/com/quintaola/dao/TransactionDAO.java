@@ -30,7 +30,7 @@ public class TransactionDAO {
     }
 
     public Transaction getById(String id) throws SQLException {
-        String sql = "SELECT t.*, u.name AS requester_name, a.name AS approver_name, i.name AS item_name, i.unit AS item_unit " +
+        String sql = "SELECT t.*, u.name AS requester_name, a.name AS approver_name, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img " +
                 "FROM transactions t " +
                 "JOIN users u ON t.requester_id = u.id " +
                 "LEFT JOIN users a ON t.approver_id = a.id " +
@@ -162,41 +162,42 @@ public class TransactionDAO {
     }
 
     public boolean deliver(String id) throws SQLException {
-        Connection conn = DatabaseConnection.getConnection();
-        try {
-            conn.setAutoCommit(false);
+        // try-with-resources para cerrar siempre la conexión
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            try {
+                conn.setAutoCommit(false);
 
-            String sqlGet = "SELECT item_id, quantity, type FROM transactions WHERE id = ?";
-            String itemId = null;
-            int quantity  = 0;
-            String type   = null;
+                String sqlGet = "SELECT item_id, quantity, type FROM transactions WHERE id = ?";
+                String itemId = null;
+                int quantity  = 0;
+                String type   = null;
 
-            try (PreparedStatement ps = conn.prepareStatement(sqlGet)) {
-                ps.setString(1, id);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        itemId   = rs.getString("item_id");
-                        quantity = rs.getInt("quantity");
-                        type     = rs.getString("type");
+                try (PreparedStatement ps = conn.prepareStatement(sqlGet)) {
+                    ps.setString(1, id);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            itemId   = rs.getString("item_id");
+                            quantity = rs.getInt("quantity");
+                            type     = rs.getString("type");
+                        }
                     }
                 }
-            }
 
-            if (itemId == null) { conn.rollback(); return false; }
+                if (itemId == null) { conn.rollback(); return false; }
 
-            String sqlComplete = """
+                String sqlComplete = """
                 UPDATE transactions
                 SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """;
-            try (PreparedStatement ps = conn.prepareStatement(sqlComplete)) {
-                ps.setString(1, id);
-                ps.executeUpdate();
-            }
+                try (PreparedStatement ps = conn.prepareStatement(sqlComplete)) {
+                    ps.setString(1, id);
+                    ps.executeUpdate();
+                }
 
-            int delta = type.equals("IN") ? quantity : -quantity;
-            String sqlStock = """
+                int delta = type.equals("IN") ? quantity : -quantity;
+                String sqlStock = """
                 UPDATE items
                 SET cached_quantity = cached_quantity + ?,
                     status = CASE
@@ -206,23 +207,24 @@ public class TransactionDAO {
                     END
                 WHERE id = ?
                 """;
-            try (PreparedStatement ps = conn.prepareStatement(sqlStock)) {
-                ps.setInt   (1, delta);
-                ps.setInt   (2, delta);
-                ps.setInt   (3, delta);
-                ps.setString(4, itemId);
-                ps.executeUpdate();
+                try (PreparedStatement ps = conn.prepareStatement(sqlStock)) {
+                    ps.setInt   (1, delta);
+                    ps.setInt   (2, delta);
+                    ps.setInt   (3, delta);
+                    ps.setString(4, itemId);
+                    ps.executeUpdate();
+                }
+
+                conn.commit();
+                return true;
+
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
-
-            conn.commit();
-            return true;
-
-        } catch (SQLException e) {
-            conn.rollback();
-            throw e;
-        } finally {
-            conn.setAutoCommit(true);
-        }
+        } // ← Aquí se cierra la conexión automáticamente
     }
 
     private Transaction mapRow(ResultSet rs) throws SQLException {
@@ -239,6 +241,7 @@ public class TransactionDAO {
         t.setProcessedAt  (rs.getString("processed_at"));
         try { t.setItemName     (rs.getString("item_name")); } catch (Exception ignored) {}
         try { t.setItemUnit     (rs.getString("item_unit")); } catch (Exception ignored) {}
+        try { t.setItemImg      (rs.getString("item_img"));  } catch (Exception ignored) {}
         try { t.setRequesterName(rs.getString("requester_name")); } catch (Exception ignored) {}
         try { t.setApproverName (rs.getString("approver_name")); } catch (Exception ignored) {}
         return t;

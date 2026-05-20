@@ -155,7 +155,7 @@ public class AuthServlet extends HttpServlet {
             session.setAttribute("userId",    user.getId());
             session.setAttribute("userName",  user.getName());
             session.setAttribute("userEmail", user.getEmail());
-            session.setAttribute("userRole",  user.getRoleName());
+            session.setAttribute("userRole",  user.getRoleId());
             session.setAttribute("roleId",    user.getRoleId());
             session.setMaxInactiveInterval(30 * 60); // 30 minutos
 
@@ -171,7 +171,7 @@ public class AuthServlet extends HttpServlet {
             response.addProperty("userId",    user.getId());
             response.addProperty("userName",  user.getName());
             response.addProperty("userEmail", user.getEmail());
-            response.addProperty("userRole",  user.getRoleName());
+            response.addProperty("userRole",  user.getRoleId());
             response.addProperty("roleId",    user.getRoleId());
             response.addProperty("redirect",  redirect);
 

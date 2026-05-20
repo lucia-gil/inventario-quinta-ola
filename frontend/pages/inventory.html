@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inventario | Quinta Ola</title>
+
   <link href="/src/style.css" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -12,25 +13,46 @@
 
   <main class="page-main">
 
+    <!-- HEADER -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Lista de Materiales</h1>
-        <p class="page-subtitle">Listado de materiales y stock actual en tiempo real.</p>
+        <h1 class="page-title" id="inventory-title">
+          Lista de Materiales
+        </h1>
+
+        <p class="page-subtitle" id="inventory-subtitle">
+          Listado de materiales y stock actual en tiempo real.
+        </p>
       </div>
-      <!-- Solo admin/superadmin pueden añadir material -->
+
+      <!-- SOLO ADMIN/SUPERADMIN -->
       <a href="/pages/admin-items.html"
          data-requires="canManageItems"
-         class="btn-page-primary">
-        <i data-lucide="plus" class="w-4 h-4"></i> Añadir Material
+         class="btn-page-primary"
+         id="btn-add-material">
+
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        Añadir Material
       </a>
     </div>
 
+    <!-- SEARCH -->
     <div class="search-bar">
+
       <div class="search-input-wrap">
         <i data-lucide="search" class="input-icon-left"></i>
-        <input type="text" id="search-input" placeholder="Buscar materiales..." class="input-icon" />
+
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Buscar materiales..."
+          class="input-icon"
+        />
       </div>
-      <div class="flex gap-3">
+
+      <!-- FILTROS SOLO ADMIN -->
+      <div class="flex gap-3" id="filters-admin">
+
         <select id="filter-tag" class="select-page w-auto">
           <option value="">Todas las Etiquetas</option>
           <option>Construcción</option>
@@ -38,92 +60,435 @@
           <option>Líquidos</option>
           <option>Plomería</option>
         </select>
+
         <select id="filter-stock" class="select-page w-auto">
           <option value="">Todos los Stocks</option>
           <option value="OK">OK (En Stock)</option>
           <option value="Stock Bajo">Bajo Stock</option>
           <option value="Sin Stock">Sin Stock</option>
         </select>
+
       </div>
     </div>
 
-    <div class="table-panel">
-      <div class="table-wrapper">
-        <table class="table">
-          <thead class="table-head">
-            <tr>
-              <th class="th">Material</th>
-              <th class="th">Tags</th>
-              <th class="th">Stock</th>
-              <th class="th">Mínimo</th>
-              <th class="th">Estado</th>
-            </tr>
-          </thead>
-          <tbody id="inventory-tbody" class="table-body"></tbody>
-        </table>
+    <!-- ===================================================== -->
+    <!-- VIEWER MODE — CATÁLOGO -->
+    <!-- ===================================================== -->
+
+    <div id="viewer-catalog-view" class="hidden">
+
+      <div
+        id="catalog-container"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      >
+        <!-- cards -->
       </div>
 
-      <div class="panel-footer">
-        <p class="panel-count-text" id="inventory-count">Cargando ítems...</p>
-        <div id="inventory-pagination"></div>
+      <div class="panel-footer mt-8">
+        <p class="panel-count-text" id="catalog-count">
+          Cargando materiales...
+        </p>
+
+        <div id="catalog-pagination"></div>
       </div>
+
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- ADMIN / MANAGER / DEPOSIT MODE — TABLA -->
+    <!-- ===================================================== -->
+
+    <div id="inventory-table-view">
+
+      <div class="table-panel">
+
+        <div class="table-wrapper">
+
+          <table class="table">
+
+            <thead class="table-head">
+              <tr>
+                <th class="th">Material</th>
+                <th class="th">Tags</th>
+                <th class="th">Stock</th>
+                <th class="th">Mínimo</th>
+                <th class="th">Estado</th>
+              </tr>
+            </thead>
+
+            <tbody
+              id="inventory-tbody"
+              class="table-body"
+            ></tbody>
+
+          </table>
+
+        </div>
+
+        <div class="panel-footer">
+
+          <p
+            class="panel-count-text"
+            id="inventory-count"
+          >
+            Cargando ítems...
+          </p>
+
+          <div id="inventory-pagination"></div>
+
+        </div>
+
+      </div>
+
     </div>
 
   </main>
 
+  <div id="item-modal"
+     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xl relative">
+
+      <button
+        onclick="QO.closeItemModal()"
+        class="absolute top-4 right-4 text-xl">
+        ✕
+      </button>
+
+      <div id="item-modal-content"></div>
+
+    </div>
+
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- SCRIPTS -->
+  <!-- ===================================================== -->
+
   <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
-  <script>
-    // 1. GUARDIA — sesión obligatoria
-    if (!Auth.requireLogin()) throw new Error('No auth');
 
-    // 2. NAVBAR derivada del rol
+  <script>
+
+    // =====================================================
+    // GUARDIA
+    // =====================================================
+
+    if (!Auth.requireLogin()) {
+      throw new Error('No auth');
+    }
+
+    // =====================================================
+    // DATOS DE SESIÓN
+    // =====================================================
+
+    const roleId = Auth.getRoleId();
+
+    const isViewer =
+      roleId === 'role-viewer';
+      console.log('ROLE ID:', roleId);
+      console.log('IS VIEWER:', isViewer);
+
+    const isManager =
+      roleId === 'role-manager';
+
+    const isAdmin =
+      roleId === 'role-admin' ||
+      roleId === 'role-superadmin';
+
+    // =====================================================
+    // NAVBAR
+    // =====================================================
+
     QO.navbar({
-      active:   'inventory',
-      name:     Auth.getUserName(),
-      role:     Auth.getReadableRole(),
+      active: 'inventory',
+      name: Auth.getUserName(),
+      role: Auth.getReadableRole(),
       menuType: Auth.getMenuType(),
     });
+
     QO.footer();
 
-    // 3. CARGAR INVENTARIO — sin lógica de rol aquí, el atributo data-requires
-    //    en el botón ya lo oculta automáticamente vía auth.js
+    // =====================================================
+    // CONFIGURAR UI SEGÚN ROL
+    // =====================================================
+
+    function configureInventoryByRole() {
+
+      const tableView =
+        document.getElementById('inventory-table-view');
+
+      const catalogView =
+        document.getElementById('viewer-catalog-view');
+
+      const filtersAdmin =
+        document.getElementById('filters-admin');
+
+      const title =
+        document.getElementById('inventory-title');
+
+      const subtitle =
+        document.getElementById('inventory-subtitle');
+
+      // ============================================
+      // VIEWER
+      // ============================================
+
+      if (isViewer) {
+
+        // Mostrar cards
+        catalogView.classList.remove('hidden');
+
+        // Ocultar tabla
+        tableView.classList.add('hidden');
+
+        // Ocultar filtros admin
+        filtersAdmin.classList.add('hidden');
+
+        // Cambiar textos
+        title.textContent =
+          'Catálogo de Materiales';
+
+        subtitle.textContent =
+          'Selecciona materiales y agrégalos a tu solicitud.';
+
+      }
+
+      // ============================================
+      // ADMIN / MANAGER / DEPOSIT
+      // ============================================
+
+      else {
+
+        catalogView.classList.add('hidden');
+
+        tableView.classList.remove('hidden');
+
+      }
+    }
+
+    // =====================================================
+    // CARGAR INVENTARIO
+    // =====================================================
+
     async function cargarInventario() {
+
       try {
-        const res = await fetch('/api/items', { credentials: 'include' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const res = await fetch('/api/items', {
+          credentials: 'include'
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
 
         const items = await res.json();
 
+        // ============================================
+        // NORMALIZAR DATA
+        // ============================================
+
         const inventario = items.map(item => ({
-          img:    item.imageUrl || '/img/placeholder.png',
-          name:   item.name,
-          tags:   item.category ? [item.category] : [],
-          stock:  item.cachedQuantity,
-          unit:   item.unit || 'unid.',
-          min:    item.minQuantity,
-          status: item.status || 'OK',
+
+          id: item.id,
+
+          img:
+            item.imageUrl ||
+            '/img/placeholder.png',
+
+          name:
+            item.name,
+
+          sku:
+            item.sku || 'N/A',
+
+          tags:
+            item.category
+              ? [item.category]
+              : [],
+
+          stock:
+            item.cachedQuantity,
+
+          unit:
+            item.unit || 'unid.',
+
+          min:
+            item.minQuantity,
+
+          status:
+            item.status || 'OK',
+
         }));
 
-        QO.renderInventoryRows('inventory-tbody', inventario);
+        window.inventoryData = inventario;
 
-        document.getElementById('inventory-count').textContent =
-          `Mostrando ${inventario.length} de ${inventario.length} items`;
+        // ============================================
+        // VIEWER → CATÁLOGO
+        // ============================================
 
-        QO.renderPagination('inventory-pagination', {
-          current: 1,
-          total:   Math.ceil(inventario.length / 5) || 1,
-        });
+        if (isViewer) {
 
-      } catch (err) {
-        console.error('Error cargando inventario:', err);
-        document.getElementById('inventory-count').textContent =
-          `Error: ${err.message}`;
+          QO.renderCatalogCards(
+            'catalog-container',
+            inventario
+          );
+
+          document.getElementById('catalog-count').textContent =
+            `Mostrando ${inventario.length} materiales disponibles`;
+
+          QO.renderPagination('catalog-pagination', {
+            current: 1,
+            total: Math.ceil(inventario.length / 8) || 1,
+          });
+
+        }
+
+        // ============================================
+        // ADMIN / MANAGER / DEPOSIT → TABLA
+        // ============================================
+
+        else {
+
+          QO.renderInventoryRows(
+            'inventory-tbody',
+            inventario
+          );
+
+          document.getElementById('inventory-count').textContent =
+            `Mostrando ${inventario.length} de ${inventario.length} items`;
+
+          QO.renderPagination('inventory-pagination', {
+            current: 1,
+            total: Math.ceil(inventario.length / 5) || 1,
+          });
+
+        }
+
       }
+
+      catch (err) {
+
+        console.error(
+          'Error cargando inventario:',
+          err
+        );
+
+        const errorMessage =
+          `Error: ${err.message}`;
+
+        if (isViewer) {
+
+          document.getElementById('catalog-count').textContent =
+            errorMessage;
+
+        } else {
+
+          document.getElementById('inventory-count').textContent =
+            errorMessage;
+
+        }
+
+      }
+
       lucide.createIcons();
     }
 
+    // =====================================================
+    // CARRITO — VIEWER
+    // =====================================================
+
+    QO.addToCart = function(itemId) {
+
+      if (!isViewer) return;
+
+      window.location.href =
+        `/pages/show-requestform.html?item=${itemId}`;
+
+    };
+
+    QO.showItemDetails = function(itemId) {
+
+      const item =
+        window.inventoryData.find(
+          i => i.id === itemId
+        );
+
+      if (!item) return;
+
+      const modal =
+        document.getElementById('item-modal');
+
+      const content =
+        document.getElementById('item-modal-content');
+
+      content.innerHTML = `
+        <img
+          src="${item.img}"
+          class="w-full h-64 object-cover rounded-xl mb-4"
+        >
+
+        <h2 class="text-2xl font-bold mb-2">
+          ${item.name}
+        </h2>
+
+        <p class="text-gray-500 mb-3">
+          SKU: ${item.sku}
+        </p>
+
+        <div class="space-y-2 mb-4">
+
+          <p>
+            <strong>Stock:</strong>
+            ${item.stock} ${item.unit}
+          </p>
+
+          <p>
+            <strong>Stock mínimo:</strong>
+            ${item.min}
+          </p>
+
+          <p>
+            <strong>Estado:</strong>
+            ${item.status}
+          </p>
+
+        </div>
+
+        <button
+          onclick="QO.addToCart('${item.id}')"
+          class="btn-page-primary w-full">
+
+          Solicitar Material
+
+        </button>
+      `;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      lucide.createIcons();
+    };
+
+    QO.closeItemModal = function() {
+
+      const modal =
+        document.getElementById('item-modal');
+
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+
+    };
+    // =====================================================
+    // INIT
+    // =====================================================
+
+    configureInventoryByRole();
+
     cargarInventario();
+
   </script>
+
 </body>
 </html>

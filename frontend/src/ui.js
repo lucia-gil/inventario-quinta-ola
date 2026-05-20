@@ -462,8 +462,24 @@ const QO = (() => {
             ${stockBadge(item.status === 'low' ? 'Stock Bajo' : 'OK').replace('stock-ok', 'badge badge-success text-[10px] uppercase').replace('stock-low', 'badge badge-warning text-[10px] uppercase')}
           </div>
           <p class="catalog-card-sku">SKU: ${item.sku}</p>
-          <button class="catalog-card-btn" data-id="${item.id}" onclick="QO.addToCart && QO.addToCart(${item.id})">
-            <i data-lucide="plus" class="w-4 h-4"></i> Añadir
+          <button
+            class="catalog-card-btn"
+            data-id="${item.id}"
+            onclick="QO.addToCart && QO.addToCart('${item.id}')">
+
+            <i data-lucide="clipboard-plus" class="w-4 h-4"></i>
+            Solicitar material
+
+          </button>
+
+          <button
+            class="catalog-card-btn-secondary mt-2 flex items-center justify-center gap-2"
+            onclick="QO.showItemDetails('${item.id}')">
+
+            <i data-lucide="info" class="w-4 h-4"></i>
+
+            <span>Ver detalles</span>
+
           </button>
         </div>
       </div>`).join('');

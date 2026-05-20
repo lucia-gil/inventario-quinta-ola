@@ -49,11 +49,25 @@ public class SessionFilter implements Filter {
                 && session.getAttribute("userId") != null;
 
         if (!logueado) {
+            // AGREGADO: si es una llamada a /api/*, devolver JSON 401 en vez de redirect HTML
+            if (path.startsWith("/api/")) {
+                res.setStatus(401);
+                res.setContentType("application/json");
+                res.setCharacterEncoding("UTF-8");
+                res.getWriter().write("{\"error\":\"Sesión expirada. Vuelve a iniciar sesión.\"}");
+                return;
+            }
+            // Si es una página HTML, sí redirigir al login
             res.sendRedirect(req.getContextPath() + "/pages/show-login.html");
             return;
         }
 
         String roleId = (String) session.getAttribute("roleId");
+
+        if (roleId == null) {
+            res.sendRedirect(req.getContextPath() + "/pages/show-login.html");
+            return;
+        }
 
         if (path.contains("superadmin-permissions") &&
                 !"role-superadmin".equals(roleId)) {
