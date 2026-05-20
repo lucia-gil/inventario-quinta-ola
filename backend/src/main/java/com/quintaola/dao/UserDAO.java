@@ -97,6 +97,34 @@ public class UserDAO {
         user.setRoleName    (rs.getString ("role_name"));
         user.setActivo      (rs.getBoolean("activo"));
         user.setCreatedAt   (rs.getString ("created_at"));
+        try { user.setAvatarUrl(rs.getString("avatar_url")); } catch (Exception ignored) {}
         return user;
+    }
+
+    public User getById(String id) throws SQLException {
+        String sql = """
+            SELECT u.*, r.name AS role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.id = ? AND u.activo = 1
+            """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapRow(rs);
+            }
+        }
+        return null;
+    }
+
+    public boolean updateAvatar(String userId, String avatarUrl) throws SQLException {
+        String sql = "UPDATE users SET avatar_url = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, avatarUrl);
+            ps.setString(2, userId);
+            return ps.executeUpdate() > 0;
+        }
     }
 }

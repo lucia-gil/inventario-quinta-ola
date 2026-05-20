@@ -11,6 +11,7 @@ public class User {
     private String roleName;
     private boolean activo;
     private String createdAt;
+    private String avatarUrl;
 
     public User() {}
 
@@ -40,4 +41,7 @@ public class User {
 
     public String getCreatedAt()               { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 }
