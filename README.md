@@ -15,7 +15,9 @@ Sistema de gestión de inventario para Quinta Ola — TEL131 PUCP 2026-1
 
 ## Levantar frontend
 cd frontend
+
 npm install
+
 npm run dev
 
 ## Levantar backend
