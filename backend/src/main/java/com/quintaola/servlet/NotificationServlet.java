@@ -37,12 +37,26 @@ public class NotificationServlet extends HttpServlet {
         }
 
         try {
-            String userId = (String) session.getAttribute("userId");
+            // Obtenemos el atributo de sesión de forma segura sin importar si es Integer o String
+            Object userIdObj = session.getAttribute("userId");
+            if (userIdObj == null) {
+                res.setStatus(401);
+                out.print("{\"error\":\"No autorizado\"}");
+                return;
+            }
+
+            String userId = userIdObj.toString(); // Convierte a String limpiamente sin romper nada
             List<Notification> alerts = dao.getByUserId(userId);
+
+            // Enviamos la lista convertida a JSON
             out.print(gson.toJson(alerts));
+
         } catch (Exception e) {
+            System.out.println("ERROR EN NOTIFICATION_SERVLET: " + e.getMessage());
+            e.printStackTrace();
             res.setStatus(500);
-            out.print("{\"error\":\"" + e.getMessage() + "\"}");
+            // IMPORTANTE: Devolvemos un array vacío en caso de error extremo para que el JS no se muera
+            out.print("[]");
         }
         out.flush();
     }

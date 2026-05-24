@@ -43,30 +43,39 @@ const QO = (() => {
   ];
 
   const NAV_LINKS_SUPERADMIN = [
-    ...NAV_LINKS_ADMIN,
     { id: 'permissions',   label: 'Permisos',         href: '/pages/superadmin-permissions.html' },
     { id: 'auditoria',     label: 'Auditoría',        href: '/pages/auditoria.html' },
   ];
 
   /* ============================================================
-     NAVBAR
+     NAVBAR CORREGIDA — PROTECCIÓN DE MENÚS POR ROL TRADICIONAL
   ============================================================ */
   function navbar({
     active   = '',
     name     = 'Usuario',
     role     = '',
-    menuType = 'viewer',
+    menuType = 'role-viewer', // Ajustado al formato real de auth.js
     logoHref = null,
   } = {}) {
 
+    // 🛡️ MAPEO COMPATIBLE DE ROLES CON LOS STRINGS DE AUTH.JS
     const linksByType = {
-      viewer:     NAV_LINKS_VIEWER,
-      manager:    NAV_LINKS_MANAGER,
-      deposit:    NAV_LINKS_DEPOSIT,
-      admin:      NAV_LINKS_ADMIN,
-      superadmin: NAV_LINKS_SUPERADMIN,
-      default:    NAV_LINKS_VIEWER,
+      'role-viewer':     NAV_LINKS_VIEWER,
+      'role-manager':    NAV_LINKS_MANAGER,
+      'role-member':     NAV_LINKS_DEPOSIT, // 'role-member' mapea a la vista del depósito
+      'role-deposit':    NAV_LINKS_DEPOSIT, // Respaldo por si acaso
+      'role-admin':      NAV_LINKS_ADMIN,
+      'role-superadmin': NAV_LINKS_SUPERADMIN,
+      
+      // Mapeos antiguos o cortos como comodín de compatibilidad
+      viewer:            NAV_LINKS_VIEWER,
+      manager:           NAV_LINKS_MANAGER,
+      deposit:           NAV_LINKS_DEPOSIT,
+      admin:             NAV_LINKS_ADMIN,
+      superadmin:        NAV_LINKS_SUPERADMIN,
     };
+    
+    // Si no encuentra el menú asignado, caerá de manera segura en el viewer ordinario
     const links = linksByType[menuType] || NAV_LINKS_VIEWER;
 
     if (!logoHref) logoHref = links[0]?.href || '/index.html';
@@ -186,12 +195,17 @@ const QO = (() => {
       } else {
         list.innerHTML = notifs.slice(0, 5).map(n => {
           const isUnread = !n.isRead && !n.is_read;
+          
+          // Capturamos de forma segura el ID de la solicitud vinculada
+          const requestId = n.relatedId || n.related_id;
+
           const icon = {
             'request_approved':   'check-circle',
             'request_rejected':   'x-circle',
             'new_request':        'inbox',
             'ready_for_delivery': 'package',
           }[n.type] || 'bell';
+
           const color = {
             'request_approved':   'text-green-600 bg-green-50',
             'request_rejected':   'text-red-600 bg-red-50',
@@ -208,6 +222,15 @@ const QO = (() => {
                 <p class="text-xs font-bold text-gray-800 truncate">${n.title}</p>
                 <p class="text-[11px] text-gray-500 leading-snug">${n.message || ''}</p>
                 <p class="text-[10px] text-gray-400 mt-1">${n.createdAt || n.created_at || ''}</p>
+                
+                ${requestId ? `
+                  <div class="mt-1 flex justify-end">
+                    <a href="/pages/request-detail.html?id=${requestId}" 
+                       class="inline-flex items-center gap-0.5 text-[11px] font-semibold text-pink-600 hover:text-pink-700 hover:underline">
+                      Ver más <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                    </a>
+                  </div>
+                ` : ''}
               </div>
               ${isUnread ? '<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1"></span>' : ''}
             </div>`;
@@ -237,23 +260,41 @@ const QO = (() => {
     }).join('');
 
     const html = `
-      <nav class="navbar">
-        <div class="flex items-center">
-          <a href="/index.html">
-            <img src="/img/QuintaOlaLogo.png" alt="Quinta Ola" class="navbar-logo" />
+      <nav class="navbar" id="main-app-navbar"> <div class="flex items-center">
+          <a href="${logoHref}">
+            <img src="/img/QuintaOlaLogo.png" alt="Quinta Ola Logo" class="navbar-logo" />
           </a>
         </div>
-        <div class="flex gap-6 text-sm items-center">
+        <div class="navbar-menu">
           ${linksHTML}
-          <a href="/pages/show-login.html"
-            class="bg-accent text-white px-5 py-2 rounded-lg font-medium hover:bg-pink-600 transition duration-200 shadow-sm flex items-center gap-2">
-            <i data-lucide="log-in" class="w-4 h-4"></i> Login
-          </a>
+          <div class="nav-divider">
+            ${userInfo}
+            ${bellHTML}
+            <a href="/pages/profile.html" class="nav-avatar" id="nav-profile-btn" title="Mi perfil">
+              <i data-lucide="user" class="w-5 h-5"></i>
+            </a>
+            ${logoutBtn}
+          </div>
         </div>
       </nav>`;
 
+    // 🛡️ LIMPIEZA DE NAVBARS DUPLICADAS O VIEJAS
+    const existingNavbar = document.getElementById('main-app-navbar');
+    if (existingNavbar) {
+      existingNavbar.remove(); // Si ya había una navbar vieja, la borramos por completo
+    }
+
+    // Inyectamos la nueva barra fresca y limpia
     document.body.insertAdjacentHTML('afterbegin', html);
-    document.body.classList.add('pt-20');
+    
+    if (!document.body.classList.contains('pt-20')) {
+      document.body.classList.add('pt-20');
+    }
+
+    // Inicializar campanita después de inyectar
+    if (showBell) {
+      initNotificationBell();
+    }
   }
 
   /* ============================================================

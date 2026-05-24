@@ -10,7 +10,27 @@
 
 <body class="bg-background text-textMain font-sans scroll-smooth flex flex-col min-h-screen">
 
-  <main class="flex-grow pt-28 pb-16 px-6 max-w-7xl mx-auto w-full">
+  <nav class="bg-white/90 backdrop-blur-md shadow px-8 py-3 flex justify-between items-center fixed top-0 left-0 w-full z-50">
+      <div class="flex items-center">
+          <img src="/img/QuintaOlaLogo.png" alt="Quinta Ola - Sistema Inteligente de Inventario" class="h-14 w-auto object-contain" />
+          <span class="sr-only">Quinta Ola</span>
+      </div>
+
+      <div class="flex gap-6 text-sm items-center">
+          <a href="/pages/catalog.html"
+              class="relative text-secondary hover:text-accent transition font-medium group">
+              Nuestros productos
+              <span class="absolute left-0 -bottom-1 w-0 h-[2px] bg-accent transition-all duration-300 group-hover:w-full"></span>
+          </a>
+
+          <a href="/pages/show-login.html"
+              class="bg-accent text-white px-5 py-2 rounded-lg font-medium hover:bg-secondary transition duration-200 shadow-sm flex items-center gap-2">
+              <i data-lucide="log-in" class="w-4 h-4"></i> Hola, inicia sesión
+          </a>
+      </div>
+  </nav>
+
+  <main class="flex-grow pt-32 pb-16 px-6 max-w-7xl mx-auto w-full">
 
     <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
       <div>
@@ -25,13 +45,10 @@
       </div>
     </div>
 
-    <!-- GRID DE TARJETAS -->
     <div id="catalog-grid"
       class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      <!-- inyectadas por JS -->
-    </div>
+      </div>
 
-    <!-- PAGINACIÓN -->
     <div class="mt-12 flex justify-center">
       <div id="catalog-pagination"></div>
     </div>
@@ -39,21 +56,56 @@
   </main>
 
   <script src="/src/ui.js"></script>
+  
   <script>
-    QO.navbarPublic({ active: 'catalog' });
-    QO.footerPublic();
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      // 1. Datos estáticos de los productos
+      const productos = [
+        { id: 1, name: 'Cemento Portland',    sku: 'CEM-001', img: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500', status: 'ok' },
+        { id: 2, name: 'Pintura Látex Blanca',sku: 'PIN-042', img: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=500', status: 'ok' },
+        { id: 3, name: 'Tubos PVC 2"',        sku: 'TUB-112', img: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500', status: 'low' },
+        { id: 4, name: 'Ladrillo King Kong',  sku: 'LAD-005', img: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?w=500', status: 'ok' }
+      ];
 
-    // ── Reemplazar con fetch('/api/catalog') ──
-    const productos = [
-      { id: 1, name: 'Cemento Portland',   sku: 'CEM-001', img: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500', status: 'ok' },
-      { id: 2, name: 'Pintura Látex Blanca',sku: 'PIN-042', img: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=500', status: 'ok' },
-      { id: 3, name: 'Tubos PVC 2"',        sku: 'TUB-112', img: 'https://contusol.com.pe/wp-content/uploads/2025/01/TUBO-PVC-2%E2%80%B3-DESAGUE-TP.jpg', status: 'low' },
-      { id: 4, name: 'Ladrillo King Kong',  sku: 'LAD-005', img: 'https://d34fyu2ua7aizz.cloudfront.net/images/product/43/large/ts_image_61bb5f51482ec4_87680737.jpg', status: 'ok' },
-    ];
+      // 2. Pintado limpio en el DOM
+      const grid = document.getElementById('catalog-grid');
+      if (grid) {
+        grid.innerHTML = productos.map(p => `
+          <div class="card p-4 border border-gray-100 rounded-2xl shadow-sm bg-white flex flex-col justify-between transition-all hover:shadow-md">
+            <img src="${p.img}" alt="${p.name}" class="w-full h-44 object-cover rounded-xl mb-4">
+            <div class="flex-grow">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400">${p.sku}</span>
+                <span class="px-2 py-0.5 text-[9px] font-bold rounded-full ${p.status === 'low' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+                  ${p.status === 'low' ? 'BAJO STOCK' : 'OK'}
+                </span>
+              </div>
+              <h3 class="font-semibold text-gray-800 text-base mb-4">${p.name}</h3>
+            </div>
+            <div class="space-y-2">
+              <button class="w-full bg-accent/10 hover:bg-accent/20 text-accent text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i> Solicitar material
+              </button>
+              <button class="w-full text-gray-500 hover:text-gray-700 text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors">
+                <i data-lucide="info" class="w-3.5 h-3.5"></i> Ver detalles
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
 
-    QO.renderCatalogCards('catalog-grid', productos);
-    QO.renderPagination('catalog-pagination', { current: 1, total: 3 });
-    lucide.createIcons();
+      // 3. Render de Paginación estática
+      const pag = document.getElementById('catalog-pagination');
+      if (pag && typeof QO !== 'undefined' && typeof QO.renderPagination === 'function') {
+        QO.renderPagination('catalog-pagination', { current: 1, total: 3 });
+      }
+
+      // 4. Iniciar Iconos Lucide
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
   </script>
 </body>
 </html>

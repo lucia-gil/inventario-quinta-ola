@@ -17,7 +17,6 @@
         <h1 class="page-title">Entregas Pendientes</h1>
         <p class="page-subtitle">Solicitudes aprobadas listas para ser entregadas desde el depósito.</p>
       </div>
-      <!-- El encargado NO tiene botón de nueva transacción — solo gestiona entregas -->
       <div class="flex items-center gap-3 bg-blue-50 border border-blue-100
                   text-blue-700 px-4 py-2 rounded-xl text-sm font-medium">
         <i data-lucide="warehouse" class="w-4 h-4"></i>
@@ -25,10 +24,8 @@
       </div>
     </div>
 
-    <!-- STATS rápidas -->
     <div id="deposit-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-6"></div>
 
-    <!-- TABLA — solo solicitudes APROBADAS -->
     <div class="table-panel">
       <div class="panel-header">
         <div>
@@ -65,7 +62,6 @@
       </div>
     </div>
 
-    <!-- HISTORIAL DE ENTREGAS HOY -->
     <div class="panel">
       <div class="panel-header">
         <div>
@@ -92,7 +88,6 @@
 
   </main>
 
-  <!-- MODAL de confirmación de entrega -->
   <div id="modal-overlay"
     class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 space-y-5">
@@ -108,7 +103,7 @@
       <div>
         <label class="form-label-tiny">Responsable de entrega</label>
         <input type="text" id="modal-responsable" class="input-page mt-1"
-          placeholder="Tu nombre completo" value="Álvaro Gómez">
+          placeholder="Tu nombre completo" value="Carmen del Depósito">
       </div>
       <div>
         <label class="form-label-tiny">Notas adicionales (opcional)</label>
@@ -117,37 +112,41 @@
       </div>
       <div class="flex gap-3 pt-2">
         <button onclick="closeModal()" class="btn-ghost flex-1 justify-center">Cancelar</button>
-        <button id="modal-confirm"
-          class="flex-1 btn-page-primary justify-center">
+        <button id="modal-confirm" class="flex-1 btn-page-primary justify-center">
           <i data-lucide="check" class="w-4 h-4"></i> Confirmar entrega
         </button>
       </div>
     </div>
   </div>
 
+  <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    // Vista solo para encargado de depósito — menuType default (sin admin ni superadmin)
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const userRole = localStorage.getItem('userRole') || '';
-    QO.navbar({ active: '...', name: userName, role: userRole });
+    // =====================================================
+    // GUARDIA DE AUTENTICACIÓN
+    // =====================================================
+    if (!Auth.requireLogin()) {
+        throw new Error('No auth');
+    }
+
+    // =====================================================
+    // NAVBAR Y NOTIFICACIONES UNIFICADAS
+    // =====================================================
+    QO.navbar({
+      active: 'deposit',             
+      name: Auth.getUserName(),      
+      role: Auth.getReadableRole(),  
+      menuType: Auth.getMenuType()   
+    });
+
     QO.footer();
 
-    // CONECTAR: fetch('/api/requests?status=Aprobada', { headers: { Authorization: `Bearer ${token}` } })
-    let solicitudesPendientes = [
-      { id: 'TXN-0002', requester: 'María López',       material: 'Polera Quinta Ola (M)',      qty: '10 unid.',  approvedBy: 'Jean Piere Ipurre', approvedDate: '2026-04-14 · 3:20 PM' },
-      { id: 'TXN-0006', requester: 'Ana Torres',        material: 'Kit Manualidades Taller',    qty: '8 kits',    approvedBy: 'Jean Piere Ipurre', approvedDate: '2026-04-14 · 4:00 PM' },
-      { id: 'TXN-0007', requester: 'Luis Mendoza',      material: 'Donación Ropa Abrigo',       qty: '20 prendas', approvedBy: 'María López',       approvedDate: '2026-04-15 · 9:10 AM' },
-      { id: 'TXN-0008', requester: 'Jean Piere Ipurre', material: 'Kit Humanitario Grande',     qty: '5 kits',    approvedBy: 'María López',       approvedDate: '2026-04-15 · 10:00 AM' },
-    ];
-
-    // CONECTAR: fetch('/api/requests?status=Entregada&today=true')
-    const entregasHoy = [
-      { id: 'TXN-0001', requester: 'Jean Piere Ipurre', material: 'Polera Quinta Ola (M)', qty: '5 unid.', hora: '08:45 AM', responsable: 'Álvaro Gómez' },
-    ];
-
+    // === Variables de Estado de la Aplicación ===
+    let solicitudesPendientes = [];
+    let entregasHoy = [];
     let currentIdToDeliver = null;
 
+    // === Funciones de Renderizado y Frontend ===
     function renderPendientes(data) {
       const tbody = document.getElementById('deposit-tbody');
       if (!data || data.length === 0) {
@@ -221,6 +220,15 @@
         `Mostrando ${filtered.length} de ${solicitudesPendientes.length} solicitudes`;
     }
 
+    function updateStats() {
+      QO.renderStatCards('deposit-stats', [
+        { label: 'Pendientes de entrega', value: solicitudesPendientes.length, icon: 'clock',          colorClass: 'stat-icon-yellow' },
+        { label: 'Entregadas hoy',        value: entregasHoy.length,           icon: 'package-check',  colorClass: 'stat-icon-green'  },
+        { label: 'Total del mes',         value: 38,                           icon: 'bar-chart-2',    colorClass: 'stat-icon-blue'   },
+      ]);
+    }
+
+    // === Controladores de Modales ===
     function openModal(id, material, qty) {
       currentIdToDeliver = id;
       document.getElementById('modal-text').textContent =
@@ -234,53 +242,79 @@
       currentIdToDeliver = null;
     }
 
+    // === Operaciones AJAX / Conexión Servidor (API REST) ===
+    function cargarDatosDelServidor() {
+      // 1. Obtener aprobados esperando entrega
+      fetch('/api/transactions/approved')
+        .then(res => {
+          if (!res.ok) throw new Error("Error en el servidor al traer aprobados");
+          return res.json();
+        })
+        .then(data => {
+          solicitudesPendientes = data.map(t => ({
+            id: t.id,
+            requester: t.requesterName || 'Sin Nombre',
+            material: t.itemName || 'Material Desconocido',
+            qty: `${t.quantity} ${t.itemUnit || 'unid.'}`,
+            approvedBy: t.approverName || 'Manager',
+            approvedDate: t.createdAt || 'Reciente'
+          }));
+          
+          renderPendientes(solicitudesPendientes);
+          updateStats();
+          document.getElementById('deposit-count').textContent = 
+            `${solicitudesPendientes.length} solicitudes pendientes de entrega`;
+        })
+        .catch(err => console.error("Error cargando aprobados:", err));
+
+      // 2. Obtener historial para la sección inferior
+      fetch('/api/transactions')
+        .then(res => res.json())
+        .then(data => {
+          const completadas = data.filter(t => t.status === 'COMPLETED');
+          entregasHoy = completadas.map(t => ({
+            id: t.id,
+            requester: t.requesterName || 'Desconocido',
+            material: t.itemName || 'Desconocido',
+            qty: `${t.quantity} ${t.itemUnit || 'unid.'}`,
+            hora: t.processedAt ? t.processedAt.split(' ')[1] || 'Entregado' : 'Entregado',
+            responsable: 'Carmen del Depósito'
+          }));
+          renderEntregasHoy();
+          updateStats();
+        })
+        .catch(err => console.error("Error cargando historial:", err));
+    }
+
+    // Evento del botón para confirmar la entrega y hacer el PUT en Java
     document.getElementById('modal-confirm').addEventListener('click', () => {
       if (!currentIdToDeliver) return;
       const responsable = document.getElementById('modal-responsable').value.trim();
       if (!responsable) { alert('Escribe el nombre del responsable.'); return; }
+      const notas = document.getElementById('modal-notas').value;
 
-      // CONECTAR:
-      // await fetch(`/api/requests/${currentIdToDeliver}/deliver`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      //   body: JSON.stringify({ responsable, notas: document.getElementById('modal-notas').value }),
-      // });
-
-      // Simulación: quitar de pendientes y agregar a entregas hoy
-      const entregada = solicitudesPendientes.find(s => s.id === currentIdToDeliver);
-      solicitudesPendientes = solicitudesPendientes.filter(s => s.id !== currentIdToDeliver);
-      if (entregada) {
-        entregasHoy.push({
-          id: entregada.id, requester: entregada.requester,
-          material: entregada.material, qty: entregada.qty,
-          hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
-          responsable,
-        });
-      }
-
-      closeModal();
-      renderPendientes(solicitudesPendientes);
-      renderEntregasHoy();
-      updateStats();
-      document.getElementById('deposit-count').textContent =
-        `${solicitudesPendientes.length} solicitudes pendientes`;
-      lucide.createIcons();
+      fetch(`/api/transactions/${currentIdToDeliver}/deliver`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notas })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("No se pudo procesar la entrega en el servidor");
+        return res.json();
+      })
+      .then(data => {
+        closeModal();
+        cargarDatosDelServidor(); 
+        alert('¡Entrega registrada y stock actualizado en el almacén!');
+      })
+      .catch(err => {
+        alert('Error al registrar entrega: ' + err.message);
+        console.error(err);
+      });
     });
 
-    function updateStats() {
-      QO.renderStatCards('deposit-stats', [
-        { label: 'Pendientes de entrega', value: solicitudesPendientes.length, icon: 'clock',          colorClass: 'stat-icon-yellow' },
-        { label: 'Entregadas hoy',        value: entregasHoy.length,           icon: 'package-check',  colorClass: 'stat-icon-green'  },
-        { label: 'Total del mes',         value: 38,                           icon: 'bar-chart-2',    colorClass: 'stat-icon-blue'   },
-      ]);
-    }
-
-    // Inicializar
-    updateStats();
-    renderPendientes(solicitudesPendientes);
-    renderEntregasHoy();
-    document.getElementById('deposit-count').textContent =
-      `${solicitudesPendientes.length} solicitudes pendientes de entrega`;
+    // === Inicialización de Arranque ===
+    cargarDatosDelServidor();
     lucide.createIcons();
   </script>
 </body>

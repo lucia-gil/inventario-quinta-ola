@@ -10,26 +10,25 @@
 
 <body class="page-body">
 
-  <!-- ============================================================
-       NAVBAR — generada automáticamente por ui.js
-       active: qué enlace queda resaltado
-  ============================================================ -->
-
   <main class="page-main">
 
-    <!-- CABECERA -->
     <div>
-      <h1 class="page-title">Bienvenido al Sistema de Inventario</h1>
-      <p class="page-subtitle">Resumen general de estado y actividad reciente de materiales.</p>
+      <h1 class="page-title" id="dashboard-title">Bienvenido al Sistema de Inventario</h1>
+      <p class="page-subtitle" id="dashboard-subtitle">Resumen general de estado y actividad reciente de materiales.</p>
     </div>
 
-    <!-- STAT CARDS — se renderizan desde JS con QO.renderStatCards() -->
     <div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <!-- Las tarjetas se inyectan aquí automáticamente -->
     </div>
 
-    <!-- TABLA DE ÚLTIMOS MOVIMIENTOS -->
-    <div class="panel">
+    <div id="auditoria-banner" class="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center my-4 hidden">
+      <i data-lucide="shield-check" class="w-10 h-10 text-accent mx-auto mb-2"></i>
+      <h3 class="font-bold text-gray-800 text-lg">Modo de Auditoría General Activo</h3>
+      <p class="text-sm text-gray-600 max-w-xl mx-auto mt-1">
+        Tu cuenta posee inmunidad transaccional ordinaria. Para gestionar los niveles de acceso del personal o supervisar la seguridad global, dirígete a los módulos de <strong>Miembros</strong>, <strong>Permisos</strong> o <strong>Auditoría</strong> en el menú superior.
+      </p>
+    </div>
+
+    <div class="panel" id="movements-panel">
       <div class="panel-header">
         <div>
           <h2 class="panel-header-title">Últimos movimientos</h2>
@@ -57,7 +56,6 @@
         </thead>
         
           <tbody id="movements-tbody" class="table-body">
-            <!-- filas inyectadas por JS -->
           </tbody>
         </table>
       </div>
@@ -73,12 +71,10 @@
 
   </main>
 
-  <!-- FOOTER — generado automáticamente -->
   <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
     // ── 1. CONFIGURACIÓN DE IDENTIDAD Y SEGURIDAD POR ROL ──────────────────────────
-    // Forzamos que solo entren superadmin, admin y manager (coordinadora)
     if (!Auth.requireRole(['role-superadmin', 'role-admin', 'role-manager'])) {
       throw new Error('No autorizado para ver el panel de control');
     }
@@ -87,10 +83,10 @@
     const userRole = Auth.getReadableRole() || '';
     const roleId   = Auth.getRoleId();
 
-    // Roles booleanos para control de flujo internos de la página
-    const isAdmin   = roleId === 'role-admin' || roleId === 'role-superadmin';
-    const isManager = roleId === 'role-manager';
-    const isViewer  = roleId === 'role-viewer';
+    // Roles separados quirúrgicamente
+    const isSuperAdmin = roleId === 'role-superadmin';
+    const isAdmin      = roleId === 'role-admin'; 
+    const isManager    = roleId === 'role-manager';
 
     QO.navbar({ 
       active: 'dashboard', 
@@ -100,86 +96,101 @@
     });
     QO.footer();
 
+    // ── INTERVENCIÓN INMEDIATA SÍNCRONA PARA SUPERADMIN ──
+    if (isSuperAdmin) {
+      document.getElementById('dashboard-title').textContent = "Panel de Auditoría Suprema";
+      document.getElementById('dashboard-subtitle').textContent = "Control de accesos, seguridad de credenciales e integridad global del sistema.";
+      
+      // Apagamos la tabla y prendemos el aviso de inmediato antes de que responda cualquier fetch
+      document.getElementById('movements-panel').style.display = 'none';
+      document.getElementById('auditoria-banner').classList.remove('hidden');
+    }
+
     // ── 2. CARGAR MÉTRICAS Y MOVIMIENTOS REALES DESDE BACKEND ──────────────────
     async function cargarDashboardReal() {
       try {
-        // Consultamos la API de transacciones
         const res = await fetch('/api/transactions', { credentials: 'include' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const transacciones = await res.json();
 
-        // Si es un Solicitante (Viewer), filtramos para que solo vea sus propias solicitudes
-        const movimientosFiltrados = isViewer 
-          ? transacciones.filter(t => t.requesterId === localStorage.getItem("userId"))
-          : transacciones;
+        if (isSuperAdmin) {
+          // Métricas estables exclusivas de control global
+          QO.renderStatCards('stats-grid', [
+            { label: 'Total Materiales en Sistema', value: window.inventoryData ? window.inventoryData.length : 12, icon: 'package', colorClass: 'stat-icon-blue' },
+            { label: 'Alertas Críticas de Stock', value: 3, icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
+            { label: 'Trámites en Espera', value: transacciones.filter(t => t.status === 'PENDING' || t.status === 'Pendiente').length, icon: 'clock', colorClass: 'stat-icon-yellow' },
+            { label: 'Rol Superior Asignado', value: 'SuperAdmin', icon: 'shield', colorClass: 'stat-icon-green' },
+          ]);
 
-        // Calcular métricas basadas en la data real viva
-        const totalItems  = window.inventoryData ? window.inventoryData.length : 12; 
-        const pendientes  = transacciones.filter(t => t.status === 'PENDING' || t.status === 'Pendiente').length;
-        const aprobadas   = transacciones.filter(t => t.status === 'APPROVED' || t.status === 'Aprobada' || t.status === 'COMPLETED').length;
-        const bajoStock   = 3; // Valor de contingencia o jalar de tu endpoint de items si aplica
-
-        // Renderizamos las métricas reales
-        QO.renderStatCards('stats-grid', [
-          { label: 'Total Materiales', value: totalItems,  icon: 'package',        colorClass: 'stat-icon-blue' },
-          { label: 'Bajo Stock',       value: bajoStock,   icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
-          { label: 'Pendientes',       value: pendientes,  icon: 'clock',          colorClass: 'stat-icon-yellow' },
-          { label: 'Aprobadas',        value: aprobadas,   icon: 'check-circle',   colorClass: 'stat-icon-green' },
-        ]);
-
-        // Mapeamos los datos al formato exacto que ui.js espera
-        const movimientosFormateados = movimientosFiltrados.slice(0, 5).map(t => ({
-          id: t.id.length > 12 ? `TXN-${t.id.substring(0, 5).toUpperCase()}` : t.id,
-          requester: t.requesterName || 'Sistema',
-          item: t.itemName || 'Material',
-          qty: `${t.quantity} ${t.itemUnit || 'unid.'}`,
-          type: t.type || 'OUT',
-          date: new Date(t.createdAt).toLocaleDateString('es-PE'),
-          status: t.status === 'PENDING' ? 'Pendiente' : t.status === 'APPROVED' ? 'Aprobado' : t.status === 'REJECTED' ? 'Rechazado' : 'Entregado',
-          realId: t.id // Preservamos el ID nativo de la base de datos
-        }));
-
-        // Limpiar contenedor e inyectar filas con redirección dinámica nativa
-        const tbody = document.getElementById('movements-tbody');
-        if (movimientosFormateados.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-400 text-sm">No se registran solicitudes de materiales.</td></tr>`;
         } else {
-          tbody.innerHTML = movimientosFormateados.map(m => `
-            <tr class="table-row">
-              <td class="td font-mono text-xs font-bold">${m.id}</td>
-              <td class="td font-medium text-gray-700">${m.requester}</td>
-              <td class="td font-semibold">${m.item}</td>
-              <td class="td-center">${m.qty}</td>
-              <td class="td-center">${QO.typeBadge(m.type)}</td>
-              <td class="td-light">${m.date}</td>
-              <td class="td-center">${QO.statusBadge(m.status)}</td>
-              <td class="td-center">
-                <a href="/pages/request-detail.html?id=${m.realId}" class="text-accent hover:text-pink-600 font-bold p-1 transition-colors">
-                  <i data-lucide="eye" class="w-4 h-4 inline"></i>
-                </a>
-              </td>
-            </tr>
-          `).join('');
+          // ── FLUJO TRADICIONAL COMPLETO PARA ADMIN Y MANAGER ──
+          document.getElementById('auditoria-banner').classList.add('hidden');
+          document.getElementById('movements-panel').style.display = 'block';
+
+          const pendientes = transacciones.filter(t => t.status === 'PENDING' || t.status === 'Pendiente').length;
+          const aprobadas  = transacciones.filter(t => t.status === 'APPROVED' || t.status === 'Aprobada' || t.status === 'COMPLETED').length;
+          const totalItems = window.inventoryData ? window.inventoryData.length : 12;
+
+          QO.renderStatCards('stats-grid', [
+            { label: 'Total Materiales', value: totalItems,  icon: 'package',        colorClass: 'stat-icon-blue' },
+            { label: 'Bajo Stock',       value: 3,           icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
+            { label: 'Pendientes',       value: pendientes,  icon: 'clock',          colorClass: 'stat-icon-yellow' },
+            { label: 'Aprobadas',        value: aprobadas,   icon: 'check-circle',   colorClass: 'stat-icon-green' },
+          ]);
+
+          const movimientosFormateados = transacciones.slice(0, 5).map(t => ({
+            id: t.id.length > 12 ? `TXN-${t.id.substring(0, 5).toUpperCase()}` : t.id,
+            requester: t.requesterName || 'Sistema',
+            item: t.itemName || 'Material',
+            qty: `${t.quantity} ${t.itemUnit || 'unid.'}`,
+            type: t.type || 'OUT',
+            date: new Date(t.createdAt).toLocaleDateString('es-PE'),
+            status: t.status === 'PENDING' ? 'Pendiente' : t.status === 'APPROVED' ? 'Aprobado' : t.status === 'REJECTED' ? 'Rechazado' : 'Entregado',
+            realId: t.id
+          }));
+
+          const tbody = document.getElementById('movements-tbody');
+          if (movimientosFormateados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-400 text-sm">No se registran solicitudes de materiales.</td></tr>`;
+          } else {
+            tbody.innerHTML = movimientosFormateados.map(m => `
+              <tr class="table-row">
+                <td class="td font-mono text-xs font-bold">${m.id}</td>
+                <td class="td font-medium text-gray-700">${m.requester}</td>
+                <td class="td font-semibold">${m.item}</td>
+                <td class="td-center">${m.qty}</td>
+                <td class="td-center">${QO.typeBadge(m.type)}</td>
+                <td class="td-light">${m.date}</td>
+                <td class="td-center">${QO.statusBadge(m.status)}</td>
+                <td class="td-center">
+                  <a href="/pages/request-detail.html?id=${m.realId}" class="text-accent hover:text-pink-600 font-bold p-1 transition-colors">
+                    <i data-lucide="eye" class="w-4 h-4 inline"></i>
+                  </a>
+                </td>
+              </tr>
+            `).join('');
+          }
+
+          document.getElementById('showing-count').textContent = movimientosFormateados.length;
+          document.getElementById('total-count').textContent = transacciones.length;
+
+          QO.renderPagination('dashboard-pagination', { 
+            current: 1, 
+            total: Math.ceil(transacciones.length / 5) || 1 
+          });
         }
-
-        document.getElementById('showing-count').textContent = movimientosFormateados.length;
-        document.getElementById('total-count').textContent = movimientosFiltrados.length;
-
-        QO.renderPagination('dashboard-pagination', { 
-          current: 1, 
-          total: Math.ceil(movimientosFiltrados.length / 5) || 1 
-        });
 
       } catch (err) {
         console.error("Error poblando Dashboard:", err);
-        // Fallback preventivo por si el backend se encuentra offline durante pruebas
-        QO.renderStatCards('stats-grid', [
-          { label: 'Total Materiales', value: 0, icon: 'package', colorClass: 'stat-icon-blue' },
-          { label: 'Bajo Stock', value: 0, icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
-          { label: 'Pendientes', value: 0, icon: 'clock', colorClass: 'stat-icon-yellow' },
-          { label: 'Aprobadas', value: 0, icon: 'check-circle', colorClass: 'stat-icon-green' },
-        ]);
+        if (!isSuperAdmin) {
+          QO.renderStatCards('stats-grid', [
+            { label: 'Total Materiales', value: 0, icon: 'package', colorClass: 'stat-icon-blue' },
+            { label: 'Bajo Stock', value: 0, icon: 'alert-triangle', colorClass: 'stat-icon-orange' },
+            { label: 'Pendientes', value: 0, icon: 'clock', colorClass: 'stat-icon-yellow' },
+            { label: 'Aprobadas', value: 0, icon: 'check-circle', colorClass: 'stat-icon-green' },
+          ]);
+        }
       }
       if (window.lucide) lucide.createIcons();
     }
