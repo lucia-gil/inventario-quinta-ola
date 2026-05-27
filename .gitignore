@@ -7,11 +7,15 @@ backend/target/
 backend/.idea/
 *.iml
 
+# IntelliJ
+.idea/
+
+# VSCode
+.vscode/
+
 # Base de datos
 *.mwb.bak
 
 # Sistema
 .DS_Store
 Thumbs.db
-
-.vscode/
