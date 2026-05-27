@@ -20,9 +20,6 @@ public class AuthServlet extends HttpServlet {
     private final UserDAO userDAO = new UserDAO();
     private final Gson gson       = new Gson();
 
-    // ── POST /api/auth/register ───────────────────────────────────
-    // ── POST /api/auth/login ──────────────────────────────────────
-    // ── POST /api/auth/logout ─────────────────────────────────────
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
@@ -32,7 +29,7 @@ public class AuthServlet extends HttpServlet {
         res.setHeader("Access-Control-Allow-Origin", "*");
 
         PrintWriter out = res.getWriter();
-        String pathInfo = req.getPathInfo(); // "/register" | "/login" | "/logout"
+        String pathInfo = req.getPathInfo();
 
         if (pathInfo == null) {
             res.setStatus(400);
@@ -53,7 +50,6 @@ public class AuthServlet extends HttpServlet {
         out.flush();
     }
 
-    // ── GET /api/auth/me — obtener usuario de la sesión ──────────
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
@@ -69,11 +65,11 @@ public class AuthServlet extends HttpServlet {
             HttpSession session = req.getSession(false);
             if (session != null && session.getAttribute("userId") != null) {
                 JsonObject user = new JsonObject();
-                user.addProperty("userId",   (String) session.getAttribute("userId"));
-                user.addProperty("userName", (String) session.getAttribute("userName"));
-                user.addProperty("userEmail",(String) session.getAttribute("userEmail"));
-                user.addProperty("userRole", (String) session.getAttribute("userRole"));
-                user.addProperty("roleId",   (String) session.getAttribute("roleId"));
+                user.addProperty("userId",   (Integer) session.getAttribute("userId"));
+                user.addProperty("userName", (String)  session.getAttribute("userName"));
+                user.addProperty("userEmail",(String)  session.getAttribute("userEmail"));
+                user.addProperty("userRole", (String)  session.getAttribute("roleName"));
+                user.addProperty("roleId",   (Integer) session.getAttribute("roleId"));
                 out.print(gson.toJson(user));
             } else {
                 res.setStatus(401);
@@ -83,14 +79,12 @@ public class AuthServlet extends HttpServlet {
         out.flush();
     }
 
-    // ── REGISTER ──────────────────────────────────────────────────
     private void handleRegister(HttpServletRequest req,
                                 HttpServletResponse res,
                                 PrintWriter out) throws IOException {
         try {
             User user = gson.fromJson(req.getReader(), User.class);
 
-            // Validaciones básicas
             if (user.getName()  == null || user.getName().isBlank() ||
                     user.getEmail() == null || user.getEmail().isBlank() ||
                     user.getDni()   == null || user.getDni().isBlank()   ||
@@ -126,7 +120,6 @@ public class AuthServlet extends HttpServlet {
         }
     }
 
-    // ── LOGIN CORREGIDO ───────────────────────────────────────────
     private void handleLogin(HttpServletRequest req,
                              HttpServletResponse res,
                              PrintWriter out) throws IOException {
@@ -150,21 +143,21 @@ public class AuthServlet extends HttpServlet {
                 return;
             }
 
-            // Crear sesión
+            // Crear sesión — guardamos roleName además de roleId para usar en SessionFilter
             HttpSession session = req.getSession(true);
-            session.setAttribute("userId",    user.getId());
+            session.setAttribute("userId",    user.getId());        // Integer
             session.setAttribute("userName",  user.getName());
             session.setAttribute("userEmail", user.getEmail());
-            session.setAttribute("userRole",  user.getRoleId());
-            session.setAttribute("roleId",    user.getRoleId());
+            session.setAttribute("roleId",    user.getRoleId());    // Integer (1-5)
+            session.setAttribute("roleName",  user.getRoleName());  // "Viewer", "Member", "Manager", "Administrador", "SuperAdmin"
             session.setMaxInactiveInterval(30 * 60); // 30 minutos
 
-            // ── AQUÍ SE DETERMINA LA REDIRECCIÓN SEGÚN ROL ──
-            String redirect = switch (user.getRoleId()) {
-                case "role-deposito"                -> "/pages/deposit-view.html";
-                case "role-superadmin"              -> "/pages/superadmin-permissions.html";
-                case "role-manager", "role-admin"   -> "/pages/dashboard.html"; // <-- Agregado para Coordinadora y Admin
-                default                             -> "/pages/home.html";      // Solicitantes y otros roles
+            // Redirección por nombre de rol (más legible)
+            String redirect = switch (user.getRoleName()) {
+                case "SuperAdmin"                  -> "/pages/superadmin-permissions.html";
+                case "Manager", "Administrador"    -> "/pages/dashboard.html";
+                case "Member"                      -> "/pages/deposit-view.html";
+                default                            -> "/pages/home.html";
             };
 
             JsonObject response = new JsonObject();
@@ -172,7 +165,7 @@ public class AuthServlet extends HttpServlet {
             response.addProperty("userId",    user.getId());
             response.addProperty("userName",  user.getName());
             response.addProperty("userEmail", user.getEmail());
-            response.addProperty("userRole",  user.getRoleId());
+            response.addProperty("userRole",  user.getRoleName());  // ← El frontend recibe "Administrador" etc.
             response.addProperty("roleId",    user.getRoleId());
             response.addProperty("redirect",  redirect);
 
@@ -184,7 +177,6 @@ public class AuthServlet extends HttpServlet {
         }
     }
 
-    // ── LOGOUT ────────────────────────────────────────────────────
     private void handleLogout(HttpServletRequest req,
                               HttpServletResponse res,
                               PrintWriter out) {
@@ -195,7 +187,6 @@ public class AuthServlet extends HttpServlet {
         out.print("{\"message\":\"Sesión cerrada correctamente\"}");
     }
 
-    // ── OPTIONS — CORS ────────────────────────────────────────────
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse res) {
         res.setHeader("Access-Control-Allow-Origin", "*");

@@ -7,22 +7,21 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class UserDAO {
 
     public boolean register(User user) throws SQLException {
+        // role_id = 1 → "Viewer" (rol por defecto al registrarse)
         String sql = """
-            INSERT INTO users (id, email, dni, name, password_hash, role_id, activo)
-            VALUES (?, ?, ?, ?, ?, 'role-viewer', 1)
+            INSERT INTO users (email, dni, name, password_hash, role_id, activo)
+            VALUES (?, ?, ?, ?, 1, 1)
             """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, UUID.randomUUID().toString());
-            ps.setString(2, user.getEmail());
-            ps.setString(3, user.getDni());
-            ps.setString(4, user.getName());
-            ps.setString(5, BCrypt.hashpw(user.getPasswordHash(), BCrypt.gensalt()));
+            ps.setString(1, user.getEmail());
+            ps.setString(2, user.getDni());
+            ps.setString(3, user.getName());
+            ps.setString(4, BCrypt.hashpw(user.getPasswordHash(), BCrypt.gensalt()));
             return ps.executeUpdate() > 0;
         }
     }
@@ -67,33 +66,33 @@ public class UserDAO {
         return users;
     }
 
-    public boolean updateRole(String userId, String roleId) throws SQLException {
+    public boolean updateRole(int userId, int roleId) throws SQLException {
         String sql = "UPDATE users SET role_id = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, roleId);
-            ps.setString(2, userId);
+            ps.setInt(1, roleId);
+            ps.setInt(2, userId);
             return ps.executeUpdate() > 0;
         }
     }
 
-    public boolean disable(String userId) throws SQLException {
+    public boolean disable(int userId) throws SQLException {
         String sql = "UPDATE users SET activo = 0 WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId);
+            ps.setInt(1, userId);
             return ps.executeUpdate() > 0;
         }
     }
 
     private User mapRow(ResultSet rs) throws SQLException {
         User user = new User();
-        user.setId          (rs.getString ("id"));
+        user.setId          (rs.getInt    ("id"));
         user.setEmail       (rs.getString ("email"));
         user.setDni         (rs.getString ("dni"));
         user.setName        (rs.getString ("name"));
         user.setPasswordHash(rs.getString ("password_hash"));
-        user.setRoleId      (rs.getString ("role_id"));
+        user.setRoleId      (rs.getInt    ("role_id"));
         user.setRoleName    (rs.getString ("role_name"));
         user.setActivo      (rs.getBoolean("activo"));
         user.setCreatedAt   (rs.getString ("created_at"));
@@ -101,7 +100,7 @@ public class UserDAO {
         return user;
     }
 
-    public User getById(String id) throws SQLException {
+    public User getById(int id) throws SQLException {
         String sql = """
             SELECT u.*, r.name AS role_name
             FROM users u
@@ -110,7 +109,7 @@ public class UserDAO {
             """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, id);
+            ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapRow(rs);
             }
@@ -118,12 +117,12 @@ public class UserDAO {
         return null;
     }
 
-    public boolean updateAvatar(String userId, String avatarUrl) throws SQLException {
+    public boolean updateAvatar(int userId, String avatarUrl) throws SQLException {
         String sql = "UPDATE users SET avatar_url = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, avatarUrl);
-            ps.setString(2, userId);
+            ps.setInt(2, userId);
             return ps.executeUpdate() > 0;
         }
     }

@@ -4,7 +4,7 @@ import java.util.List;
 
 public class Item {
 
-    private String id;
+    private int id;
     private String name;
     private String description;
     private String imageUrl;
@@ -19,8 +19,8 @@ public class Item {
 
     public Item() {}
 
-    public String getId()                     { return id; }
-    public void setId(String id)              { this.id = id; }
+    public int getId()                        { return id; }
+    public void setId(int id)                 { this.id = id; }
 
     public String getName()                   { return name; }
     public void setName(String name)          { this.name = name; }
@@ -52,14 +52,11 @@ public class Item {
     public List<String> getTags()             { return tags; }
     public void setTags(List<String> tags)    { this.tags = tags; }
 
-    public String getCategory() {
-        return category;
-    }
+    public String getCategory()               { return category; }
+    public void setCategory(String category)  { this.category = category; }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
     public String getStatusFrontend() {
+        if (this.status == null) return "OK";
         return switch (this.status) {
             case "OK"          -> "OK";
             case "LOW"         -> "Stock Bajo";

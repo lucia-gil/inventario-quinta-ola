@@ -2,12 +2,12 @@ package com.quintaola.model;
 
 public class User {
 
-    private String id;
+    private int id;
     private String email;
     private String dni;
     private String name;
     private String passwordHash;
-    private String roleId;
+    private int roleId;
     private String roleName;
     private boolean activo;
     private String createdAt;
@@ -15,8 +15,8 @@ public class User {
 
     public User() {}
 
-    public String getId()                      { return id; }
-    public void setId(String id)               { this.id = id; }
+    public int getId()                         { return id; }
+    public void setId(int id)                  { this.id = id; }
 
     public String getEmail()                   { return email; }
     public void setEmail(String email)         { this.email = email; }
@@ -30,8 +30,8 @@ public class User {
     public String getPasswordHash()            { return passwordHash; }
     public void setPasswordHash(String hash)   { this.passwordHash = hash; }
 
-    public String getRoleId()                  { return roleId; }
-    public void setRoleId(String roleId)       { this.roleId = roleId; }
+    public int getRoleId()                     { return roleId; }
+    public void setRoleId(int roleId)          { this.roleId = roleId; }
 
     public String getRoleName()                { return roleName; }
     public void setRoleName(String roleName)   { this.roleName = roleName; }
@@ -42,6 +42,6 @@ public class User {
     public String getCreatedAt()               { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
-    public String getAvatarUrl() { return avatarUrl; }
+    public String getAvatarUrl()               { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 }

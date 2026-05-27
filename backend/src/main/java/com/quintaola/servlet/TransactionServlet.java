@@ -21,7 +21,6 @@ public class TransactionServlet extends HttpServlet {
     private final TransactionDAO dao = new TransactionDAO();
     private final Gson gson          = new Gson();
 
-    // Agregamos el nuevo metodo
     private void aplicarCORS(HttpServletRequest req, HttpServletResponse res) {
         String origin = req.getHeader("Origin");
         if (origin == null || origin.isEmpty()) {
@@ -37,7 +36,7 @@ public class TransactionServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
 
-        aplicarCORS(req, res);                                // ← AGREGAR esta línea
+        aplicarCORS(req, res);
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
 
@@ -45,46 +44,40 @@ public class TransactionServlet extends HttpServlet {
         String path = req.getPathInfo();
 
         try {
-            // Si la ruta no es nula y tiene más de una barra (ej: /720135bd-ee66-...)
+            // Ruta específica con ID: /:id
             if (path != null && path.split("/").length > 1 &&
                     !"pending".equals(path.substring(1)) &&
                     !"approved".equals(path.substring(1)) &&
                     !"me".equals(path.substring(1))) {
 
-                String id = path.split("/")[1];
-                // Aquí llamas a un método en tu DAO que busque por ID único
+                int id = Integer.parseInt(path.split("/")[1]);
                 Transaction t = dao.getById(id);
                 if (t != null) {
                     t.setStatus(t.getStatusFrontend());
-                    out.print(gson.toJson(t)); // Devuelve el objeto individual
+                    out.print(gson.toJson(t));
                 } else {
                     res.setStatus(404);
                     out.print("{\"error\":\"No se encontró la transacción\"}");
                 }
             }
-            // Rutas grupales que ya tenías programadas
+            // Rutas grupales
             else {
                 List<Transaction> list;
                 if ("/pending".equals(path)) {
                     list = dao.getPending();
                 } else if ("/approved".equals(path)) {
                     list = dao.getApproved();
-
                 } else if ("/me".equals(path)) {
                     HttpSession session = req.getSession(false);
-
-                    // AGREGADO: validar sesión ANTES de usarla
                     if (session == null || session.getAttribute("userId") == null) {
                         res.setStatus(401);
                         out.print("{\"error\":\"Sesión expirada. Vuelve a iniciar sesión.\"}");
                         out.flush();
                         return;
                     }
-
-                    String userId = (String) session.getAttribute("userId");
+                    int userId = (Integer) session.getAttribute("userId");
                     list = dao.getByUser(userId);
-                }
-                else {
+                } else {
                     list = dao.getAll();
                 }
 
@@ -92,12 +85,15 @@ public class TransactionServlet extends HttpServlet {
                 out.print(gson.toJson(list));
             }
 
+        } catch (NumberFormatException e) {
+            res.setStatus(400);
+            out.print("{\"error\":\"ID inválido\"}");
         } catch (SQLException e) {
             res.setStatus(500);
             String msg = e.getMessage() != null ? e.getMessage().replace("\"", "'") : "Error SQL";
             out.print("{\"error\":\"SQL: " + msg + "\"}");
-            e.printStackTrace();   // AGREGADO: imprime en consola de Tomcat
-        } catch (Exception e) {     // AGREGADO: captura TODO otro tipo de error
+            e.printStackTrace();
+        } catch (Exception e) {
             res.setStatus(500);
             String msg = e.getMessage() != null ? e.getMessage().replace("\"", "'") : e.getClass().getSimpleName();
             out.print("{\"error\":\"" + e.getClass().getSimpleName() + ": " + msg + "\"}");
@@ -110,7 +106,7 @@ public class TransactionServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
 
-        aplicarCORS(req, res);                                // ← AGREGAR
+        aplicarCORS(req, res);
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
 
@@ -120,11 +116,11 @@ public class TransactionServlet extends HttpServlet {
             Transaction t = gson.fromJson(req.getReader(), Transaction.class);
 
             HttpSession session = req.getSession(false);
-            if (session != null) {
-                t.setRequesterId((String) session.getAttribute("userId"));
+            if (session != null && session.getAttribute("userId") != null) {
+                t.setRequesterId((Integer) session.getAttribute("userId"));
             }
 
-            if (t.getItemId() == null || t.getQuantity() <= 0) {
+            if (t.getItemId() == 0 || t.getQuantity() <= 0) {
                 res.setStatus(400);
                 out.print("{\"error\":\"Item y cantidad son obligatorios\"}");
                 out.flush();
@@ -151,7 +147,7 @@ public class TransactionServlet extends HttpServlet {
     protected void doPut(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
 
-        aplicarCORS(req, res);                                // ← AGREGAR
+        aplicarCORS(req, res);
         res.setContentType("application/json");
         res.setCharacterEncoding("UTF-8");
 
@@ -167,11 +163,13 @@ public class TransactionServlet extends HttpServlet {
             }
 
             String[] parts = path.split("/");
-            String id     = parts[1];
+            int id = Integer.parseInt(parts[1]);
             String action = parts.length > 2 ? parts[2] : "";
 
             HttpSession session = req.getSession(false);
-            String approverId   = session != null ? (String) session.getAttribute("userId") : null;
+            int approverId = (session != null && session.getAttribute("userId") != null)
+                    ? (Integer) session.getAttribute("userId")
+                    : 0;
 
             JsonObject body = null;
             try {
@@ -195,6 +193,9 @@ public class TransactionServlet extends HttpServlet {
                 out.print("{\"error\":\"No se encontró la solicitud o ya fue procesada\"}");
             }
 
+        } catch (NumberFormatException e) {
+            res.setStatus(400);
+            out.print("{\"error\":\"ID inválido\"}");
         } catch (SQLException e) {
             res.setStatus(500);
             out.print("{\"error\":\"" + e.getMessage() + "\"}");

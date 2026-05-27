@@ -49,7 +49,7 @@ public class SessionFilter implements Filter {
                 && session.getAttribute("userId") != null;
 
         if (!logueado) {
-            // AGREGADO: si es una llamada a /api/*, devolver JSON 401 en vez de redirect HTML
+            // Para /api/* devolver JSON 401, para HTML redirigir al login
             if (path.startsWith("/api/")) {
                 res.setStatus(401);
                 res.setContentType("application/json");
@@ -57,34 +57,37 @@ public class SessionFilter implements Filter {
                 res.getWriter().write("{\"error\":\"Sesión expirada. Vuelve a iniciar sesión.\"}");
                 return;
             }
-            // Si es una página HTML, sí redirigir al login
             res.sendRedirect(req.getContextPath() + "/pages/show-login.html");
             return;
         }
 
-        String roleId = (String) session.getAttribute("roleId");
+        // Ahora comparamos por roleName (más legible) en lugar de roleId numérico
+        String roleName = (String) session.getAttribute("roleName");
 
-        if (roleId == null) {
+        if (roleName == null) {
             res.sendRedirect(req.getContextPath() + "/pages/show-login.html");
             return;
         }
 
+        // Solo SuperAdmin ve permisos
         if (path.contains("superadmin-permissions") &&
-                !"role-superadmin".equals(roleId)) {
+                !"SuperAdmin".equals(roleName)) {
             res.sendRedirect(req.getContextPath() + "/pages/403.html");
             return;
         }
 
+        // Solo Administrador y SuperAdmin ven miembros y analytics
         if ((path.contains("admin-users") || path.contains("analytics")) &&
-                !roleId.equals("role-admin") && !roleId.equals("role-superadmin")) {
+                !"Administrador".equals(roleName) && !"SuperAdmin".equals(roleName)) {
             res.sendRedirect(req.getContextPath() + "/pages/403.html");
             return;
         }
 
+        // Member (depósito), Administrador y SuperAdmin ven deposit-view
         if (path.contains("deposit-view") &&
-                !roleId.equals("role-deposito") &&
-                !roleId.equals("role-admin") &&
-                !roleId.equals("role-superadmin")) {
+                !"Member".equals(roleName) &&
+                !"Administrador".equals(roleName) &&
+                !"SuperAdmin".equals(roleName)) {
             res.sendRedirect(req.getContextPath() + "/pages/403.html");
             return;
         }

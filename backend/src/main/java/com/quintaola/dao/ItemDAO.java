@@ -3,19 +3,18 @@
 // ============================================================
 //
 // getAll()            - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// getAllActive()      - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// getPage(limit,offset)- id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// getAllAdmin()       - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
 // getById(id)         - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// search(text)        - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
+// create(item)        - boolean
+// update(item)        - boolean
+// disable(id)         - boolean
 //
-// getLowStock()       - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// getOkStock()        - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// getUnavailable()    - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-//
-// getNewest()         - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// getOldest()         - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-//
-// getMostRequested()  - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, total_requests, tags
+// getLowStock()       - ResultSet
+// getOkStock()        - ResultSet
+// getUnavailable()    - ResultSet
+// getNewest()         - ResultSet
+// getOldest()         - ResultSet
+// getMostRequested()  - ResultSet
 // ============================================================
 
 package com.quintaola.dao;
@@ -26,7 +25,6 @@ import com.quintaola.util.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class ItemDAO {
 
@@ -78,7 +76,7 @@ public class ItemDAO {
     }
 
     // ── GET BY ID con sus TAGS ─────────────────────────────────────────────────
-    public Item getById(String id) throws SQLException {
+    public Item getById(int id) throws SQLException {
         String sql = """
             SELECT i.*, GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
             FROM items i
@@ -91,7 +89,7 @@ public class ItemDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, id);
+            ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapRow(rs);
             }
@@ -100,28 +98,37 @@ public class ItemDAO {
     }
 
     // ── CREATE ────────────────────────────────────────────────────
-    public boolean create(Item item) throws SQLException {
+    // Inserta el item y devuelve el ID generado por la BD (para usarlo en item_tags)
+    public int create(Item item) throws SQLException {
         String sql = """
-        INSERT INTO items (id, name, description, image_url, unit,
-                           cached_quantity, min_quantity, status, activo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-        """;
+            INSERT INTO items (name, description, image_url, unit,
+                               cached_quantity, min_quantity, status, activo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+            """;
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            // 🌟 CAMBIO: Si el item ya trae ID generado por el Servlet, úsalo. Si no, ponle uno nuevo.
-            ps.setString(1, (item.getId() != null && !item.getId().isBlank()) ? item.getId() : UUID.randomUUID().toString());
-            ps.setString(2, item.getName());
-            ps.setString(3, item.getDescription());
-            ps.setString(4, item.getImageUrl());
-            ps.setString(5, item.getUnit());
-            ps.setInt   (6, item.getCachedQuantity());
-            ps.setInt   (7, item.getMinQuantity());
-            ps.setString(8, item.getStatus() != null ? item.getStatus() : "OK");
+            ps.setString(1, item.getName());
+            ps.setString(2, item.getDescription());
+            ps.setString(3, item.getImageUrl());
+            ps.setString(4, item.getUnit());
+            ps.setInt   (5, item.getCachedQuantity());
+            ps.setInt   (6, item.getMinQuantity());
+            ps.setString(7, item.getStatus() != null ? item.getStatus() : "OK");
 
-            return ps.executeUpdate() > 0;
+            int rows = ps.executeUpdate();
+            if (rows == 0) return 0;
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int newId = keys.getInt(1);
+                    item.setId(newId);
+                    return newId;
+                }
+            }
         }
+        return 0;
     }
 
     // ── UPDATE ────────────────────────────────────────────────────
@@ -141,28 +148,28 @@ public class ItemDAO {
             ps.setString(3, item.getImageUrl());
             ps.setString(4, item.getUnit());
             ps.setInt   (5, item.getMinQuantity());
-            ps.setString(6, item.getId());
+            ps.setInt   (6, item.getId());
 
             return ps.executeUpdate() > 0;
         }
     }
 
     // ── DISABLE — deshabilitar en lugar de borrar ─────────────────
-    public boolean disable(String id) throws SQLException {
+    public boolean disable(int id) throws SQLException {
         String sql = "UPDATE items SET activo = 0 WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, id);
+            ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         }
     }
 
-    // ── MAP ROW — convierte una fila de BD a objeto Item (Soporta la lista de Tags) ──
+    // ── MAP ROW — convierte una fila de BD a objeto Item (soporta lista de Tags) ──
     private Item mapRow(ResultSet rs) throws SQLException {
         Item item = new Item();
-        item.setId             (rs.getString   ("id"));
+        item.setId             (rs.getInt      ("id"));
         item.setName           (rs.getString   ("name"));
         item.setDescription    (rs.getString   ("description"));
         item.setImageUrl       (rs.getString   ("image_url"));
@@ -173,18 +180,17 @@ public class ItemDAO {
         item.setActivo         (rs.getBoolean  ("activo"));
         item.setCreatedAt      (rs.getString   ("created_at"));
 
-        // 🌟 PROCESAR LOS TAGS DE LA CONSULTA COMBINADA 🌟
+        // Procesar los TAGS de la consulta combinada
         List<String> listaTags = new ArrayList<>();
         try {
             String tagsString = rs.getString("tags");
             if (tagsString != null && !tagsString.isBlank()) {
-                // Separamos la cadena por ", " para reconstruir la lista de strings
                 for (String tag : tagsString.split(", ")) {
                     listaTags.add(tag.trim());
                 }
             }
         } catch (SQLException e) {
-            // En caso un query no traiga la columna alias 'tags', evitamos que truene el sistema
+            // Si el query no trae la columna 'tags', no truena
         }
         item.setTags(listaTags);
 

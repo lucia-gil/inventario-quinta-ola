@@ -13,7 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -21,7 +20,7 @@ import java.sql.SQLException;
 import java.util.Base64;
 
 @WebServlet("/api/users/*")
-@MultipartConfig // Permite recibir formularios con archivos (FormData)
+@MultipartConfig
 public class UserServlet extends HttpServlet {
 
     private final UserDAO userDAO = new UserDAO();
@@ -36,13 +35,12 @@ public class UserServlet extends HttpServlet {
     }
 
     // ── GET /api/users/:id ─────────────────────────────────────────
-    // Sirve para refrescar los datos del perfil (incluido el avatar)
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
         aplicarCORS(res);
         PrintWriter out = res.getWriter();
-        String pathInfo = req.getPathInfo(); // "/id-del-usuario"
+        String pathInfo = req.getPathInfo();
 
         if (pathInfo == null || pathInfo.equals("/")) {
             res.setStatus(400);
@@ -50,18 +48,21 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
-        String userId = pathInfo.substring(1);
-
         try {
+            int userId = Integer.parseInt(pathInfo.substring(1));
             User user = userDAO.getById(userId);
+
             if (user != null) {
-                // Quitamos el password hash por seguridad antes de enviarlo al cliente
+                // Quitamos el password hash por seguridad
                 user.setPasswordHash(null);
                 out.print(gson.toJson(user));
             } else {
                 res.setStatus(404);
                 out.print("{\"error\":\"Usuario no encontrado\"}");
             }
+        } catch (NumberFormatException e) {
+            res.setStatus(400);
+            out.print("{\"error\":\"ID de usuario inválido\"}");
         } catch (SQLException e) {
             res.setStatus(500);
             out.print("{\"error\":\"Error en la base de datos: " + e.getMessage() + "\"}");
@@ -70,13 +71,12 @@ public class UserServlet extends HttpServlet {
     }
 
     // ── POST /api/users/me/avatar ──────────────────────────────────
-    // Recibe el archivo seleccionado del frontend, lo convierte a texto y lo guarda
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
         aplicarCORS(res);
         PrintWriter out = res.getWriter();
-        String pathInfo = req.getPathInfo(); // "/me/avatar"
+        String pathInfo = req.getPathInfo();
 
         if (!"/me/avatar".equals(pathInfo)) {
             res.setStatus(404);
@@ -84,7 +84,6 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
-        // Verificar sesión activa
         HttpSession session = req.getSession(false);
         if (session == null || session.getAttribute("userId") == null) {
             res.setStatus(401);
@@ -92,10 +91,9 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
-        String userId = (String) session.getAttribute("userId");
+        int userId = (Integer) session.getAttribute("userId");
 
         try {
-            // Obtenemos el archivo enviado en el campo 'avatar'
             Part filePart = req.getPart("avatar");
             if (filePart == null || filePart.getSize() == 0) {
                 res.setStatus(400);
@@ -103,8 +101,7 @@ public class UserServlet extends HttpServlet {
                 return;
             }
 
-            // Convertir la imagen cargada a una cadena Base64 legible por el navegador
-            String contentType = filePart.getContentType(); // image/png, image/jpeg
+            String contentType = filePart.getContentType();
             byte[] imageBytes;
             try (InputStream is = filePart.getInputStream()) {
                 imageBytes = is.readAllBytes();
@@ -113,7 +110,6 @@ public class UserServlet extends HttpServlet {
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
             String avatarUrlString = "data:" + contentType + ";base64," + base64Image;
 
-            // Guardar en la base de datos usando el DAO
             boolean ok = userDAO.updateAvatar(userId, avatarUrlString);
 
             if (ok) {

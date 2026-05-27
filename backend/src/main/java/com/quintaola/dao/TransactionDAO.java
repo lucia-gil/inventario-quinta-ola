@@ -6,14 +6,13 @@ import com.quintaola.util.DatabaseConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class TransactionDAO {
 
     public List<Transaction> getAll() throws SQLException {
         List<Transaction> list = new ArrayList<>();
         String sql = """
-            SELECT t.*, i.name AS item_name, i.unit AS item_unit,
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
                    u.name AS requester_name, a.name AS approver_name
             FROM transactions t
             JOIN items i ON t.item_id = i.id
@@ -29,21 +28,24 @@ public class TransactionDAO {
         return list;
     }
 
-    public Transaction getById(String id) throws SQLException {
-        String sql = "SELECT t.*, u.name AS requester_name, a.name AS approver_name, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img " +
-                "FROM transactions t " +
-                "JOIN users u ON t.requester_id = u.id " +
-                "LEFT JOIN users a ON t.approver_id = a.id " +
-                "JOIN items i ON t.item_id = i.id " +
-                "WHERE t.id = ?";
+    public Transaction getById(int id) throws SQLException {
+        String sql = """
+            SELECT t.*, u.name AS requester_name, a.name AS approver_name,
+                   i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img
+            FROM transactions t
+            JOIN users u ON t.requester_id = u.id
+            LEFT JOIN users a ON t.approver_id = a.id
+            JOIN items i ON t.item_id = i.id
+            WHERE t.id = ?
+            """;
 
-        try (Connection conn = DatabaseConnection.getConnection(); // O como manejes tu conexión
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, id);
+            ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return mapRow(rs); // Reutiliza tu método mapRow actual
+                    return mapRow(rs);
                 }
             }
         }
@@ -53,7 +55,7 @@ public class TransactionDAO {
     public List<Transaction> getPending() throws SQLException {
         List<Transaction> list = new ArrayList<>();
         String sql = """
-            SELECT t.*, i.name AS item_name, i.unit AS item_unit,
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
                    u.name AS requester_name, a.name AS approver_name
             FROM transactions t
             JOIN items i ON t.item_id = i.id
@@ -73,7 +75,7 @@ public class TransactionDAO {
     public List<Transaction> getApproved() throws SQLException {
         List<Transaction> list = new ArrayList<>();
         String sql = """
-            SELECT t.*, i.name AS item_name, i.unit AS item_unit,
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
                    u.name AS requester_name, a.name AS approver_name
             FROM transactions t
             JOIN items i ON t.item_id = i.id
@@ -90,10 +92,10 @@ public class TransactionDAO {
         return list;
     }
 
-    public List<Transaction> getByUser(String userId) throws SQLException {
+    public List<Transaction> getByUser(int userId) throws SQLException {
         List<Transaction> list = new ArrayList<>();
         String sql = """
-            SELECT t.*, i.name AS item_name, i.unit AS item_unit,
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
                    u.name AS requester_name, a.name AS approver_name
             FROM transactions t
             JOIN items i ON t.item_id = i.id
@@ -104,7 +106,7 @@ public class TransactionDAO {
             """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId);
+            ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
             }
@@ -115,31 +117,34 @@ public class TransactionDAO {
     public boolean create(Transaction t) throws SQLException {
         String sql = """
             INSERT INTO transactions
-            (id, item_id, requester_id, type, quantity, status, notes)
-            VALUES (?, ?, ?, 'OUT', ?, 'PENDING', ?)
+            (item_id, requester_id, type, quantity, status, notes)
+            VALUES (?, ?, 'OUT', ?, 'PENDING', ?)
             """;
-
-        String txId = UUID.randomUUID().toString();
 
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, txId);
-                    ps.setString(2, t.getItemId());
-                    ps.setString(3, t.getRequesterId());
-                    ps.setInt   (4, t.getQuantity());
-                    ps.setString(5, t.getNotes());
+                int txId = 0;
+                try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setInt   (1, t.getItemId());
+                    ps.setInt   (2, t.getRequesterId());
+                    ps.setInt   (3, t.getQuantity());
+                    ps.setString(4, t.getNotes());
                     ps.executeUpdate();
+
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        if (keys.next()) txId = keys.getInt(1);
+                    }
                 }
 
-                // CAMBIO: Alerta automática para Managers y Admins
-                String sqlManagers = "SELECT id FROM users WHERE role_id IN ('role-manager', 'role-admin') AND activo = 1";
+                // Alerta automática para Managers y Administradores
+                // role_id 3 = Manager, role_id 4 = Administrador
+                String sqlManagers = "SELECT id FROM users WHERE role_id IN (3, 4) AND activo = 1";
                 try (PreparedStatement psM = conn.prepareStatement(sqlManagers);
                      ResultSet rsM = psM.executeQuery()) {
                     while (rsM.next()) {
-                        String managerId = rsM.getString("id");
-                        if (!managerId.equals(t.getRequesterId())) {
+                        int managerId = rsM.getInt("id");
+                        if (managerId != t.getRequesterId()) {
                             crearNotificacion(
                                     conn,
                                     managerId,
@@ -163,7 +168,7 @@ public class TransactionDAO {
         }
     }
 
-    public boolean approve(String id, String approverId, String notes) throws SQLException {
+    public boolean approve(int id, int approverId, String notes) throws SQLException {
         String sql = """
             UPDATE transactions
             SET status = 'APPROVED', approver_id = ?, notes = ?,
@@ -174,26 +179,26 @@ public class TransactionDAO {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                boolean ok = false;
+                boolean ok;
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, approverId);
+                    ps.setInt   (1, approverId);
                     ps.setString(2, notes);
-                    ps.setString(3, id);
+                    ps.setInt   (3, id);
                     ok = ps.executeUpdate() > 0;
                 }
 
                 if (ok) {
-                    // CAMBIO: Obtener solicitante para notificarle la aprobación
+                    // Obtener solicitante para notificarle la aprobación
                     String sqlGetReq = "SELECT requester_id FROM transactions WHERE id = ?";
-                    String requesterId = null;
+                    int requesterId = 0;
                     try (PreparedStatement psR = conn.prepareStatement(sqlGetReq)) {
-                        psR.setString(1, id);
+                        psR.setInt(1, id);
                         try (ResultSet rsR = psR.executeQuery()) {
-                            if (rsR.next()) requesterId = rsR.getString("requester_id");
+                            if (rsR.next()) requesterId = rsR.getInt("requester_id");
                         }
                     }
 
-                    if (requesterId != null) {
+                    if (requesterId > 0) {
                         crearNotificacion(
                                 conn,
                                 requesterId,
@@ -216,7 +221,7 @@ public class TransactionDAO {
         }
     }
 
-    public boolean reject(String id, String approverId, String notes) throws SQLException {
+    public boolean reject(int id, int approverId, String notes) throws SQLException {
         String sql = """
             UPDATE transactions
             SET status = 'REJECTED', approver_id = ?, notes = ?,
@@ -227,26 +232,26 @@ public class TransactionDAO {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                boolean ok = false;
+                boolean ok;
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, approverId);
+                    ps.setInt   (1, approverId);
                     ps.setString(2, notes);
-                    ps.setString(3, id);
+                    ps.setInt   (3, id);
                     ok = ps.executeUpdate() > 0;
                 }
 
                 if (ok) {
-                    // CAMBIO: Obtener solicitante para notificarle el rechazo
+                    // Obtener solicitante para notificarle el rechazo
                     String sqlGetReq = "SELECT requester_id FROM transactions WHERE id = ?";
-                    String requesterId = null;
+                    int requesterId = 0;
                     try (PreparedStatement psR = conn.prepareStatement(sqlGetReq)) {
-                        psR.setString(1, id);
+                        psR.setInt(1, id);
                         try (ResultSet rsR = psR.executeQuery()) {
-                            if (rsR.next()) requesterId = rsR.getString("requester_id");
+                            if (rsR.next()) requesterId = rsR.getInt("requester_id");
                         }
                     }
 
-                    if (requesterId != null) {
+                    if (requesterId > 0) {
                         crearNotificacion(
                                 conn,
                                 requesterId,
@@ -269,57 +274,56 @@ public class TransactionDAO {
         }
     }
 
-    public boolean deliver(String id) throws SQLException {
-        // try-with-resources para cerrar siempre la conexión
+    public boolean deliver(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             try {
                 conn.setAutoCommit(false);
 
                 String sqlGet = "SELECT item_id, quantity, type FROM transactions WHERE id = ?";
-                String itemId = null;
-                int quantity  = 0;
-                String type   = null;
+                int itemId = 0;
+                int quantity = 0;
+                String type = null;
 
                 try (PreparedStatement ps = conn.prepareStatement(sqlGet)) {
-                    ps.setString(1, id);
+                    ps.setInt(1, id);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
-                            itemId   = rs.getString("item_id");
-                            quantity = rs.getInt("quantity");
+                            itemId   = rs.getInt   ("item_id");
+                            quantity = rs.getInt   ("quantity");
                             type     = rs.getString("type");
                         }
                     }
                 }
 
-                if (itemId == null) { conn.rollback(); return false; }
+                if (itemId == 0) { conn.rollback(); return false; }
 
                 String sqlComplete = """
-                UPDATE transactions
-                SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-                """;
+                    UPDATE transactions
+                    SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """;
                 try (PreparedStatement ps = conn.prepareStatement(sqlComplete)) {
-                    ps.setString(1, id);
+                    ps.setInt(1, id);
                     ps.executeUpdate();
                 }
 
                 int delta = type.equals("IN") ? quantity : -quantity;
                 String sqlStock = """
-                UPDATE items
-                SET cached_quantity = cached_quantity + ?,
-                    status = CASE
-                        WHEN cached_quantity + ? <= 0           THEN 'UNAVAILABLE'
-                        WHEN cached_quantity + ? <= min_quantity THEN 'LOW'
-                        ELSE 'OK'
-                    END
-                WHERE id = ?
-                """;
+                    UPDATE items
+                    SET cached_quantity = cached_quantity + ?,
+                        status = CASE
+                            WHEN cached_quantity + ? <= 0            THEN 'UNAVAILABLE'
+                            WHEN cached_quantity + ? <= min_quantity THEN 'LOW'
+                            ELSE 'OK'
+                        END
+                    WHERE id = ?
+                    """;
                 try (PreparedStatement ps = conn.prepareStatement(sqlStock)) {
-                    ps.setInt   (1, delta);
-                    ps.setInt   (2, delta);
-                    ps.setInt   (3, delta);
-                    ps.setString(4, itemId);
+                    ps.setInt(1, delta);
+                    ps.setInt(2, delta);
+                    ps.setInt(3, delta);
+                    ps.setInt(4, itemId);
                     ps.executeUpdate();
                 }
 
@@ -332,15 +336,15 @@ public class TransactionDAO {
             } finally {
                 conn.setAutoCommit(true);
             }
-        } // ← Aquí se cierra la conexión automáticamente
+        }
     }
 
     private Transaction mapRow(ResultSet rs) throws SQLException {
         Transaction t = new Transaction();
-        t.setId           (rs.getString("id"));
-        t.setItemId       (rs.getString("item_id"));
-        t.setRequesterId  (rs.getString("requester_id"));
-        t.setApproverId   (rs.getString("approver_id"));
+        t.setId           (rs.getInt   ("id"));
+        t.setItemId       (rs.getInt   ("item_id"));
+        t.setRequesterId  (rs.getInt   ("requester_id"));
+        t.setApproverId   (rs.getInt   ("approver_id"));
         t.setType         (rs.getString("type"));
         t.setQuantity     (rs.getInt   ("quantity"));
         t.setStatus       (rs.getString("status"));
@@ -355,19 +359,19 @@ public class TransactionDAO {
         return t;
     }
 
-    // CAMBIO: Único método añadido para insertar las notificaciones compartiendo la conexión activa
-    private void crearNotificacion(Connection conn, String userId, String type, String title, String message, String relatedId) throws SQLException {
+    // Crea una notificación reutilizando la conexión activa (BD genera el id sola)
+    private void crearNotificacion(Connection conn, int userId, String type, String title,
+                                   String message, int relatedId) throws SQLException {
         String sql = """
-            INSERT INTO notifications (id, user_id, type, title, message, related_id, is_read)
-            VALUES (?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO notifications (user_id, type, title, message, related_id, is_read)
+            VALUES (?, ?, ?, ?, ?, 0)
             """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, UUID.randomUUID().toString());
-            ps.setString(2, userId);
-            ps.setString(3, type);
-            ps.setString(4, title);
-            ps.setString(5, message);
-            ps.setString(6, relatedId);
+            ps.setInt   (1, userId);
+            ps.setString(2, type);
+            ps.setString(3, title);
+            ps.setString(4, message);
+            ps.setInt   (5, relatedId);
             ps.executeUpdate();
         }
     }

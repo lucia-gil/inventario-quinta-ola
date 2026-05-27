@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -71,19 +70,15 @@ public class ItemServlet extends HttpServlet {
                 return;
             }
 
-            if (item.getId() == null || item.getId().isBlank()) {
-                item.setId(java.util.UUID.randomUUID().toString());
-            }
+            // La BD genera el ID. create() devuelve el ID nuevo (0 si falló).
+            int newId = itemDAO.create(item);
 
-            boolean creado = itemDAO.create(item);
-
-            if (creado) {
-                // El campo "category" ahora se llena automáticamente gracias a Gson
+            if (newId > 0) {
                 if (item.getCategory() != null && !item.getCategory().isBlank()) {
-                    guardarRelacionTag(item.getId(), item.getCategory());
+                    guardarRelacionTag(newId, item.getCategory());
                 }
                 res.setStatus(201);
-                out.print("{\"message\":\"Material creado correctamente\"}");
+                out.print("{\"message\":\"Material creado correctamente\",\"id\":" + newId + "}");
             } else {
                 res.setStatus(500);
                 out.print("{\"error\":\"No se pudo crear el material\"}");
@@ -114,8 +109,9 @@ public class ItemServlet extends HttpServlet {
             }
 
             String[] parts = pathInfo.split("/");
-            String id = parts[1];
+            int id = Integer.parseInt(parts[1]);
 
+            // Disable
             if (parts.length == 3 && parts[2].equals("disable")) {
                 boolean deshabilitado = itemDAO.disable(id);
                 if (deshabilitado) {
@@ -128,12 +124,12 @@ public class ItemServlet extends HttpServlet {
                 return;
             }
 
+            // Update
             Item item = gson.fromJson(req.getReader(), Item.class);
             item.setId(id);
 
             boolean actualizado = itemDAO.update(item);
             if (actualizado) {
-                // Guardamos o actualizamos la etiqueta asociada
                 if (item.getCategory() != null && !item.getCategory().isBlank()) {
                     guardarRelacionTag(id, item.getCategory());
                 }
@@ -143,6 +139,9 @@ public class ItemServlet extends HttpServlet {
                 out.print("{\"error\":\"Material no encontrado\"}");
             }
 
+        } catch (NumberFormatException e) {
+            res.setStatus(400);
+            out.print("{\"error\":\"ID inválido\"}");
         } catch (Exception e) {
             res.setStatus(500);
             out.print("{\"error\":\"Error al actualizar: " + e.getMessage() + "\"}");
@@ -150,38 +149,38 @@ public class ItemServlet extends HttpServlet {
         out.flush();
     }
 
-    private void guardarRelacionTag(String itemId, String categoryName) {
+    private void guardarRelacionTag(int itemId, String categoryName) {
         String selectTagSql = "SELECT id FROM tags WHERE name = ?";
         String deleteOldSql = "DELETE FROM item_tags WHERE item_id = ?";
         String insertTagSql = "INSERT INTO item_tags (item_id, tag_id) VALUES (?, ?)";
 
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
-            String tagId = null;
+            int tagId = 0;
             try (PreparedStatement ps = conn.prepareStatement(selectTagSql)) {
                 ps.setString(1, categoryName);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        tagId = rs.getString("id");
+                        tagId = rs.getInt("id");
                     }
                 }
             }
 
-            if (tagId != null) {
+            if (tagId > 0) {
                 try (PreparedStatement psDelete = conn.prepareStatement(deleteOldSql)) {
-                    psDelete.setString(1, itemId);
+                    psDelete.setInt(1, itemId);
                     psDelete.executeUpdate();
                 }
                 try (PreparedStatement psInsert = conn.prepareStatement(insertTagSql)) {
-                    psInsert.setString(1, itemId);
-                    psInsert.setString(2, tagId);
+                    psInsert.setInt(1, itemId);
+                    psInsert.setInt(2, tagId);
                     psInsert.executeUpdate();
-                    System.out.println("ÉXITO: Relación guardada en item_tags para el item: " + itemId + " con tag: " + tagId);
+                    System.out.println("ÉXITO: Relación guardada en item_tags para item: " + itemId + " con tag: " + tagId);
                 }
             } else {
-                System.out.println("⚠️ ALERTA: No se encontró ningún tag en la BD con el nombre: '" + categoryName + "'");
+                System.out.println("⚠️ ALERTA: No se encontró tag con nombre: '" + categoryName + "'");
             }
         } catch (SQLException e) {
-            System.err.println("ERROR CRÍTICO SQL en guardarRelacionTag: " + e.getMessage());
+            System.err.println("ERROR SQL en guardarRelacionTag: " + e.getMessage());
         }
     }
 

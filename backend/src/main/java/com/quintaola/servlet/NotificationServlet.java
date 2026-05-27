@@ -20,7 +20,7 @@ public class NotificationServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        // Manejo de CORS tal cual tus otros servlets
+        // CORS
         String origin = req.getHeader("Origin");
         res.setHeader("Access-Control-Allow-Origin", origin != null ? origin : "http://localhost:5173");
         res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -37,25 +37,16 @@ public class NotificationServlet extends HttpServlet {
         }
 
         try {
-            // Obtenemos el atributo de sesión de forma segura sin importar si es Integer o String
-            Object userIdObj = session.getAttribute("userId");
-            if (userIdObj == null) {
-                res.setStatus(401);
-                out.print("{\"error\":\"No autorizado\"}");
-                return;
-            }
-
-            String userId = userIdObj.toString(); // Convierte a String limpiamente sin romper nada
+            // El userId ahora se guarda como Integer en la sesión
+            int userId = (Integer) session.getAttribute("userId");
             List<Notification> alerts = dao.getByUserId(userId);
-
-            // Enviamos la lista convertida a JSON
             out.print(gson.toJson(alerts));
 
         } catch (Exception e) {
             System.out.println("ERROR EN NOTIFICATION_SERVLET: " + e.getMessage());
             e.printStackTrace();
             res.setStatus(500);
-            // IMPORTANTE: Devolvemos un array vacío en caso de error extremo para que el JS no se muera
+            // Devolver array vacío para que el frontend no truene
             out.print("[]");
         }
         out.flush();
