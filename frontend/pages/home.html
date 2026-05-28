@@ -85,7 +85,7 @@
     // 2. Obtener los datos formateados y reales mediante el módulo Auth
     const userName = Auth.getUserName();
     const userRole = Auth.getReadableRole();
-    const roleId = Auth.getRoleId();
+    const roleId = Auth.getRoleId(); // Ahora esto devolverá un número (int)
     const menuType = Auth.getMenuType(); 
 
     // 3. Cargar Navbar con la estructura unificada
@@ -99,7 +99,8 @@
 
     // 4. Lógica para ocultar el panel de estadísticas globales a los Viewers
     const statsContainer = document.getElementById('home-stats');
-    if (roleId === 'role-viewer' || roleId === 'role-member') {
+    // CAMBIO AQUÍ: Se evalúan los enteros 1 y 2
+    if (roleId === 1 || roleId === 2) {
       if (statsContainer) statsContainer.style.display = 'none'; 
     } else {
       QO.renderStatCards('home-stats', [
@@ -109,8 +110,9 @@
       ]);
     }
 
-    // 5. Ocultar la tarjeta de "Permisos" a quienes NO sean admin/superadmin
-    if (roleId !== 'role-superadmin' && roleId !== 'role-admin') {
+    // 5. Ocultar la tarjeta de "Permisos" a quienes NO sean Administrador (4) ni SuperAdmin (5)
+    // CAMBIO AQUÍ: Se evalúan los enteros 4 y 5
+    if (roleId !== 4 && roleId !== 5) {
       const cardPermisos = document.getElementById('card-permisos');
       if (cardPermisos) cardPermisos.style.display = 'none';
     }
