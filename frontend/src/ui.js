@@ -46,18 +46,19 @@ const QO = (() => {
   ];
 
   /* ============================================================
-     DEDUCIR MENÚ AUTOMÁTICAMENTE DESDE EL ROL
-     Acepta tanto los nombres nuevos ("Administrador", "SuperAdmin")
-     como los viejos por compatibilidad ("admin", "superadmin")
+     DEDUCIR MENÚ AUTOMÁTICAMENTE DESDE EL ROLE ID (INT)
+     IDs: 5=SuperAdmin, 4=Administrador, 3=Manager, 2=Member, 1=Viewer
   ============================================================ */
-  function getMenuTypeFromRole(roleName) {
-    if (!roleName) return 'default';
-    const r = roleName.toLowerCase();
-    if (r === 'superadmin')                                    return 'superadmin';
-    if (r === 'administrador' || r === 'admin')                return 'admin';
-    if (r === 'manager' || r === 'aprobador')                  return 'default';
-    if (r === 'member' || r === 'encargado de depósito')       return 'default';
-    return 'default';
+  function getMenuTypeFromRoleId(roleId) {
+    const id = parseInt(roleId, 10);
+    
+    if (id === 5) return 'superadmin';
+    if (id === 4) return 'admin';
+    if (id === 3) return 'manager'; 
+    if (id === 2) return 'member';  
+    if (id === 1) return 'viewer';  
+    
+    return 'viewer'; // Fallback de seguridad al rol con menos permisos
   }
 
   /* ============================================================
@@ -72,21 +73,23 @@ const QO = (() => {
   function navbar({
     active   = '',
     name     = null,
-    role     = null,
+    role     = null, // Para mostrar el texto en pantalla
+    roleId   = null, // NUEVO: Para la lógica estricta del menú
     menuType = null,
     logoHref = '/pages/dashboard.html',
   } = {}) {
 
-    // Si no se pasa name/role, los leemos del localStorage
+    // Si no se pasa name/role/roleId, los leemos del localStorage
     if (name === null) name = localStorage.getItem('userName') || 'Usuario';
     if (role === null) role = localStorage.getItem('userRole') || '';
+    if (roleId === null) roleId = parseInt(localStorage.getItem('roleId'), 10) || 0;
 
-    // Si no se pasa menuType, lo deducimos del rol
-    if (menuType === null) menuType = getMenuTypeFromRole(role);
+    // Si no se pasa menuType, lo deducimos estrictamente del ID numérico
+    if (menuType === null) menuType = getMenuTypeFromRoleId(roleId);
 
     const links = menuType === 'superadmin' ? NAV_LINKS_SUPERADMIN
                 : menuType === 'admin'      ? NAV_LINKS_ADMIN
-                :                              NAV_LINKS;
+                :                             NAV_LINKS;
 
     const linksHTML = links.map(link => {
       const isActive = link.id === active;
@@ -122,6 +125,11 @@ const QO = (() => {
             <a href="/pages/profile.html" class="nav-avatar" id="nav-profile-btn">
               <i data-lucide="user" class="w-5 h-5"></i>
             </a>
+
+            <button onclick="Auth.logout()" class="text-gray-400 hover:text-red-500 transition-colors ml-2 flex items-center justify-center setup-btn" title="Cerrar Sesión">
+              <i data-lucide="log-out" class="w-5 h-5"></i>
+            </button>
+
           </div>
         </div>
       </nav>`;
@@ -207,7 +215,7 @@ const QO = (() => {
               <li><a href="/pages/profile.html" class="footer-link">Configurar Perfil</a></li>
               <li><a href="/pages/notifications.html" class="footer-link">Notificaciones</a></li>
               <li>
-                <a href="/index.html" class="hover:text-red-400 transition-colors flex items-center gap-1 mt-6">
+                <a href="#" onclick="Auth.logout(); return false;" class="hover:text-red-400 transition-colors flex items-center gap-1 mt-6">
                   <i data-lucide="log-out" class="w-4 h-4"></i> Cerrar Sesión
                 </a>
               </li>
@@ -487,7 +495,7 @@ const QO = (() => {
     stockBadge,
     roleBadge,
     userAvatar,
-    getMenuTypeFromRole,
+    getMenuTypeFromRoleId,
     init,
   };
 })();
