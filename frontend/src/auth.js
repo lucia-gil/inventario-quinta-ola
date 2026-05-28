@@ -1,43 +1,49 @@
 /**
- * QUINTA OLA — Módulo central de autenticación y roles *
+ * QUINTA OLA — Módulo central de autenticación y roles
+ *
  * USO:
  *   <script src="/src/auth.js"></script>
  *   <script>
  *     Auth.requireLogin();
  *     if (Auth.canApprove()) { ... }
+ *     if (Auth.isSuperAdmin()) { ... }
  *   </script>
+ *
+ * IMPORTANTE: este módulo lee localStorage.userRole con el NOMBRE
+ * del rol ('Administrador', 'SuperAdmin', etc.), no IDs string viejos.
+ * Eso coincide con lo que ahora devuelve el backend tras la migración INT.
  */
 
 const Auth = (() => {
 
   /* ============================================================
-     CATÁLOGO ÚNICO DE ROLES
+     CATÁLOGO ÚNICO DE ROLES — claves = nombres reales del backend
   ============================================================ */
   const ROLES = {
-    'role-viewer': {
+    'Viewer': {
       readable: 'Solicitante',
-      menuType: 'viewer',
+      menuType: 'default',
       landing:  '/pages/home.html',
     },
-    'role-member': {
+    'Member': {
       readable: 'Encargado de Depósito',
-      menuType: 'deposit',
+      menuType: 'default',
       landing:  '/pages/deposit-view.html',
     },
-    'role-manager': {
+    'Manager': {
       readable: 'Aprobador',
-      menuType: 'manager',
+      menuType: 'default',
       landing:  '/pages/dashboard.html',
     },
-    'role-admin': {
+    'Administrador': {
       readable: 'Administrador',
       menuType: 'admin',
       landing:  '/pages/dashboard.html',
     },
-    'role-superadmin': {
+    'SuperAdmin': {
       readable: 'SuperAdmin',
       menuType: 'superadmin',
-      landing:  '/pages/dashboard.html',
+      landing:  '/pages/superadmin-permissions.html',
     },
   };
 
@@ -45,12 +51,16 @@ const Auth = (() => {
      SESIÓN
   ============================================================ */
   function getUserId()   { return localStorage.getItem('userId'); }
-  function getUserName() { return localStorage.getItem('userName') || 'Usuario'; }
+  function getUserName() { return localStorage.getItem('userName')  || 'Usuario'; }
   function getUserEmail(){ return localStorage.getItem('userEmail') || ''; }
-  function getUserDni()  { return localStorage.getItem('userDni')  || ''; }
-  function getRoleId()   { return localStorage.getItem('userRole') || 'role-viewer'; }
+  function getUserDni()  { return localStorage.getItem('userDni')   || ''; }
 
-  function getRoleInfo()     { return ROLES[getRoleId()] || ROLES['role-viewer']; }
+  // El backend ahora guarda el NOMBRE del rol en userRole, no IDs viejos
+  function getRoleName() { return localStorage.getItem('userRole') || 'Viewer'; }
+  // El backend ahora guarda el ID numérico en roleId (string en localStorage)
+  function getRoleId()   { return parseInt(localStorage.getItem('roleId')) || 1; }
+
+  function getRoleInfo()     { return ROLES[getRoleName()] || ROLES['Viewer']; }
   function getReadableRole() { return getRoleInfo().readable; }
   function getMenuType()     { return getRoleInfo().menuType; }
   function getLandingPage()  { return getRoleInfo().landing; }
@@ -58,41 +68,43 @@ const Auth = (() => {
   /* ============================================================
      CHECKS POR ROL
   ============================================================ */
-  function is(roleId)    { return getRoleId() === roleId; }
-  function isViewer()    { return is('role-viewer'); }
-  function isMember()    { return is('role-member'); }
-  function isManager()   { return is('role-manager'); }
-  function isAdmin()     { return is('role-admin'); }
-  function isSuperAdmin(){ return is('role-superadmin'); }
+  function is(roleName)  { return getRoleName() === roleName; }
+  function isViewer()    { return is('Viewer'); }
+  function isMember()    { return is('Member'); }
+  function isManager()   { return is('Manager'); }
+  function isAdmin()     { return is('Administrador'); }
+  function isSuperAdmin(){ return is('SuperAdmin'); }
 
   /* ============================================================
-     CHECKS POR CAPACIDAD (preferible usar estos en la UI)
+     CHECKS POR CAPACIDAD — preferible usar estos en la UI
   ============================================================ */
   function canApprove() {
-    return ['role-manager', 'role-admin', 'role-superadmin'].includes(getRoleId());
+    return ['Manager', 'Administrador', 'SuperAdmin'].includes(getRoleName());
   }
   function canDeliver() {
-    return ['role-member', 'role-admin', 'role-superadmin'].includes(getRoleId());
+    return ['Member', 'Administrador', 'SuperAdmin'].includes(getRoleName());
   }
   function canManageItems() {
-    return ['role-admin', 'role-superadmin'].includes(getRoleId());
+    return ['Administrador', 'SuperAdmin'].includes(getRoleName());
   }
   function canManageUsers() {
-    return ['role-admin', 'role-superadmin'].includes(getRoleId());
+    return ['Administrador', 'SuperAdmin'].includes(getRoleName());
   }
-  function canManagePermissions() {
-    return isSuperAdmin();
-  }
+  // Solo SuperAdmin puede gestionar permisos, roles y ver auditoría
+  function canManagePermissions() { return isSuperAdmin(); }
+  function canManageRoles()       { return isSuperAdmin(); }
+  function canViewAudit()         { return isSuperAdmin(); }
+
   function canCreateRequest() {
-    return ['role-viewer', 'role-manager', 'role-admin'].includes(getRoleId());
+    return ['Viewer', 'Manager', 'Administrador'].includes(getRoleName());
   }
-  // Las notificaciones las ve todo el mundo MENOS SuperAdmin (lo pide el PDF)
+  // Notificaciones para todos menos SuperAdmin (lo pide el PDF)
   function canSeeNotifications() {
     return !isSuperAdmin();
   }
 
   /* ============================================================
-     GUARDIAS
+     GUARDIAS — bloquean acceso a páginas no permitidas
   ============================================================ */
   function requireLogin() {
     if (!getUserId()) {
@@ -104,8 +116,8 @@ const Auth = (() => {
 
   function requireRole(allowedRoles) {
     if (!requireLogin()) return false;
-    if (!allowedRoles.includes(getRoleId())) {
-      window.location.href = '/pages/403.html';
+    if (!allowedRoles.includes(getRoleName())) {
+      window.location.href = '/pages/error-404.html';
       return false;
     }
     return true;
@@ -114,14 +126,18 @@ const Auth = (() => {
   function requireCapability(capabilityFn) {
     if (!requireLogin()) return false;
     if (!capabilityFn()) {
-      window.location.href = '/pages/403.html';
+      window.location.href = '/pages/error-404.html';
       return false;
     }
     return true;
   }
 
   /* ============================================================
-     APLICAR PERMISOS AL DOM
+     APLICAR PERMISOS AL DOM AUTOMÁTICAMENTE
+     Uso en HTML:
+       <button data-requires="canApprove">Aprobar</button>
+       <a data-requires-role="Administrador,SuperAdmin">Gestión</a>
+       <div data-hidden-for-role="Viewer">No para solicitantes</div>
   ============================================================ */
   function applyDOMPermissions() {
     document.querySelectorAll('[data-requires]').forEach(el => {
@@ -133,25 +149,27 @@ const Auth = (() => {
     });
     document.querySelectorAll('[data-requires-role]').forEach(el => {
       const allowed = el.getAttribute('data-requires-role').split(',').map(s => s.trim());
-      if (!allowed.includes(getRoleId())) {
+      if (!allowed.includes(getRoleName())) {
         el.style.display = 'none';
       }
     });
     document.querySelectorAll('[data-hidden-for-role]').forEach(el => {
       const hidden = el.getAttribute('data-hidden-for-role').split(',').map(s => s.trim());
-      if (hidden.includes(getRoleId())) {
+      if (hidden.includes(getRoleName())) {
         el.style.display = 'none';
       }
     });
   }
 
   /* ============================================================
-     NOTIFICACIONES — helpers para la campanita
+     NOTIFICACIONES — helpers
   ============================================================ */
   async function fetchNotifications() {
     if (!canSeeNotifications()) return [];
     try {
-      const res = await fetch('/api/notifications', { credentials: 'include' });
+      const res = await fetch('http://localhost:8080/inventario/api/notifications', {
+        credentials: 'include',
+      });
       if (!res.ok) return [];
       return await res.json();
     } catch {
@@ -166,7 +184,7 @@ const Auth = (() => {
 
   async function markNotificationRead(id) {
     try {
-      await fetch(`/api/notifications/${id}/read`, {
+      await fetch(`http://localhost:8080/inventario/api/notifications/${id}/read`, {
         method: 'PUT',
         credentials: 'include',
       });
@@ -178,7 +196,10 @@ const Auth = (() => {
   ============================================================ */
   function logout() {
     localStorage.clear();
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    fetch('http://localhost:8080/inventario/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    })
       .catch(() => {})
       .finally(() => window.location.href = '/pages/show-login.html');
   }
@@ -189,13 +210,15 @@ const Auth = (() => {
   const API = {
     ROLES,
     // sesión
-    getUserId, getUserName, getUserEmail, getUserDni, getRoleId,
-    getRoleInfo, getReadableRole, getMenuType, getLandingPage,
+    getUserId, getUserName, getUserEmail, getUserDni,
+    getRoleId, getRoleName, getRoleInfo,
+    getReadableRole, getMenuType, getLandingPage,
     // checks por rol
     is, isViewer, isMember, isManager, isAdmin, isSuperAdmin,
     // checks por capacidad
     canApprove, canDeliver, canManageItems, canManageUsers,
-    canManagePermissions, canCreateRequest, canSeeNotifications,
+    canManagePermissions, canManageRoles, canViewAudit,
+    canCreateRequest, canSeeNotifications,
     // guardias
     requireLogin, requireRole, requireCapability,
     // DOM
