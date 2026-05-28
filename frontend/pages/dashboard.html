@@ -74,25 +74,26 @@
   <script src="/src/auth.js"></script>
   <script src="/src/ui.js"></script>
   <script>
-    // ── 1. CONFIGURACIÓN DE IDENTIDAD Y SEGURIDAD POR ROL ──────────────────────────
-    if (!Auth.requireRole(['role-superadmin', 'role-admin', 'role-manager'])) {
+    // ── 1. CONFIGURACIÓN DE IDENTIDAD Y SEGURIDAD POR ROL (INT) ──────────────────
+    // IDs permitidos en Dashboard: 5 (SuperAdmin), 4 (Admin), 3 (Manager)
+    if (!Auth.requireRole([5, 4, 3])) {
       throw new Error('No autorizado para ver el panel de control');
     }
 
     const userName = Auth.getUserName() || 'Usuario';
     const userRole = Auth.getReadableRole() || '';
-    const roleId   = Auth.getRoleId();
+    const roleId   = parseInt(Auth.getRoleId(), 10);
 
-    // Roles separados quirúrgicamente
-    const isSuperAdmin = roleId === 'role-superadmin';
-    const isAdmin      = roleId === 'role-admin'; 
-    const isManager    = roleId === 'role-manager';
+    // Roles separados quirúrgicamente mediante IDs numéricos
+    const isSuperAdmin = roleId === 5;
+    const isAdmin      = roleId === 4; 
+    const isManager    = roleId === 3;
 
     QO.navbar({ 
       active: 'dashboard', 
       name: userName, 
       role: userRole,
-      menuType: Auth.getMenuType() 
+      roleId: roleId // Pasamos explícitamente el roleId a la Navbar
     });
     QO.footer();
 
