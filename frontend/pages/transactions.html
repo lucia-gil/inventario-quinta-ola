@@ -58,33 +58,32 @@
         // 1. GUARDIA — sesión obligatoria
         if (!Auth.requireLogin()) throw new Error('No auth');
 
-        // 2. NAVBAR derivada del rol
+        const roleId = parseInt(Auth.getRoleId(), 10) || 0;
+
+        // 2. NAVBAR derivada del rol usando el ID numérico
         QO.navbar({
             active:   'transactions',
             name:     Auth.getUserName(),
             role:     Auth.getReadableRole(),
-            menuType: Auth.getMenuType(),
+            roleId:   roleId
         });
         QO.footer();
 
-        // 3. TÍTULO Y SUBTÍTULO contextuales según el rol
-        if (Auth.isViewer()) {
+        // 3. TÍTULO Y SUBTÍTULO contextuales según el rol numérico
+        // 1 = Viewer, 2 = Member, 3 = Manager, 4 = Admin, 5 = SuperAdmin
+        if (roleId === 1 || roleId === 2) {
             document.getElementById('page-title').textContent = 'Mis Solicitudes';
             document.getElementById('page-subtitle').textContent = 'Todas las solicitudes que has creado';
-        } else if (Auth.canApprove()) {
-            document.getElementById('page-title').textContent = 'Solicitudes';
-            document.getElementById('page-subtitle').textContent = 'Solicitudes activas del sistema (puedes aprobar/rechazar)';
-        } else if (Auth.canDeliver()) {
-            document.getElementById('page-title').textContent = 'Solicitudes aprobadas';
-            document.getElementById('page-subtitle').textContent = 'Listas para entregar desde el depósito';
+        } else if (roleId >= 3) {
+            document.getElementById('page-title').textContent = 'Solicitudes del Sistema';
+            document.getElementById('page-subtitle').textContent = 'Control y seguimiento de transacciones globales';
         }
 
-        // 4. ENDPOINT según rol
-        //    - Viewer: solo las suyas (/me)
-        //    - Resto: todas (/)
+        // 4. ENDPOINT según rol numérico
         async function cargarTransacciones() {
             try {
-                const endpoint = Auth.isViewer() ? '/api/transactions/me' : '/api/transactions';
+                // Viewers (1) y Members (2) pegan a /me. Resto a la ruta general.
+                const endpoint = (roleId === 1 || roleId === 2) ? '/api/transactions/me' : '/api/transactions';
 
                 const res = await fetch(endpoint, {
                     credentials: 'include',
