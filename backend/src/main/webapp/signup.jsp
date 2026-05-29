@@ -148,7 +148,7 @@
                 <div class="mt-6 text-center">
                     <p class="text-sm text-gray-600">
                         ¿Ya tienes una cuenta?
-                        <a href="${pageContext.request.contextPath}/login.jsp" class="font-semibold text-purple-600 hover:text-purple-500 transition-colors">
+                        <a href="${pageContext.request.contextPath}/AuthServlet?action=formLogin" class="font-semibold text-purple-600 hover:text-purple-500 transition-colors">
                             Inicia sesión aquí
                         </a>
                     </p>
