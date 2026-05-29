@@ -1,140 +1,356 @@
+<%--
+    ════════════════════════════════════════════════════════════════════
+     inventory.jsp — Vista del inventario de materiales
+    ════════════════════════════════════════════════════════════════════
+
+     PROPÓSITO:
+     Listar materiales con filtros (búsqueda, tag, estado).
+     Muestra 2 vistas distintas según el rol:
+       - Viewer/Member: tarjetas tipo catálogo (solo lectura)
+       - Manager/Admin/SuperAdmin: tabla administrativa con acciones
+
+     ¿DE DÓNDE SACAMOS LOS DATOS?
+     - "items"       → lista filtrada que envió InventoryServlet
+     - "totalItems"  → cantidad total (antes de filtrar)
+     - "filtroTexto" → para preservar el texto de búsqueda
+     - "filtroTag"   → para preservar el filtro de tag
+     - "filtroStock" → para preservar el filtro de stock
+
+     CONVERTIDO DESDE:
+     inventory.html (versión con fetch + JS). Toda la lógica de filtrado
+     pasó al servidor (Clase 7.2 slide 13 - patrón MVC).
+
+     LO QUE EL JP PUEDE PREGUNTAR:
+     - "¿Por qué dos vistas distintas?" → Por requerimiento del cliente:
+       Viewer/Member solo consultan, Admin/SuperAdmin gestionan.
+     - "¿Cómo filtras?" → En el servlet con un for-loop en Java. El JSP
+       solo recibe la lista ya filtrada.
+    ════════════════════════════════════════════════════════════════════
+--%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.quintaola.model.Item" %>
 <%
+    /* ════════════════════════════════════════════════════════════════
+     *  BLOQUE DE PREPARACIÓN DE DATOS
+     *  ════════════════════════════════════════════════════════════════ */
+
     String ctx = request.getContextPath();
+
+    // Castear la lista de items que mandó el servlet (Clase 7.2 slide 53)
     List<Item> items = (List<Item>) request.getAttribute("items");
+    Integer totalItems = (Integer) request.getAttribute("totalItems");
+    if (totalItems == null) totalItems = 0;
+
+    // Recuperar los filtros aplicados (para conservarlos en los inputs)
+    String filtroTexto = (String) request.getAttribute("filtroTexto");
+    String filtroTag   = (String) request.getAttribute("filtroTag");
+    String filtroStock = (String) request.getAttribute("filtroStock");
+    if (filtroTexto == null) filtroTexto = "";
+    if (filtroTag == null) filtroTag = "";
+    if (filtroStock == null) filtroStock = "";
+
+    // Mensaje de error si lo hay
     String error = (String) request.getAttribute("error");
+
+    // ─── DETERMINAR QUÉ VISTA MOSTRAR SEGÚN ROL ───
+    // Antes esto lo decidía JavaScript; ahora lo hago en JSP
+    Integer roleIdSession = (Integer) session.getAttribute("roleId");
+    int roleId = roleIdSession != null ? roleIdSession : 0;
     String roleName = (String) session.getAttribute("roleName");
+
+    // Roles 1 (Viewer) y 2 (Member) → vista catálogo (tarjetas)
+    boolean esCatalogo = (roleId == 1 || roleId == 2);
+
+    // Roles 3,4,5 → vista tabla con CRUD
+    boolean esAdmin = (roleId == 4 || roleId == 5);
+    boolean puedeAgregarMaterial = (roleId == 3 || roleId == 4 || roleId == 5);
+
+    // Título y subtítulo según rol
+    String pageTitle    = esCatalogo ? "Catálogo de Materiales" : "Lista de Materiales";
+    String pageSubtitle = esCatalogo
+        ? "Selecciona materiales y agrégalos a tu solicitud."
+        : "Listado de materiales y stock actual en tiempo real.";
 %>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css" rel="stylesheet" />
 </head>
+
 <body class="page-body">
 
     <jsp:include page="includes/navbar.jsp"/>
 
     <main class="page-main">
 
-        <%-- CABECERA --%>
+        <%-- ──────────────────────────────────────────────────────────
+              CABECERA (título + botón añadir)
+             ────────────────────────────────────────────────────────── --%>
         <div class="page-header">
             <div>
-                <h1 class="page-title">Lista de Materiales</h1>
-                <p class="page-subtitle">Listado de materiales y stock actual en tiempo real.</p>
+                <h1 class="page-title"><%= pageTitle %></h1>
+                <p class="page-subtitle"><%= pageSubtitle %></p>
             </div>
-            <%-- Solo Admin y SuperAdmin pueden añadir material --%>
-            <% if ("Administrador".equals(roleName) || "SuperAdmin".equals(roleName)) { %>
+
+            <%-- Botón "Añadir Material" solo para Manager/Admin/SuperAdmin --%>
+            <%-- Esto reemplaza la lógica de configureInventoryByRole() del JS --%>
+            <% if (puedeAgregarMaterial) { %>
                 <a href="<%= ctx %>/AdminItemServlet?action=formCrear" class="btn-page-primary">
                     ➕ Añadir Material
                 </a>
             <% } %>
         </div>
 
-        <%-- Mensajes --%>
+        <%-- ─── Mensaje de error si lo hay ─── --%>
         <% if (error != null) { %>
             <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3">
                 ❌ <%= error %>
             </div>
         <% } %>
 
-        <%-- TABLA DE INVENTARIO --%>
-        <div class="table-panel">
-            <div class="table-wrapper">
-                <table class="table">
-                    <thead class="table-head">
-                        <tr>
-                            <th class="th">Material</th>
-                            <th class="th">Tags</th>
-                            <th class="th-center">Stock</th>
-                            <th class="th-center">Mínimo</th>
-                            <th class="th-center">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody class="table-body">
-                        <% if (items == null || items.isEmpty()) { %>
+        <%-- ──────────────────────────────────────────────────────────
+              BARRA DE BÚSQUEDA Y FILTROS
+              IMPORTANTE: Es un FORMULARIO. Al cambiar un select o pulsar
+              Enter en el input, hace GET al servlet con los parámetros.
+              Esto reemplaza el filtrarInventario() del JS.
+             ────────────────────────────────────────────────────────── --%>
+        <form action="<%= ctx %>/InventoryServlet" method="GET" class="search-bar">
+            <%-- Como es GET y queremos el action="lista", lo mandamos como hidden --%>
+            <input type="hidden" name="action" value="lista"/>
+
+            <%-- Input de búsqueda --%>
+            <div class="search-input-wrap">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                <%-- value=<%= filtroTexto %> preserva la búsqueda al recargar --%>
+                <input type="text" name="q"
+                       value="<%= filtroTexto %>"
+                       placeholder="Buscar materiales..."
+                       class="input-icon"/>
+            </div>
+
+            <div class="flex gap-3">
+                <%-- Select de etiqueta --%>
+                <%-- El atributo selected se pone si el valor coincide con el filtro actual --%>
+                <select name="tag" class="select-page w-auto">
+                    <option value=""                              <%= filtroTag.isEmpty()              ? "selected" : "" %>>Todas las Etiquetas</option>
+                    <option value="Construcción" <%= "Construcción".equals(filtroTag) ? "selected" : "" %>>Construcción</option>
+                    <option value="Acabados"     <%= "Acabados".equals(filtroTag)     ? "selected" : "" %>>Acabados</option>
+                    <option value="Líquidos"     <%= "Líquidos".equals(filtroTag)     ? "selected" : "" %>>Líquidos</option>
+                    <option value="Plomería"     <%= "Plomería".equals(filtroTag)     ? "selected" : "" %>>Plomería</option>
+                </select>
+
+                <%-- Select de stock --%>
+                <select name="stock" class="select-page w-auto">
+                    <option value=""             <%= filtroStock.isEmpty()      ? "selected" : "" %>>Todos los Stocks</option>
+                    <option value="OK"           <%= "OK".equals(filtroStock)   ? "selected" : "" %>>OK (En Stock)</option>
+                    <option value="LOW"          <%= "LOW".equals(filtroStock)  ? "selected" : "" %>>Bajo Stock</option>
+                    <option value="UNAVAILABLE"  <%= "UNAVAILABLE".equals(filtroStock) ? "selected" : "" %>>Sin Stock</option>
+                </select>
+
+                <%-- Botón explícito para buscar (también se dispara al pulsar Enter) --%>
+                <button type="submit" class="btn-page-primary">Filtrar</button>
+            </div>
+        </form>
+
+        <%-- ══════════════════════════════════════════════════════════
+              VISTA CATÁLOGO (para Viewer / Member)
+              Tarjetas con imagen, nombre y botón solicitar.
+             ══════════════════════════════════════════════════════════ --%>
+        <% if (esCatalogo) { %>
+
+            <% if (items == null || items.isEmpty()) { %>
+                <div class="panel-form text-center py-12">
+                    <p class="text-gray-500">No hay materiales que coincidan con tu búsqueda.</p>
+                </div>
+            <% } else { %>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <% for (Item item : items) { %>
+                        <div class="catalog-card">
+                            <div class="catalog-card-img">
+                                <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) { %>
+                                    <img src="<%= item.getImageUrl() %>"
+                                         alt="<%= item.getName() %>"
+                                         onerror="this.src='<%= ctx %>/img/placeholder.png'"/>
+                                <% } else { %>
+                                    <div class="w-full h-full bg-gray-100 flex items-center justify-center text-4xl">
+                                        📦
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="catalog-card-body">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="catalog-card-title"><%= item.getName() %></h3>
+
+                                    <%-- Badge según estado de stock --%>
+                                    <%
+                                        String s = item.getStatus();
+                                        String stockClass, stockTxt;
+                                        if ("OK".equals(s))                  { stockClass = "stock-ok";   stockTxt = "OK"; }
+                                        else if ("LOW".equals(s))            { stockClass = "stock-low";  stockTxt = "Bajo"; }
+                                        else if ("UNAVAILABLE".equals(s))    { stockClass = "stock-none"; stockTxt = "Sin Stock"; }
+                                        else                                 { stockClass = "stock-ok";   stockTxt = s; }
+                                    %>
+                                    <span class="<%= stockClass %>"><%= stockTxt %></span>
+                                </div>
+                                <p class="catalog-card-sku">
+                                    Stock: <%= item.getCachedQuantity() %> <%= item.getUnit() %>
+                                </p>
+                                <%-- Botón solicitar: lleva al form de solicitud con el itemId --%>
+                                <a href="<%= ctx %>/TransactionServlet?action=formCrear&itemId=<%= item.getId() %>"
+                                   class="catalog-card-btn">
+                                    ➕ Solicitar
+                                </a>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            <% } %>
+
+        <% } else { %>
+
+            <%-- ══════════════════════════════════════════════════════════
+                  VISTA TABLA (para Manager / Admin / SuperAdmin)
+                 ══════════════════════════════════════════════════════════ --%>
+            <div class="table-panel">
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead class="table-head">
                             <tr>
-                                <td colspan="5" class="py-10 text-center text-gray-400">
-                                    No hay materiales registrados todavía.
-                                </td>
+                                <th class="th">Material</th>
+                                <th class="th">Tags</th>
+                                <th class="th-center">Stock</th>
+                                <th class="th-center">Mínimo</th>
+                                <th class="th-center">Estado</th>
+                                <% if (esAdmin) { %>
+                                    <th class="th-center" style="width: 200px;">Acciones</th>
+                                <% } %>
                             </tr>
-                        <% } else { %>
-                            <% for (Item item : items) { %>
-                                <tr class="table-row">
-                                    <td class="td">
-                                        <div class="flex items-center gap-3">
-                                            <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) { %>
-                                                <img src="<%= item.getImageUrl() %>"
-                                                     alt="<%= item.getName() %>"
-                                                     class="w-10 h-10 rounded-lg object-cover border border-gray-100 shadow-sm"
-                                                     onerror="this.style.display='none'"/>
-                                            <% } else { %>
-                                                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
-                                                    📦
-                                                </div>
-                                            <% } %>
-                                            <span class="font-semibold text-gray-800">
-                                                <%= item.getName() %>
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="td">
-                                        <%-- Las tags vienen como String separadas por coma desde el DAO --%>
-                                        <div class="flex gap-1 flex-wrap">
-                                            <% if (item.getTags() != null && !item.getTags().isEmpty()) {
-                                                for (String tag : item.getTags()) { %>
-                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 uppercase">
-                                                    <%= tag %>
-                                                </span>
-                                            <% }
-                                            } else { %>
-                                                <span class="text-gray-300 text-xs">—</span>
-                                            <% } %>
-                                        </div>
-                                    </td>
-                                    <td class="td-center text-gray-700 font-semibold">
-                                        <%= item.getCachedQuantity() %> <%= item.getUnit() %>
-                                    </td>
-                                    <td class="td-center text-gray-600">
-                                        <%= item.getMinQuantity() %>
-                                    </td>
-                                    <td class="td-center">
-                                        <%
-                                            String status = item.getStatus();
-                                            String badgeClass;
-                                            String badgeText;
-                                            if ("OK".equals(status)) {
-                                                badgeClass = "stock-ok";
-                                                badgeText = "OK";
-                                            } else if ("LOW".equals(status)) {
-                                                badgeClass = "stock-low";
-                                                badgeText = "Stock Bajo";
-                                            } else if ("UNAVAILABLE".equals(status)) {
-                                                badgeClass = "stock-none";
-                                                badgeText = "Sin Stock";
-                                            } else {
-                                                badgeClass = "stock-ok";
-                                                badgeText = status;
-                                            }
-                                        %>
-                                        <span class="<%= badgeClass %>"><%= badgeText %></span>
+                        </thead>
+                        <tbody class="table-body">
+
+                            <% if (items == null || items.isEmpty()) { %>
+                                <tr>
+                                    <td colspan="<%= esAdmin ? 6 : 5 %>" class="py-10 text-center text-gray-400">
+                                        No hay materiales que coincidan con tu búsqueda.
                                     </td>
                                 </tr>
+                            <% } else { %>
+                                <%-- ─── Iterar la lista de items (Clase 7.2 slide 54) ─── --%>
+                                <% for (Item item : items) { %>
+                                    <tr class="table-row">
+
+                                        <%-- Columna: Material (imagen + nombre) --%>
+                                        <td class="td">
+                                            <div class="flex items-center gap-3">
+                                                <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) { %>
+                                                    <img src="<%= item.getImageUrl() %>"
+                                                         alt="<%= item.getName() %>"
+                                                         class="w-10 h-10 rounded-lg object-cover border border-gray-100"
+                                                         onerror="this.style.display='none'"/>
+                                                <% } else { %>
+                                                    <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
+                                                        📦
+                                                    </div>
+                                                <% } %>
+                                                <span class="font-semibold text-gray-800">
+                                                    <%= item.getName() %>
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <%-- Columna: Tags --%>
+                                        <td class="td">
+                                            <div class="flex gap-1 flex-wrap">
+                                                <% if (item.getTags() != null && !item.getTags().isEmpty()) {
+                                                    for (String tag : item.getTags()) { %>
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 uppercase">
+                                                        <%= tag %>
+                                                    </span>
+                                                <% }
+                                                } else { %>
+                                                    <span class="text-gray-300 text-xs">—</span>
+                                                <% } %>
+                                            </div>
+                                        </td>
+
+                                        <%-- Columna: Stock --%>
+                                        <td class="td-center text-gray-700 font-semibold">
+                                            <%= item.getCachedQuantity() %> <%= item.getUnit() %>
+                                        </td>
+
+                                        <%-- Columna: Mínimo --%>
+                                        <td class="td-center text-gray-600">
+                                            <%= item.getMinQuantity() %>
+                                        </td>
+
+                                        <%-- Columna: Estado (badge según OK/LOW/UNAVAILABLE) --%>
+                                        <td class="td-center">
+                                            <%
+                                                String st = item.getStatus();
+                                                String badgeClass, badgeText;
+                                                if ("OK".equals(st)) {
+                                                    badgeClass = "stock-ok";
+                                                    badgeText = "OK";
+                                                } else if ("LOW".equals(st)) {
+                                                    badgeClass = "stock-low";
+                                                    badgeText = "Stock Bajo";
+                                                } else if ("UNAVAILABLE".equals(st)) {
+                                                    badgeClass = "stock-none";
+                                                    badgeText = "Sin Stock";
+                                                } else {
+                                                    badgeClass = "stock-ok";
+                                                    badgeText = st;
+                                                }
+                                            %>
+                                            <span class="<%= badgeClass %>"><%= badgeText %></span>
+                                        </td>
+
+                                        <%-- Columna: Acciones (solo para Admin y SuperAdmin) --%>
+                                        <% if (esAdmin) { %>
+                                            <td class="td-center">
+                                                <div class="flex justify-center gap-2">
+                                                    <%-- Botón Editar --%>
+                                                    <a href="<%= ctx %>/AdminItemServlet?action=formEditar&id=<%= item.getId() %>"
+                                                       class="border border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-600 hover:text-purple-700 px-3 py-1.5 rounded-xl text-xs font-medium transition-all">
+                                                        ✏️ Editar
+                                                    </a>
+
+                                                    <%-- Botón Desactivar (formulario POST con confirmación) --%>
+                                                    <form action="<%= ctx %>/AdminItemServlet" method="POST"
+                                                          onsubmit="return confirm('¿Confirmas desactivar este material?');"
+                                                          style="display:inline;">
+                                                        <input type="hidden" name="action" value="desactivar"/>
+                                                        <input type="hidden" name="id" value="<%= item.getId() %>"/>
+                                                        <button type="submit"
+                                                                class="border border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700 px-3 py-1.5 rounded-xl text-xs font-medium transition-all">
+                                                            🗑️ Desactivar
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        <% } %>
+                                    </tr>
+                                <% } %>
                             <% } %>
-                        <% } %>
-                    </tbody>
-                </table>
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <%-- Footer con contador --%>
+                <div class="panel-footer">
+                    <p class="panel-count-text">
+                        Mostrando <%= items != null ? items.size() : 0 %>
+                        de <%= totalItems %> items
+                    </p>
+                </div>
             </div>
-            <div class="panel-footer">
-                <p class="panel-count-text">
-                    Mostrando <%= items != null ? items.size() : 0 %> materiales
-                </p>
-            </div>
-        </div>
+
+        <% } %>
 
     </main>
 
