@@ -8,7 +8,7 @@ USE inventorydb;
 -- ============================================================
 -- HASH  DE "demo1234"
 -- ============================================================
-SET @demo_hash = '$2a$10$XVnKGcN0fEEGnpGU5ateD.jNIjLRb3WkTBX4Uh3d05hgZLXfuUmC.';
+SET @demo_hash = '$2a$10$zxrp6qqbJSIDwhPFDriat.QA3hm/qYZfK.Zwo8.jdJM1Vtve5MnSq';
 
 -- ============================================================
 -- USUARIOS DEMO
@@ -117,3 +117,23 @@ ORDER BY u.id;
 -- Manager:     coordinadora@quintaola.com
 -- Admin:       admin.demo@quintaola.com
 -- SuperAdmin:  superadmin@quintaola.com
+
+USE inventorydb;
+
+UPDATE users SET password_hash = '$2a$10$zxrp6qqbJSIDwhPFDriat.QA3hm/qYZfK.Zwo8.jdJM1Vtve5MnSq' 
+  WHERE email = 'solicitante@quintaola.com';
+
+UPDATE users SET password_hash = '$2a$10$A6qeI3kDvyEBzWIIvwNh.e6WSpzYmv5gYBwWh4sd86wNj7Dte0yW.' 
+  WHERE email = 'deposito@quintaola.com';
+
+UPDATE users SET password_hash = '$2a$10$JLEbpKMR8Ph.0Blc2p/Yau9ZH3Z.swWKwVJlwGuVxQHjSKrq41awu' 
+  WHERE email = 'coordinadora@quintaola.com';
+
+UPDATE users SET password_hash = '$2a$10$dlbkcI/bZQjq0afBnnlwW.dsMoLZtRBrrv.PuuOsHSNslcP.rheLq' 
+  WHERE email = 'admin.demo@quintaola.com';
+
+UPDATE users SET password_hash = '$2a$10$KDS7qWWh27wTO0QWiPpWJeqrgI5QlxQzumELplg0m.h3LSwSzoq36' 
+  WHERE email = 'superadmin@quintaola.com';
+
+-- Verificar:
+SELECT id, email, name, LEFT(password_hash, 25) AS hash_inicio FROM users;

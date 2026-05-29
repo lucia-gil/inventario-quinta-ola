@@ -117,7 +117,7 @@ const Auth = (() => {
   function requireRole(allowedRoles) {
     if (!requireLogin()) return false;
     if (!allowedRoles.includes(getRoleName())) {
-      window.location.href = '/pages/error-404.html';
+      window.location.href = '/pages/404.html'; //ya teniamos pagina de error de 404.html y no error-404.html
       return false;
     }
     return true;
@@ -126,7 +126,7 @@ const Auth = (() => {
   function requireCapability(capabilityFn) {
     if (!requireLogin()) return false;
     if (!capabilityFn()) {
-      window.location.href = '/pages/error-404.html';
+      window.location.href = '/pages/404.html';
       return false;
     }
     return true;

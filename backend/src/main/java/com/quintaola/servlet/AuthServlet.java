@@ -1,197 +1,142 @@
 package com.quintaola.servlet;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.quintaola.dao.UserDAO;
 import com.quintaola.model.User;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.SQLException;
 
-@WebServlet("/api/auth/*")
+/**
+ * AuthServlet — patrón MVC del curso (Clase 7.2 y 7.3).
+ *
+ * Maneja login, logout y registro mediante un parámetro `action`.
+ *
+ * URLs:
+ *   GET  /AuthServlet?action=formLogin    → muestra login.jsp
+ *   GET  /AuthServlet?action=formSignup   → muestra signup.jsp
+ *   GET  /AuthServlet?action=logout       → cierra sesión y redirige a login
+ *   POST /AuthServlet  (action=login)     → procesa credenciales
+ *   POST /AuthServlet  (action=signup)    → registra nuevo usuario
+ */
+@WebServlet(name = "AuthServlet", value = "/AuthServlet")
 public class AuthServlet extends HttpServlet {
 
-    private final UserDAO userDAO = new UserDAO();
-    private final Gson gson       = new Gson();
-
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse res)
-            throws IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        res.setContentType("application/json");
-        res.setCharacterEncoding("UTF-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
+        String action = request.getParameter("action") == null
+                ? "formLogin"
+                : request.getParameter("action");
 
-        PrintWriter out = res.getWriter();
-        String pathInfo = req.getPathInfo();
+        RequestDispatcher view;
 
-        if (pathInfo == null) {
-            res.setStatus(400);
-            out.print("{\"error\":\"Ruta no especificada\"}");
-            out.flush();
-            return;
+        switch (action) {
+            case "formLogin":
+                view = request.getRequestDispatcher("login.jsp");
+                view.forward(request, response);
+                break;
+
+            case "formSignup":
+                view = request.getRequestDispatcher("signup.jsp");
+                view.forward(request, response);
+                break;
+
+            case "logout":
+                HttpSession session = request.getSession(false);
+                if (session != null) session.invalidate();
+                response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+                break;
+
+            default:
+                response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+                break;
         }
-
-        switch (pathInfo) {
-            case "/register" -> handleRegister(req, res, out);
-            case "/login"    -> handleLogin(req, res, out);
-            case "/logout"   -> handleLogout(req, res, out);
-            default -> {
-                res.setStatus(404);
-                out.print("{\"error\":\"Ruta no encontrada\"}");
-            }
-        }
-        out.flush();
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res)
-            throws IOException {
-
-        res.setContentType("application/json");
-        res.setCharacterEncoding("UTF-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-
-        PrintWriter out = res.getWriter();
-        String pathInfo = req.getPathInfo();
-
-        if ("/me".equals(pathInfo)) {
-            HttpSession session = req.getSession(false);
-            if (session != null && session.getAttribute("userId") != null) {
-                JsonObject user = new JsonObject();
-                user.addProperty("userId",   (Integer) session.getAttribute("userId"));
-                user.addProperty("userName", (String)  session.getAttribute("userName"));
-                user.addProperty("userEmail",(String)  session.getAttribute("userEmail"));
-                user.addProperty("userRole", (String)  session.getAttribute("roleName"));
-                user.addProperty("roleId",   (Integer) session.getAttribute("roleId"));
-                out.print(gson.toJson(user));
-            } else {
-                res.setStatus(401);
-                out.print("{\"error\":\"No hay sesión activa\"}");
-            }
-        }
-        out.flush();
-    }
-
-    private void handleRegister(HttpServletRequest req,
-                                HttpServletResponse res,
-                                PrintWriter out) throws IOException {
-        try {
-            User user = gson.fromJson(req.getReader(), User.class);
-
-            if (user.getName()  == null || user.getName().isBlank() ||
-                    user.getEmail() == null || user.getEmail().isBlank() ||
-                    user.getDni()   == null || user.getDni().isBlank()   ||
-                    user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
-                res.setStatus(400);
-                out.print("{\"error\":\"Todos los campos son obligatorios\"}");
-                return;
-            }
-
-            if (!user.getDni().matches("\\d{8}")) {
-                res.setStatus(400);
-                out.print("{\"error\":\"El DNI debe tener exactamente 8 dígitos\"}");
-                return;
-            }
-
-            boolean registrado = userDAO.register(user);
-            if (registrado) {
-                res.setStatus(201);
-                out.print("{\"message\":\"Usuario registrado correctamente\"}");
-            } else {
-                res.setStatus(500);
-                out.print("{\"error\":\"No se pudo registrar el usuario\"}");
-            }
-
-        } catch (SQLException e) {
-            if (e.getMessage().contains("Duplicate entry")) {
-                res.setStatus(409);
-                out.print("{\"error\":\"El correo o DNI ya están registrados\"}");
-            } else {
-                res.setStatus(500);
-                out.print("{\"error\":\"Error al registrar: " + e.getMessage() + "\"}");
-            }
-        }
-    }
-
-    private void handleLogin(HttpServletRequest req,
-                             HttpServletResponse res,
-                             PrintWriter out) throws IOException {
-        try {
-            JsonObject body = gson.fromJson(req.getReader(), JsonObject.class);
-
-            if (body == null || !body.has("email") || !body.has("password")) {
-                res.setStatus(400);
-                out.print("{\"error\":\"Email y contraseña son obligatorios\"}");
-                return;
-            }
-
-            String email    = body.get("email").getAsString();
-            String password = body.get("password").getAsString();
-
-            User user = userDAO.login(email, password);
-
-            if (user == null) {
-                res.setStatus(401);
-                out.print("{\"error\":\"Correo o contraseña incorrectos\"}");
-                return;
-            }
-
-            // Crear sesión — guardamos roleName además de roleId para usar en SessionFilter
-            HttpSession session = req.getSession(true);
-            session.setAttribute("userId",    user.getId());        // Integer
-            session.setAttribute("userName",  user.getName());
-            session.setAttribute("userEmail", user.getEmail());
-            session.setAttribute("roleId",    user.getRoleId());    // Integer (1-5)
-            session.setAttribute("roleName",  user.getRoleName());  // "Viewer", "Member", "Manager", "Administrador", "SuperAdmin"
-            session.setMaxInactiveInterval(30 * 60); // 30 minutos
-
-            // Redirección por nombre de rol (más legible)
-            String redirect = switch (user.getRoleName()) {
-                case "SuperAdmin"                  -> "/pages/superadmin-permissions.html";
-                case "Manager", "Administrador"    -> "/pages/dashboard.html";
-                case "Member"                      -> "/pages/deposit-view.html";
-                default                            -> "/pages/home.html";
-            };
-
-            JsonObject response = new JsonObject();
-            response.addProperty("message",   "Login exitoso");
-            response.addProperty("userId",    user.getId());
-            response.addProperty("userName",  user.getName());
-            response.addProperty("userEmail", user.getEmail());
-            response.addProperty("userRole",  user.getRoleName());  // ← El frontend recibe "Administrador" etc.
-            response.addProperty("roleId",    user.getRoleId());
-            response.addProperty("redirect",  redirect);
-
-            out.print(gson.toJson(response));
-
-        } catch (SQLException e) {
-            res.setStatus(500);
-            out.print("{\"error\":\"Error al iniciar sesión: " + e.getMessage() + "\"}");
-        }
-    }
-
-    private void handleLogout(HttpServletRequest req,
-                              HttpServletResponse res,
-                              PrintWriter out) {
-        HttpSession session = req.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-        out.print("{\"message\":\"Sesión cerrada correctamente\"}");
     }
 
     @Override
-    protected void doOptions(HttpServletRequest req, HttpServletResponse res) {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        res.setStatus(200);
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // Configurar encoding (Clase 7.3, slide 16)
+        request.setCharacterEncoding("UTF-8");
+
+        String action = request.getParameter("action") == null
+                ? "" : request.getParameter("action");
+
+        UserDAO userDao = new UserDAO();
+        RequestDispatcher view;
+
+        switch (action) {
+            case "login":
+                String email    = request.getParameter("email");
+                String password = request.getParameter("password");
+
+                try {
+                    User user = userDao.login(email, password);
+
+                    if (user == null) {
+                        request.setAttribute("error", "Correo o contraseña incorrectos");
+                        view = request.getRequestDispatcher("login.jsp");
+                        view.forward(request, response);
+                    } else {
+                        // Login OK: guardar en sesión
+                        HttpSession sess = request.getSession();
+                        sess.setAttribute("userId",    user.getId());
+                        sess.setAttribute("userName",  user.getName());
+                        sess.setAttribute("userEmail", user.getEmail());
+                        sess.setAttribute("roleId",    user.getRoleId());
+                        sess.setAttribute("roleName",  user.getRoleName());
+
+                        // Redirigir según rol
+                        String redirect = switch (user.getRoleName()) {
+                            case "SuperAdmin"    -> "/PermissionServlet";
+                            case "Administrador" -> "/DashboardServlet";
+                            case "Manager"       -> "/DashboardServlet";
+                            case "Member"        -> "/DepositServlet";
+                            default              -> "/HomeServlet";
+                        };
+                        response.sendRedirect(request.getContextPath() + redirect);
+                    }
+                } catch (Exception e) {
+                    request.setAttribute("error", "Error del servidor: " + e.getMessage());
+                    view = request.getRequestDispatcher("login.jsp");
+                    view.forward(request, response);
+                }
+                break;
+
+            case "signup":
+                try {
+                    User newUser = new User();
+                    newUser.setName(request.getParameter("name"));
+                    newUser.setDni(request.getParameter("dni"));
+                    newUser.setEmail(request.getParameter("email"));
+                    newUser.setPasswordHash(request.getParameter("password"));
+
+                    boolean ok = userDao.register(newUser);
+
+                    if (ok) {
+                        request.setAttribute("success", "¡Cuenta creada! Ya puedes iniciar sesión.");
+                        view = request.getRequestDispatcher("login.jsp");
+                        view.forward(request, response);
+                    } else {
+                        request.setAttribute("error", "No se pudo crear la cuenta. ¿Quizás el correo o DNI ya existen?");
+                        view = request.getRequestDispatcher("signup.jsp");
+                        view.forward(request, response);
+                    }
+                } catch (Exception e) {
+                    request.setAttribute("error", "Error: " + e.getMessage());
+                    view = request.getRequestDispatcher("signup.jsp");
+                    view.forward(request, response);
+                }
+                break;
+
+            default:
+                response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+                break;
+        }
     }
 }

@@ -165,10 +165,14 @@
     // DATOS DE SESIÓN
     // =====================================================
 
-    const roleId = Auth.getRoleId();
-    const isViewer = roleId === 'role-viewer';
-    const isManager = roleId === 'role-manager';
-    const isAdmin = roleId === 'role-admin' || roleId === 'role-superadmin';
+    const roleId = parseInt(Auth.getRoleId(), 10) || 0;
+    
+    // Viewers (1) y Members (2) usan la vista de catálogo visual
+    const isViewer = roleId === 1 || roleId === 2; 
+    
+    // Manager (3), Admin (4) y SuperAdmin (5) usan la vista de tabla administrativa
+    const isManager = roleId === 3;
+    const isAdmin = roleId === 4 || roleId === 5;
 
     // =====================================================
     // NAVBAR
@@ -178,7 +182,7 @@
       active: 'inventory',
       name: Auth.getUserName(),
       role: Auth.getReadableRole(),
-      menuType: Auth.getMenuType(),
+      roleId: roleId
     });
 
     QO.footer();
@@ -444,7 +448,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify(solicitPayload)
+                body: JSON.stringify(solicitudPayload)
             });
 
             if (res.ok) {
