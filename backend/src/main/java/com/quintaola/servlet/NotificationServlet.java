@@ -1,54 +1,92 @@
 package com.quintaola.servlet;
 
-import com.google.gson.Gson;
 import com.quintaola.dao.NotificationDAO;
 import com.quintaola.model.Notification;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.*;
+
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 
-@WebServlet("/api/notifications")
+/* ============================================================
+   NotificationServlet
+   ============================================================
+   Maneja las notificaciones del usuario logueado.
+
+   URLs:
+     GET  /NotificationServlet                  -> lista del usuario
+     POST /NotificationServlet (action=marcar)  -> marca una como leida
+   ============================================================ */
+@WebServlet(name = "NotificationServlet", value = "/NotificationServlet")
 public class NotificationServlet extends HttpServlet {
 
-    private final NotificationDAO dao = new NotificationDAO();
-    private final Gson gson = new Gson();
-
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        // CORS
-        String origin = req.getHeader("Origin");
-        res.setHeader("Access-Control-Allow-Origin", origin != null ? origin : "http://localhost:5173");
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setContentType("application/json");
-        res.setCharacterEncoding("UTF-8");
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        PrintWriter out = res.getWriter();
-        HttpSession session = req.getSession(false);
+        Integer userId = (Integer) request.getSession().getAttribute("userId");
+        Integer roleId = (Integer) request.getSession().getAttribute("roleId");
 
-        if (session == null || session.getAttribute("userId") == null) {
-            res.setStatus(401);
-            out.print("{\"error\":\"No autorizado\"}");
+        if (userId == null) {
+            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
             return;
         }
 
+        // El PDF dice: SuperAdmin no tiene notificaciones, solo cambio de contrasena
+        if (roleId != null && roleId == 5) {
+            response.sendRedirect(request.getContextPath() + "/HomeServlet");
+            return;
+        }
+
+        NotificationDAO notifDao = new NotificationDAO();
+        RequestDispatcher view;
+
         try {
-            // El userId ahora se guarda como Integer en la sesión
-            int userId = (Integer) session.getAttribute("userId");
-            List<Notification> alerts = dao.getByUserId(userId);
-            out.print(gson.toJson(alerts));
+            // Traer todas las notifs del usuario, ordenadas mas reciente primero
+            List<Notification> notifs = notifDao.getByUserId(userId);
+
+            request.setAttribute("notificaciones", notifs);
+            request.setAttribute("activeMenu", "notifications");
+
+            view = request.getRequestDispatcher("notifications.jsp");
+            view.forward(request, response);
 
         } catch (Exception e) {
-            System.out.println("ERROR EN NOTIFICATION_SERVLET: " + e.getMessage());
-            e.printStackTrace();
-            res.setStatus(500);
-            // Devolver array vacío para que el frontend no truene
-            out.print("[]");
+            request.setAttribute("error", "Error al cargar notificaciones: " + e.getMessage());
+            view = request.getRequestDispatcher("notifications.jsp");
+            view.forward(request, response);
         }
-        out.flush();
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setCharacterEncoding("UTF-8");
+
+        String action = request.getParameter("action") == null
+                ? "" : request.getParameter("action");
+
+        NotificationDAO notifDao = new NotificationDAO();
+
+        switch (action) {
+
+            case "marcar":
+                try {
+                    int notifId = Integer.parseInt(request.getParameter("id"));
+                    notifDao.markAsRead(notifId);
+                    response.sendRedirect(request.getContextPath() + "/NotificationServlet");
+                } catch (Exception e) {
+                    response.sendRedirect(request.getContextPath()
+                            + "/NotificationServlet?error=" + e.getMessage().replace(" ", "+"));
+                }
+                break;
+
+            default:
+                response.sendRedirect(request.getContextPath() + "/NotificationServlet");
+                break;
+        }
     }
 }
