@@ -16,6 +16,9 @@
     String error = (String) request.getAttribute("error");
     String success = request.getParameter("success");
     String errParam = request.getParameter("error");
+
+    // Capturamos el rol del usuario actual para ocultar acciones
+    Integer roleId = (Integer) session.getAttribute("roleId");
 %>
 <%!
     private String traducirStatus(String s) {
@@ -108,7 +111,10 @@
                     <th class="th-center">Cantidad</th>
                     <th class="th">Fecha</th>
                     <th class="th-center">Estado</th>
+                    <%-- Solo Manager (3), Admin (4) y SA (5) ven las acciones --%>
+                    <% if (roleId != null && roleId >= 3) { %>
                     <th class="th-center">Acciones</th>
+                    <% } %>
                 </tr>
                 </thead>
                 <tbody class="table-body">
@@ -138,10 +144,13 @@
                         <%= tx.getCreatedAt() != null ? tx.getCreatedAt() : "—" %>
                     </td>
                     <td class="td-center">
-                                        <span class="<%= claseBadgeStatus(tx.getStatus()) %>">
-                                            <%= traducirStatus(tx.getStatus()) %>
-                                        </span>
+                        <span class="<%= claseBadgeStatus(tx.getStatus()) %>">
+                            <%= traducirStatus(tx.getStatus()) %>
+                        </span>
                     </td>
+
+                    <%-- Solo Manager, Admin y SA pueden interactuar con los botones --%>
+                    <% if (roleId != null && roleId >= 3) { %>
                     <td class="td-center">
                         <%-- Si está pendiente, mostrar botones de aprobar/rechazar --%>
                         <% if ("PENDING".equals(tx.getStatus())) { %>
@@ -168,6 +177,8 @@
                         <span class="text-gray-300 text-xs">—</span>
                         <% } %>
                     </td>
+                    <% } %>
+
                 </tr>
                 <% } %>
                 <% } %>

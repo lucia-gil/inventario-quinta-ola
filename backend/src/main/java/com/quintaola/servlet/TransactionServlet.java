@@ -86,8 +86,14 @@ public class TransactionServlet extends HttpServlet {
                 break;
 
             case "formCrear":
+                try {
+                    com.quintaola.dao.ItemDAO itemDao = new com.quintaola.dao.ItemDAO();
+                    request.setAttribute("items", itemDao.getAll());
+                } catch (Exception e) {
+                    System.out.println("Error cargando items: " + e.getMessage());
+                }
                 request.setAttribute("activeMenu", "inventory");
-                view = request.getRequestDispatcher("show-requestform.jsp");
+                view = request.getRequestDispatcher("request-form.jsp");
                 view.forward(request, response);
                 break;
 
@@ -119,18 +125,22 @@ public class TransactionServlet extends HttpServlet {
             case "crear":
                 try {
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
-                    int quantity = Integer.parseInt(request.getParameter("quantity"));
+                    int quantity = Integer.parseInt(request.getParameter("cantidad"));
+                    String proposito = request.getParameter("proposito");
+                    String fecha = request.getParameter("needed-by");
 
                     Transaction t = new Transaction();
                     t.setItemId(itemId);
                     t.setQuantity(quantity);
                     t.setRequesterId(userId);
+                    // Se guarda la fecha y proposito en Notes
+                    t.setNotes("Para " + fecha + " | " + proposito);
 
                     txDao.create(t);
                     response.sendRedirect(request.getContextPath() + "/HistoryServlet?action=lista");
                 } catch (Exception e) {
                     e.printStackTrace();
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=formCrear&error=1");
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=formCrear&error=Error+al+crear+solicitud");
                 }
                 break;
 
