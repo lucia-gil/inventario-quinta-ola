@@ -23,45 +23,47 @@
     </div>
     <div class="navbar-menu">
 
-        <%-- ── Links comunes a todos los usuarios autenticados ── --%>
+        <%-- ── Links para todos los usuarios EXCEPTO SuperAdmin ── --%>
+        <% if (!"SuperAdmin".equals(roleName)) { %>
         <a href="<%= ctx %>/HomeServlet" class="<%= activeMenu.equals("home") ? "nav-link-active" : "nav-link" %>">
-           Inicio
+            Inicio
         </a>
 
         <a href="<%= ctx %>/DashboardServlet" class="<%= activeMenu.equals("dashboard") ? "nav-link-active" : "nav-link" %>">
-           Dashboard
+            Dashboard
         </a>
 
         <a href="<%= ctx %>/TransactionServlet" class="<%= activeMenu.equals("transactions") ? "nav-link-active" : "nav-link" %>">
-           Transacciones
+            Transacciones
         </a>
 
         <a href="<%= ctx %>/InventoryServlet" class="<%= activeMenu.equals("inventory") ? "nav-link-active" : "nav-link" %>">
-           Inventario
+            Inventario
         </a>
 
         <a href="<%= ctx %>/HistoryServlet" class="<%= activeMenu.equals("history") ? "nav-link-active" : "nav-link" %>">
-           Historial
+            Historial
         </a>
 
-        <%-- ── Links solo para Administrador y SuperAdmin ── --%>
-        <% if ("Administrador".equals(roleName) || "SuperAdmin".equals(roleName)) { %>
-            <a href="<%= ctx %>/UserServlet" class="<%= activeMenu.equals("members") ? "nav-link-active" : "nav-link" %>">
-               Miembros
-            </a>
+        <%-- ── Links solo para Administrador (SuperAdmin excluido) ── --%>
+        <% if ("Administrador".equals(roleName)) { %>
+        <a href="<%= ctx %>/UserServlet" class="<%= activeMenu.equals("members") ? "nav-link-active" : "nav-link" %>">
+            Miembros
+        </a>
+        <% } %>
         <% } %>
 
         <%-- ── Links solo para SuperAdmin ── --%>
         <% if ("SuperAdmin".equals(roleName)) { %>
-            <a href="<%= ctx %>/RoleServlet" class="<%= activeMenu.equals("roles") ? "nav-link-active" : "nav-link" %>">
-               Roles (SA)
-            </a>
-            <a href="<%= ctx %>/PermissionServlet" class="<%= activeMenu.equals("permissions") ? "nav-link-active" : "nav-link" %>">
-               Permisos (SA)
-            </a>
-            <a href="<%= ctx %>/AuditServlet" class="<%= activeMenu.equals("audit") ? "nav-link-active" : "nav-link" %>">
-               Auditoría (SA)
-            </a>
+        <a href="<%= ctx %>/RoleServlet" class="<%= activeMenu.equals("roles") ? "nav-link-active" : "nav-link" %>">
+            Roles (SA)
+        </a>
+        <a href="<%= ctx %>/PermissionServlet" class="<%= activeMenu.equals("permissions") ? "nav-link-active" : "nav-link" %>">
+            Permisos (SA)
+        </a>
+        <a href="<%= ctx %>/AuditServlet" class="<%= activeMenu.equals("audit") ? "nav-link-active" : "nav-link" %>">
+            Auditoría (SA)
+        </a>
         <% } %>
 
         <%-- ── Info usuario, Notificaciones y Logout ── --%>
@@ -73,9 +75,9 @@
 
             <%-- 🔔 Campana de Notificaciones (No aplica para SuperAdmin según tus reglas) --%>
             <% if (!"SuperAdmin".equals(roleName)) { %>
-                <a href="<%= ctx %>/NotificationServlet" class="nav-avatar hover:bg-pink-100 transition" title="Notificaciones">
-                    🔔
-                </a>
+            <a href="<%= ctx %>/NotificationServlet" class="nav-avatar hover:bg-pink-100 transition" title="Notificaciones">
+                🔔
+            </a>
             <% } %>
 
             <a href="<%= ctx %>/ProfileServlet" class="nav-avatar hover:bg-gray-200 transition" title="Mi Perfil">👤</a>
