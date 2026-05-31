@@ -1,5 +1,189 @@
 package com.quintaola.servlet;
 
+import com.quintaola.dao.TransactionDAO;
+import com.quintaola.model.Transaction;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * TransactionServlet — Controlador de Solicitudes y Aprobaciones
+ * ════════════════════════════════════════════════════════════════════
+ */
+@WebServlet(name = "TransactionServlet", value = "/TransactionServlet")
+public class TransactionServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String action = request.getParameter("action") == null
+                ? "lista"
+                : request.getParameter("action");
+
+        TransactionDAO txDao = new TransactionDAO();
+        RequestDispatcher view;
+
+        // Validar sesión antes de cualquier acción
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+            return;
+        }
+
+        switch (action) {
+
+            case "lista":
+                try {
+                    // Leemos el filtro que manda el JSP (Todas, Pendientes, Aprobadas)
+                    String status = request.getParameter("status");
+                    if (status == null) status = "";
+
+                    List<Transaction> listaTx;
+
+                    // Filtramos según el botón que presionó el usuario
+                    if ("PENDING".equals(status)) {
+                        listaTx = txDao.getPending();
+                    } else if ("APPROVED".equals(status)) {
+                        listaTx = txDao.getApproved();
+                    } else {
+                        listaTx = txDao.getAll(); // Todas
+                    }
+
+                    request.setAttribute("transacciones", listaTx);
+                    request.setAttribute("filtroStatus", status); // Retornamos el filtro para mantener el botón activo
+                    request.setAttribute("activeMenu", "transactions");
+
+                    view = request.getRequestDispatcher("transactions.jsp");
+                    view.forward(request, response);
+                } catch (Exception e) {
+                    request.setAttribute("error", "Error al cargar las solicitudes: " + e.getMessage());
+                    view = request.getRequestDispatcher("transactions.jsp");
+                    view.forward(request, response);
+                }
+                break;
+
+            case "detalle":
+                try {
+                    int id = Integer.parseInt(request.getParameter("id"));
+                    Transaction tx = txDao.getById(id);
+
+                    if (tx != null) {
+                        request.setAttribute("tx", tx);
+                        view = request.getRequestDispatcher("request-detail.jsp");
+                        view.forward(request, response);
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista");
+                    }
+                } catch (Exception e) {
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista");
+                }
+                break;
+
+            case "formCrear":
+                try {
+                    com.quintaola.dao.ItemDAO itemDao = new com.quintaola.dao.ItemDAO();
+                    request.setAttribute("items", itemDao.getAll());
+                } catch (Exception e) {
+                    System.out.println("Error cargando items: " + e.getMessage());
+                }
+                request.setAttribute("activeMenu", "inventory");
+                view = request.getRequestDispatcher("request-form.jsp");
+                view.forward(request, response);
+                break;
+
+            default:
+                response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista");
+                break;
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setCharacterEncoding("UTF-8");
+
+        String action = request.getParameter("action") == null ? "" : request.getParameter("action");
+        TransactionDAO txDao = new TransactionDAO();
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+            return;
+        }
+
+        Integer userId = (Integer) session.getAttribute("userId");
+
+        switch (action) {
+
+            case "crear":
+                try {
+                    int itemId = Integer.parseInt(request.getParameter("itemId"));
+                    int quantity = Integer.parseInt(request.getParameter("cantidad"));
+                    String proposito = request.getParameter("proposito");
+                    String fecha = request.getParameter("needed-by");
+
+                    Transaction t = new Transaction();
+                    t.setItemId(itemId);
+                    t.setQuantity(quantity);
+                    t.setRequesterId(userId);
+                    // Se guarda la fecha y proposito en Notes
+                    t.setNotes("Para " + fecha + " | " + proposito);
+
+                    txDao.create(t);
+                    response.sendRedirect(request.getContextPath() + "/HistoryServlet?action=lista");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=formCrear&error=Error+al+crear+solicitud");
+                }
+                break;
+
+            case "aprobar":
+                try {
+                    int id = Integer.parseInt(request.getParameter("id"));
+                    // Capturamos el parámetro "notas" enviado desde tu formulario oculto
+                    String notas = request.getParameter("notas") != null ? request.getParameter("notas") : "";
+
+                    txDao.approve(id, userId, notas);
+
+                    // Redirigimos con mensaje de éxito visible en el JSP
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&status=PENDING&success=Solicitud+aprobada+correctamente");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&error=Error+al+aprobar+la+solicitud");
+                }
+                break;
+
+            case "rechazar":
+                try {
+                    int id = Integer.parseInt(request.getParameter("id"));
+                    // Capturamos el motivo del rechazo del prompt JS
+                    String notas = request.getParameter("notas") != null ? request.getParameter("notas") : "Rechazado sin comentarios.";
+
+                    txDao.reject(id, userId, notas);
+
+                    // Redirigimos con mensaje de éxito visible en el JSP
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&status=PENDING&success=Solicitud+rechazada+correctamente");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&error=Error+al+rechazar+la+solicitud");
+                }
+                break;
+
+            default:
+                response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista");
+                break;
+        }
+    }
+}
+/*package com.quintaola.servlet;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.quintaola.dao.TransactionDAO;
@@ -209,3 +393,4 @@ public class TransactionServlet extends HttpServlet {
         res.setStatus(200);
     }
 }
+*/
