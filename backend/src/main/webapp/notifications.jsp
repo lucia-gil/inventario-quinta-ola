@@ -56,11 +56,11 @@
             <div class="space-y-3">
                 <% for (Notification n : notifs) { %>
 
-                    <%-- Si esta leida (is_read=true), se ve gris; si no, destacada --%>
-                    <% boolean leida = n.isRead();
-                       String cardClass = leida
-                           ? "bg-gray-50 border border-gray-100"
-                           : "bg-white border border-pink-200 shadow-sm";
+                    <%-- Si esta leida (is_read=1), se ve gris; si no, destacada --%>
+                    <% boolean leida = (n.getIsRead() == 1);
+                        String cardClass = leida
+                                ? "bg-gray-50 border border-gray-100"
+                                : "bg-white border border-pink-200 shadow-sm";
                     %>
 
                     <div class="<%= cardClass %> rounded-xl p-4 flex items-start gap-4">

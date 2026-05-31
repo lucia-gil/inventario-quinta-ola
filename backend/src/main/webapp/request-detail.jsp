@@ -29,28 +29,28 @@
     String errParam = request.getParameter("error");
 %>
 <%!
-    /* Metodos auxiliares para traducir estados y elegir clases CSS.
-       Se declaran con <%! %> para reutilizarlos varias veces. */
+        /* Metodos auxiliares para traducir estados y elegir clases CSS.
+           Se declaran con  para reutilizarlos varias veces. */
     private String traducirStatus(String s) {
         if (s == null) return "Desconocido";
-        return switch (s) {
-            case "PENDING"   -> "Pendiente";
-            case "APPROVED"  -> "Aprobada";
-            case "REJECTED"  -> "Rechazada";
-            case "COMPLETED" -> "Entregada";
-            default          -> s;
-        };
+        switch (s) {
+        case "PENDING":   return "Pendiente";
+        case "APPROVED":  return "Aprobada";
+        case "REJECTED":  return "Rechazada";
+        case "COMPLETED": return "Entregada";
+        default:          return s;
+        }
     }
 
     private String claseBadgeStatus(String s) {
         if (s == null) return "status-badge bg-gray-100 text-gray-600";
-        return switch (s) {
-            case "PENDING"   -> "status-pending";
-            case "APPROVED"  -> "status-approved";
-            case "REJECTED"  -> "status-rejected";
-            case "COMPLETED" -> "status-delivered";
-            default          -> "status-badge bg-gray-100 text-gray-600";
-        };
+        switch (s) {
+            case "PENDING":   return "status-pending";
+            case "APPROVED":  return "status-approved";
+            case "REJECTED":  return "status-rejected";
+            case "COMPLETED": return "status-delivered";
+            default:          return "status-badge bg-gray-100 text-gray-600";
+        }
     }
 %>
 <!doctype html>

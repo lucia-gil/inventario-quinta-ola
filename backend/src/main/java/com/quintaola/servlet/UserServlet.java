@@ -1,5 +1,125 @@
 package com.quintaola.servlet;
 
+import com.quintaola.dao.UserDAO;
+import com.quintaola.model.User;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Base64;
+import java.util.List;
+
+@WebServlet(name = "UserServlet", value = "/UserServlet")
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024 * 1, // 1 MB
+        maxFileSize = 1024 * 1024 * 5,       // 5 MB máximo para el avatar
+        maxRequestSize = 1024 * 1024 * 10    // 10 MB máximo por petición
+)
+public class UserServlet extends HttpServlet {
+
+    private final UserDAO userDAO = new UserDAO();
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // 1. Validar sesión
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+            return;
+        }
+
+        String action = request.getParameter("action");
+        if (action == null) action = "lista";
+
+        try {
+            switch (action) {
+                case "lista":
+                    // Según tu PDF de reglas: Solo el Administrador (Rol 4) y SuperAdmin (5) ven los miembros
+                    Integer roleId = (Integer) session.getAttribute("roleId");
+                    if (roleId == null || roleId < 4) {
+                        response.sendRedirect(request.getContextPath() + "/HomeServlet");
+                        return;
+                    }
+
+                    // Cargamos todos los usuarios para la tabla
+                    List<User> usuarios = userDAO.getAll();
+                    request.setAttribute("usuarios", usuarios);
+                    request.setAttribute("activeMenu", "members");
+
+                    // El PDF indica que la vista se llama admin-users
+                    RequestDispatcher view = request.getRequestDispatcher("admin-users.jsp");
+                    view.forward(request, response);
+                    break;
+
+                default:
+                    response.sendRedirect(request.getContextPath() + "/DashboardServlet");
+                    break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/DashboardServlet?error=Error+al+cargar+usuarios");
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // 1. Validar sesión
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+            return;
+        }
+
+        String action = request.getParameter("action");
+        int userId = (Integer) session.getAttribute("userId");
+
+        if ("updateAvatar".equals(action)) {
+            try {
+                Part filePart = request.getPart("avatar");
+                if (filePart == null || filePart.getSize() == 0) {
+                    response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=No+se+selecciono+ningun+archivo");
+                    return;
+                }
+
+                String contentType = filePart.getContentType();
+                byte[] imageBytes;
+                try (InputStream is = filePart.getInputStream()) {
+                    imageBytes = is.readAllBytes();
+                }
+
+                // Mantengo tu misma lógica de conversión a Base64
+                String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                String avatarUrlString = "data:" + contentType + ";base64," + base64Image;
+
+                boolean ok = userDAO.updateAvatar(userId, avatarUrlString);
+
+                if (ok) {
+                    // Si todo sale bien, redirigimos de vuelta al perfil con un mensaje de éxito
+                    response.sendRedirect(request.getContextPath() + "/ProfileServlet?success=Avatar+actualizado+correctamente");
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=No+se+pudo+actualizar+el+avatar");
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Error+de+servidor+al+subir+imagen");
+            }
+        } else {
+            response.sendRedirect(request.getContextPath() + "/HomeServlet");
+        }
+    }
+}
+
+/*package com.quintaola.servlet;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.quintaola.dao.UserDAO;
@@ -135,3 +255,4 @@ public class UserServlet extends HttpServlet {
         res.setStatus(200);
     }
 }
+ */

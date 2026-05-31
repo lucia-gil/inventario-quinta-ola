@@ -64,7 +64,8 @@
 
     // Roles 3,4,5 → vista tabla con CRUD
     boolean esAdmin = (roleId == 4 || roleId == 5);
-    boolean puedeAgregarMaterial = (roleId == 3 || roleId == 4 || roleId == 5);
+    //Solo administrador y Gestor (roles 2 y 4) pueden agregar material
+    boolean puedeAgregarMaterial = (roleId == 2 || roleId == 4);
 
     // Título y subtítulo según rol
     String pageTitle    = esCatalogo ? "Catálogo de Materiales" : "Lista de Materiales";
