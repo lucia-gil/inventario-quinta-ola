@@ -1,48 +1,46 @@
-# Inventario Quinta Ola
+# Inventario Quinta Ola 📦
 
-Sistema de gestión de inventario para Quinta Ola — TEL131 PUCP 2026-1
+Sistema de gestión de inventario para **Quinta Ola** — TEL131 PUCP 2026-1.
+Esta aplicación permite controlar, gestionar y optimizar el flujo de materiales desde un solo lugar.
 
-## Estructura
-- `frontend/` — Interfaz web (Vite + Tailwind CSS)
-- `backend/`  — Servidor Java (Maven + Tomcat + JDBC)
-- `database/` — Modelo y scripts de base de datos MySQL
+## Estructura del Proyecto
 
-## Requisitos
-- Node.js 18+ (frontend)
-- Java 17+ (backend)
-- MySQL 8.0+
-- Apache Tomcat 10+
+Tras la migración a JSP, el proyecto funciona como un sistema unificado (monolítico):
 
-## Levantar frontend
-cd frontend
-npm install
-npm run dev
+* **`backend/`** — Lógica del servidor y vistas integradas. Desarrollado con **Java, Maven, Servlets y JSP**. Las vistas y estilos (Tailwind CSS compilado) se encuentran dentro de `src/main/webapp/`.
+* **`database/`** — Modelo de la base de datos y scripts de inicialización en MySQL.
 
-## Levantar backend
-Abrir carpeta backend/ en IntelliJ IDEA
-Configurar Tomcat y correr
+## Requisitos Previos
 
-## Datos de prueba
-Ejecutar `database/data-prueba.sql` después de `database/inventorydb.sql`
+* **Java 17+** (JDK)
+* **MySQL 8.0+**
+* **Apache Tomcat 10+**
+* Un IDE compatible con Java EE (IntelliJ IDEA Ultimate, Eclipse Enterprise o NetBeans)
 
-Usuarios de prueba:
+## Levantar el Proyecto
 
-- Viewer:
-solicitante@quintaola.com
-admin123
+Dado que las vistas (JSP) ahora están integradas en el backend, solo necesitas levantar un servidor:
 
-- Member:
-deposito@quintaola.com
-admin123
+1. Clona este repositorio en tu máquina local.
+2. Abre la carpeta `backend/` en tu IDE (ej. IntelliJ IDEA, NetBeans o Eclipse).
+3. Configura tu servidor **Apache Tomcat (versión 10+)** en el IDE.
+4. Ejecuta (Run) el proyecto en el servidor. 
+5. El proyecto estará disponible en tu navegador, generalmente en `http://localhost:8080/inventario/`
+## Base de Datos y Datos de Prueba
 
-- Manager:
-oordinadora@quintaola.com
-admin123
+Para inicializar la base de datos con información funcional:
 
-- Admin:
-admin.demo@quintaola.com
-admin123
+1. Ejecuta primero el script de estructura: `database/inventorydb.sql`
+2. Ejecuta después el script de datos iniciales: `database/seed_data.sql`
 
-- SuperAdmin:
-superadmin@quintaola.com
-admin123
+### 👥 Usuarios de Prueba
+
+Puedes probar los distintos roles del sistema utilizando las siguientes credenciales (la contraseña para todos es `admin123`):
+
+| Rol | Correo / Usuario | Contraseña |
+| :--- | :--- | :--- |
+| **Viewer** (Solicitante) | `solicitante@quintaola.com` | `admin123` |
+| **Member** (Depósito) | `deposito@quintaola.com` | `admin123` |
+| **Manager** (Coordinadora)| `coordinadora@quintaola.com` | `admin123` |
+| **Admin** | `admin.demo@quintaola.com` | `admin123` |
+| **SuperAdmin** | `superadmin@quintaola.com` | `admin123` |
