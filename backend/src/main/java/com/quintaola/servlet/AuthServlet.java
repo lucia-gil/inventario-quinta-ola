@@ -108,10 +108,15 @@ public class AuthServlet extends HttpServlet {
                 }
                 break;
 
-            case "signup":
+            case "register":
                 try {
                     User newUser = new User();
-                    newUser.setName(request.getParameter("name"));
+
+                    // Juntamos los campos separados del formulario
+                    String nombres = request.getParameter("nombres");
+                    String apellidos = request.getParameter("apellidos");
+                    newUser.setName(nombres + " " + apellidos);
+
                     newUser.setDni(request.getParameter("dni"));
                     newUser.setEmail(request.getParameter("email"));
                     newUser.setPasswordHash(request.getParameter("password"));

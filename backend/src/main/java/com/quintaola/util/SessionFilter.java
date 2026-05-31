@@ -23,14 +23,21 @@ public class SessionFilter implements Filter {
         String path = req.getRequestURI().substring(req.getContextPath().length());
 
         // ─── URLs públicas que no requieren login ───
+        // index.jsp es la landing page pública
+        // Páginas de error siempre accesibles
+        // Recursos estáticos (CSS, JS, imágenes) siempre accesibles
         if (path.equals("/")                          ||
-                path.equals("/AuthServlet")               ||  // login form
+                path.equals("/index.jsp")                 ||
+                path.equals("/AuthServlet")               ||
                 path.startsWith("/AuthServlet?")          ||
                 path.startsWith("/css/")                  ||
                 path.startsWith("/js/")                   ||
                 path.startsWith("/img/")                  ||
                 path.equals("/login.jsp")                 ||
-                path.equals("/signup.jsp")) {
+                path.equals("/signup.jsp")                ||
+                path.equals("/403.jsp")                   ||
+                path.equals("/404.jsp")                   ||
+                path.equals("/500.jsp")) {
             chain.doFilter(request, response);
             return;
         }

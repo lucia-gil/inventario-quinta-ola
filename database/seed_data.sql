@@ -137,3 +137,4 @@ UPDATE users SET password_hash = '$2a$10$KDS7qWWh27wTO0QWiPpWJeqrgI5QlxQzumELplg
 
 -- Verificar:
 SELECT id, email, name, LEFT(password_hash, 25) AS hash_inicio FROM users;
+SELECT item_id, requester_id, approver_id, type, quantity, status, notes FROM transactions;
