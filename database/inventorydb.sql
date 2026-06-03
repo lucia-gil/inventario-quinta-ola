@@ -1,6 +1,5 @@
 -- ============================================================
--- QUINTA OLA — ESQUEMA DE BASE DE DATOS
--- IDs en INT AUTO_INCREMENT
+-- QUINTA OLA — BD COMPLETA 
 -- ============================================================
 
 DROP DATABASE IF EXISTS inventorydb;
@@ -8,23 +7,23 @@ CREATE DATABASE inventorydb;
 USE inventorydb;
 
 -- ============================================================
--- ROLES
+-- ROLES (los 5 son fijos, no se borran ni crean nuevos)
 -- ============================================================
 CREATE TABLE roles (
     id           INT          AUTO_INCREMENT PRIMARY KEY,
     name         VARCHAR(100) NOT NULL UNIQUE,
     description  VARCHAR(255),
     is_system    BOOLEAN      DEFAULT FALSE,
+    activo       BOOLEAN      DEFAULT TRUE,
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
 
--- Roles del sistema (IDs autogenerados: 1=Viewer, 2=Member, 3=Manager, 4=Admin, 5=SuperAdmin)
-INSERT INTO roles (name, description, is_system) VALUES
-    ('Viewer',         'Solo lectura del catáuserslogo',              TRUE),
-    ('Member',         'Solicitante: crea solicitudes',          TRUE),
-    ('Manager',        'Aprobador: aprueba o rechaza',           TRUE),
-    ('Administrador',  'Administra usuarios y materiales',       TRUE),
-    ('SuperAdmin',     'Control total + auditoría',              TRUE);
+INSERT INTO roles (name, description, is_system, activo) VALUES
+    ('Viewer',         'Solicitante: crea pedidos de materiales',     TRUE, TRUE),
+    ('Member',         'Encargado de depósito: entrega materiales',   TRUE, TRUE),
+    ('Manager',        'Aprobador: aprueba o rechaza solicitudes',    TRUE, TRUE),
+    ('Administrador',  'Gestión completa de usuarios y materiales',   TRUE, TRUE),
+    ('SuperAdmin',     'Control total + auditoría del sistema',       TRUE, TRUE);
 
 -- ============================================================
 -- USERS
@@ -66,16 +65,13 @@ CREATE TABLE tags (
     id         INT          AUTO_INCREMENT PRIMARY KEY,
     name       VARCHAR(100) NOT NULL UNIQUE,
     created_by INT,
-
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
 CREATE TABLE item_tags (
     item_id INT,
     tag_id  INT,
-
     PRIMARY KEY (item_id, tag_id),
-
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id)  REFERENCES tags(id)  ON DELETE CASCADE
 );
@@ -88,27 +84,16 @@ CREATE TABLE transactions (
     item_id      INT        NOT NULL,
     requester_id INT        NOT NULL,
     approver_id  INT,
-
     type     ENUM('IN', 'OUT', 'ADJUST') NOT NULL,
     quantity INT                         NOT NULL,
-
-    status ENUM(
-        'PENDING',
-        'WAITING_CHANGES',
-        'APPROVED',
-        'REJECTED',
-        'COMPLETED'
-    ) NOT NULL DEFAULT 'PENDING',
-
+    status ENUM('PENDING', 'WAITING_CHANGES', 'APPROVED', 'REJECTED', 'COMPLETED') NOT NULL DEFAULT 'PENDING',
     notes              TEXT,
     needed_by          DATE       NULL,
     estimated_delivery DATE       NULL,
-
     created_at         TIMESTAMP  DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP  DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     processed_at       TIMESTAMP  NULL,
     delivered_at       TIMESTAMP  NULL,
-
     FOREIGN KEY (item_id)      REFERENCES items(id),
     FOREIGN KEY (requester_id) REFERENCES users(id),
     FOREIGN KEY (approver_id)  REFERENCES users(id)
@@ -126,8 +111,56 @@ CREATE TABLE notifications (
     related_id   INT,
     is_read      TINYINT(1)   NOT NULL DEFAULT 0,
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- PERMISSIONS (catálogo de privilegios disponibles - Sprint 5)
+-- ============================================================
+CREATE TABLE permissions (
+    id          INT          AUTO_INCREMENT PRIMARY KEY,
+    code        VARCHAR(50)  NOT NULL UNIQUE,
+    description VARCHAR(255),
+    category    VARCHAR(50)
+);
+
+INSERT INTO permissions (code, description, category) VALUES
+    ('inventory.edit',    'Editar items del inventario',       'inventario'),
+    ('inventory.delete',  'Eliminar items del inventario',     'inventario'),
+    ('user.manage',       'Gestionar cuentas de usuarios',     'usuarios'),
+    ('user.delete',       'Eliminar usuarios',                 'usuarios'),
+    ('request.approve',   'Aprobar solicitudes',               'solicitudes'),
+    ('request.reject',    'Rechazar solicitudes',              'solicitudes'),
+    ('stock.update',      'Actualizar cantidades de stock',    'deposito'),
+    ('report.export',     'Exportar reportes a CSV/Excel',     'reportes'),
+    ('audit.view',        'Ver bitácora de auditoría',         'auditoria');
+
+-- ============================================================
+-- USER_PERMISSIONS (qué permisos extra tiene cada usuario)
+-- ============================================================
+CREATE TABLE user_permissions (
+    user_id        INT NOT NULL,
+    permission_id  INT NOT NULL,
+    granted_by     INT NOT NULL,
+    granted_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, permission_id),
+    FOREIGN KEY (user_id)       REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
+    FOREIGN KEY (granted_by)    REFERENCES users(id)
+);
+
+-- ============================================================
+-- AUDIT LOG (bitácora inmutable - Sprint 5)
+-- ============================================================
+CREATE TABLE audit_log (
+    id          INT          AUTO_INCREMENT PRIMARY KEY,
+    actor_id    INT          NOT NULL,
+    action      VARCHAR(50)  NOT NULL,
+    entity      VARCHAR(50)  NOT NULL,
+    entity_id   INT,
+    details     TEXT,
+    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (actor_id) REFERENCES users(id)
 );
 
 -- ============================================================
@@ -141,6 +174,11 @@ CREATE INDEX idx_item_tags_tag           ON item_tags(tag_id);
 CREATE INDEX idx_users_rol               ON users(role_id);
 CREATE INDEX idx_items_activo            ON items(activo);
 CREATE INDEX idx_users_activo            ON users(activo);
+CREATE INDEX idx_roles_activo            ON roles(activo);
 CREATE INDEX idx_notifications_user      ON notifications(user_id);
 CREATE INDEX idx_notifications_unread    ON notifications(user_id, is_read);
 CREATE INDEX idx_notifications_created   ON notifications(created_at);
+CREATE INDEX idx_audit_actor             ON audit_log(actor_id);
+CREATE INDEX idx_audit_entity            ON audit_log(entity, entity_id);
+CREATE INDEX idx_audit_created           ON audit_log(created_at);
+CREATE INDEX idx_userperms_user          ON user_permissions(user_id);
