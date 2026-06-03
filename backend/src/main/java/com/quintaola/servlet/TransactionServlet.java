@@ -9,10 +9,11 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * ════════════════════════════════════════════════════════════════════
- * TransactionServlet — Controlador de Solicitudes y Aprobaciones
+ * TransactionServlet — Bandeja de Entrada de Solicitudes Pendientes
  * ════════════════════════════════════════════════════════════════════
  */
 @WebServlet(name = "TransactionServlet", value = "/TransactionServlet")
@@ -40,44 +41,59 @@ public class TransactionServlet extends HttpServlet {
 
             case "lista":
                 try {
-                    // Leemos el filtro que manda el JSP (Todas, Pendientes, Aprobadas)
-                    String status = request.getParameter("status");
-                    if (status == null) status = "";
-
-                    List<Transaction> listaTx;
-
-                    // 1. Recuperamos las credenciales de la sesión actual
+                    // 1. Recuperamos credenciales
                     Integer userIdSession = (Integer) session.getAttribute("userId");
                     Integer roleIdSession = (Integer) session.getAttribute("roleId");
                     int currentUserId = userIdSession != null ? userIdSession : 0;
                     int currentRoleId = roleIdSession != null ? roleIdSession : 0;
 
-                    // 2. Lógica de visibilidad por Roles
+                    List<Transaction> todasPendientes;
+
+                    // 2. Lógica: SOLO traemos transacciones PENDIENTES
                     if (currentRoleId == 1) {
-                        // 👁 VIEWER (Rol 1): Solo ve su propio historial
-                        listaTx = txDao.getByUser(currentUserId);
+                        // Rol 1 (Viewer): Filtramos en memoria solo sus pendientes
+                        todasPendientes = txDao.getByUser(currentUserId).stream()
+                                .filter(t -> "PENDING".equals(t.getStatus()))
+                                .collect(Collectors.toList());
                     } else if (currentRoleId == 4 || currentRoleId == 5) {
-                        // ADMIN & SUPERADMIN (Roles 4 y 5): Ven TODO (enviamos 0 para saltar el filtro)
-                        if ("PENDING".equals(status)) {
-                            listaTx = txDao.getPendingExcludingSelf(0);
-                        } else if ("APPROVED".equals(status)) {
-                            listaTx = txDao.getApprovedExcludingSelf(0);
-                        } else {
-                            listaTx = txDao.getAllExcludingSelf(0);
-                        }
+                        // Rol 4 y 5 (Admin/SA): Ven TODAS las pendientes de la empresa
+                        todasPendientes = txDao.getPendingExcludingSelf(0);
                     } else {
-                        // MEMBER & MANAGER (Roles 2 y 3): Ven todas EXCEPTO las que ellos mismos crearon
-                        if ("PENDING".equals(status)) {
-                            listaTx = txDao.getPendingExcludingSelf(currentUserId);
-                        } else if ("APPROVED".equals(status)) {
-                            listaTx = txDao.getApprovedExcludingSelf(currentUserId);
-                        } else {
-                            listaTx = txDao.getAllExcludingSelf(currentUserId);
+                        // Rol 2 y 3 (Member/Manager): Ven pendientes EXCEPTO las suyas
+                        todasPendientes = txDao.getPendingExcludingSelf(currentUserId);
+                    }
+
+                    // 3. LÓGICA DE PAGINACIÓN (Súper Profesional)
+                    int pageNum = 1;
+                    int pageSize = 8; // <-- Muestra 8 solicitudes por página (puedes cambiarlo)
+
+                    if (request.getParameter("page") != null) {
+                        try {
+                            pageNum = Integer.parseInt(request.getParameter("page"));
+                        } catch (NumberFormatException e) {
+                            pageNum = 1;
                         }
                     }
 
-                    request.setAttribute("transacciones", listaTx);
-                    request.setAttribute("filtroStatus", status);
+                    int totalRecords = todasPendientes.size();
+                    int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+
+                    // Validar límites de página
+                    if (pageNum < 1) pageNum = 1;
+                    if (pageNum > totalPages && totalPages > 0) pageNum = totalPages;
+
+                    // Extraer la "tajada" (subList) correspondiente a la página actual
+                    int startIndex = (pageNum - 1) * pageSize;
+                    int endIndex = Math.min(startIndex + pageSize, totalRecords);
+                    List<Transaction> listaPaginada = todasPendientes.isEmpty()
+                            ? todasPendientes
+                            : todasPendientes.subList(startIndex, endIndex);
+
+                    // 4. Enviamos datos a la vista
+                    request.setAttribute("transacciones", listaPaginada);
+                    request.setAttribute("currentPage", pageNum);
+                    request.setAttribute("totalPages", totalPages);
+                    request.setAttribute("totalRecords", totalRecords);
                     request.setAttribute("activeMenu", "transactions");
 
                     view = request.getRequestDispatcher("transactions.jsp");
@@ -147,8 +163,6 @@ public class TransactionServlet extends HttpServlet {
                 try {
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
                     int quantity = Integer.parseInt(request.getParameter("cantidad"));
-
-                    // 1. Usamos los NOMBRES EXACTOS que están en el atributo 'name' del JSP
                     String notas = request.getParameter("notas");
                     String fecha = request.getParameter("neededBy");
 
@@ -157,14 +171,12 @@ public class TransactionServlet extends HttpServlet {
                     t.setQuantity(quantity);
                     t.setRequesterId(userId);
 
-                    // 2. Lógica inteligente para armar la nota
                     String notasFinales = "";
                     if (fecha != null && !fecha.trim().isEmpty()) {
                         notasFinales = "Para " + fecha + " | " + notas;
                     } else {
-                        notasFinales = notas; // Si no hay fecha, solo guardamos el texto
+                        notasFinales = notas;
                     }
-
                     t.setNotes(notasFinales);
 
                     txDao.create(t);
@@ -178,13 +190,11 @@ public class TransactionServlet extends HttpServlet {
             case "aprobar":
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
-                    // Capturamos el parámetro "notas" enviado desde tu formulario oculto
                     String notas = request.getParameter("notas") != null ? request.getParameter("notas") : "";
 
                     txDao.approve(id, userId, notas);
-
-                    // Redirigimos con mensaje de éxito visible en el JSP
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&status=PENDING&success=Solicitud+aprobada+correctamente");
+                    // Como ahora solo hay pendientes, quitamos el status=PENDING de la URL
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&success=Solicitud+aprobada+correctamente");
                 } catch (Exception e) {
                     e.printStackTrace();
                     response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&error=Error+al+aprobar+la+solicitud");
@@ -194,13 +204,10 @@ public class TransactionServlet extends HttpServlet {
             case "rechazar":
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
-                    // Capturamos el motivo del rechazo del prompt JS
                     String notas = request.getParameter("notas") != null ? request.getParameter("notas") : "Rechazado sin comentarios.";
 
                     txDao.reject(id, userId, notas);
-
-                    // Redirigimos con mensaje de éxito visible en el JSP
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&status=PENDING&success=Solicitud+rechazada+correctamente");
+                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&success=Solicitud+rechazada+correctamente");
                 } catch (Exception e) {
                     e.printStackTrace();
                     response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&error=Error+al+rechazar+la+solicitud");
