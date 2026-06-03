@@ -1,14 +1,27 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.quintaola.dao.NotificationDAO" %>
 <%
     String userName = (String) session.getAttribute("userName");
     String roleName = (String) session.getAttribute("roleName");
     String activeMenu = (String) request.getAttribute("activeMenu");
+    Integer navUserId = (Integer) session.getAttribute("userId");
 
     if (userName == null) userName = "Usuario";
     if (roleName == null) roleName = "";
     if (activeMenu == null) activeMenu = "";
 
     String ctx = request.getContextPath();
+
+    // ─── CONSULTAR NOTIFICACIONES NO LEÍDAS ───
+    int unreadNotifs = 0;
+    if (navUserId != null && !"SuperAdmin".equals(roleName)) {
+        try {
+            NotificationDAO navNotifDao = new NotificationDAO();
+            unreadNotifs = navNotifDao.getUnreadCount(navUserId);
+        } catch (Exception ignored) {
+            // Failsafe para evitar que se rompa el renderizado si la BD falla
+        }
+    }
 %>
 
 <nav class="sidebar">
@@ -46,7 +59,32 @@
                 <p class="sidebar-user-role"><%= roleName %></p>
             </div>
             <% if (!"SuperAdmin".equals(roleName)) { %>
-            <a href="<%= ctx %>/NotificationServlet" class="sidebar-bell" title="Notificaciones">🔔</a>
+            <%-- Modificado sutilmente con position inline-relative para albergar el contador flotante --%>
+            <a href="<%= ctx %>/NotificationServlet" class="sidebar-bell" title="Notificaciones" style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+                🔔
+                <% if (unreadNotifs > 0) { %>
+                <span style="
+                    position: absolute;
+                    top: -5px;
+                    right: -5px;
+                    background-color: #db2777; /* Rosa fuerte corporativo */
+                    color: white;
+                    font-size: 10px;
+                    font-weight: bold;
+                    border-radius: 9999px;
+                    min-width: 16px;
+                    height: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 3px;
+                    border: 2px solid white;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                ">
+                    <%= unreadNotifs %>
+                </span>
+                <% } %>
+            </a>
             <% } %>
         </div>
         <div class="sidebar-actions">

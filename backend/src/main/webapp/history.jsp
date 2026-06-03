@@ -150,7 +150,7 @@
                                 No hay transacciones que coincidan con tu búsqueda.
                             </td>
                         </tr>
-                        bag<% } else { %>
+                        <% } else { %>
                         <% for (Transaction tx : transacciones) { %>
                         <tr class="table-row">
 

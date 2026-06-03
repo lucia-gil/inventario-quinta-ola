@@ -9,7 +9,7 @@ public class User {
     private String passwordHash;
     private int roleId;
     private String roleName;
-    private boolean activo;
+    private int activo; // <-- Cambiado a int para coincidir con el Servlet y la BD (0 o 1)
     private String createdAt;
     private String avatarUrl;
 
@@ -36,8 +36,9 @@ public class User {
     public String getRoleName()                { return roleName; }
     public void setRoleName(String roleName)   { this.roleName = roleName; }
 
-    public boolean isActivo()                  { return activo; }
-    public void setActivo(boolean activo)      { this.activo = activo; }
+    // 👇 Métodos actualizados para la propiedad activo
+    public int getActivo()                     { return activo; }
+    public void setActivo(int activo)          { this.activo = activo; }
 
     public String getCreatedAt()               { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }

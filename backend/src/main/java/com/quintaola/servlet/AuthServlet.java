@@ -15,11 +15,11 @@ import java.io.IOException;
  * Maneja login, logout y registro mediante un parámetro `action`.
  *
  * URLs:
- *   GET  /AuthServlet?action=formLogin    → muestra login.jsp
- *   GET  /AuthServlet?action=formSignup   → muestra signup.jsp
- *   GET  /AuthServlet?action=logout       → cierra sesión y redirige a login
- *   POST /AuthServlet  (action=login)     → procesa credenciales
- *   POST /AuthServlet  (action=signup)    → registra nuevo usuario
+ * GET  /AuthServlet?action=formLogin    → muestra login.jsp
+ * GET  /AuthServlet?action=formSignup   → muestra signup.jsp
+ * GET  /AuthServlet?action=logout       → cierra sesión y redirige a login
+ * POST /AuthServlet  (action=login)     → procesa credenciales
+ * POST /AuthServlet  (action=signup)    → registra nuevo usuario
  */
 @WebServlet(name = "AuthServlet", value = "/AuthServlet")
 public class AuthServlet extends HttpServlet {
@@ -82,6 +82,14 @@ public class AuthServlet extends HttpServlet {
                         request.setAttribute("error", "Correo o contraseña incorrectos");
                         view = request.getRequestDispatcher("login.jsp");
                         view.forward(request, response);
+
+                        // 🛡️ NUEVO: Validar si la cuenta está pendiente de aprobación
+                        // Nota: Si en tu modelo User la propiedad es boolean, usa !user.isActivo()
+                    } else if (user.getActivo() == 0) {
+                        request.setAttribute("error", "Tu cuenta está pendiente de aprobación por un Administrador.");
+                        view = request.getRequestDispatcher("login.jsp");
+                        view.forward(request, response);
+
                     } else {
                         // Login OK: guardar en sesión
                         HttpSession sess = request.getSession();
@@ -121,10 +129,17 @@ public class AuthServlet extends HttpServlet {
                     newUser.setEmail(request.getParameter("email"));
                     newUser.setPasswordHash(request.getParameter("password"));
 
+                    // 🛡️ NUEVO: Forzamos los valores de seguridad
+                    // Nota: Si en tu modelo User 'activo' es boolean, usa newUser.setActivo(false);
+                    newUser.setRoleId(1);
+                    newUser.setActivo(0);
+
                     boolean ok = userDao.register(newUser);
 
                     if (ok) {
-                        request.setAttribute("success", "¡Cuenta creada! Ya puedes iniciar sesión.");
+                        userDao.createAdminNotification("user_approval", "Nuevo registro pendiente", "El usuario " + newUser.getName() + " espera aprobación.");
+
+                        request.setAttribute("success", "¡Registro exitoso! Tu cuenta ha sido creada y está pendiente de aprobación por un Administrador.");
                         view = request.getRequestDispatcher("login.jsp");
                         view.forward(request, response);
                     } else {

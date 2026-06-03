@@ -37,7 +37,7 @@ public class NotificationDAO {
         return list;
     }
 
-    // 2. MÉTODO NUEVO: Marcar una notificación específica como leída (is_read = 1)
+    // 2. MeTODO NUEVO: Marcar una notificación específica como leída (is_read = 1)
     public boolean markAsRead(int notifId) throws SQLException {
         String sql = "UPDATE notifications SET is_read = 1 WHERE id = ?";
 
@@ -49,5 +49,20 @@ public class NotificationDAO {
 
             return filasAfectadas > 0; // Retorna true si se actualizó correctamente
         }
+    }
+
+    // 3. Obtener el número de notificaciones NO leídas de un usuario
+    public int getUnreadCount(int userId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
     }
 }

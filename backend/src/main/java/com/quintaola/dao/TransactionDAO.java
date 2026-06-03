@@ -114,6 +114,79 @@ public class TransactionDAO {
         return list;
     }
 
+    // ============================================================
+    // MÉTODOS NUEVOS: Filtro de exclusión de auto-aprobación
+    // ============================================================
+
+    public List<Transaction> getAllExcludingSelf(int currentUserId) throws SQLException {
+        List<Transaction> list = new ArrayList<>();
+        String sql = """
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
+                   u.name AS requester_name, a.name AS approver_name
+            FROM transactions t
+            JOIN items i ON t.item_id = i.id
+            JOIN users u ON t.requester_id = u.id
+            LEFT JOIN users a ON t.approver_id = a.id
+            WHERE t.requester_id != ? OR ? = 0
+            ORDER BY t.created_at DESC
+            """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, currentUserId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        }
+        return list;
+    }
+
+    public List<Transaction> getPendingExcludingSelf(int currentUserId) throws SQLException {
+        List<Transaction> list = new ArrayList<>();
+        String sql = """
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
+                   u.name AS requester_name, a.name AS approver_name
+            FROM transactions t
+            JOIN items i ON t.item_id = i.id
+            JOIN users u ON t.requester_id = u.id
+            LEFT JOIN users a ON t.approver_id = a.id
+            WHERE t.status = 'PENDING' AND (t.requester_id != ? OR ? = 0)
+            ORDER BY t.created_at DESC
+            """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, currentUserId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        }
+        return list;
+    }
+
+    public List<Transaction> getApprovedExcludingSelf(int currentUserId) throws SQLException {
+        List<Transaction> list = new ArrayList<>();
+        String sql = """
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
+                   u.name AS requester_name, a.name AS approver_name
+            FROM transactions t
+            JOIN items i ON t.item_id = i.id
+            JOIN users u ON t.requester_id = u.id
+            LEFT JOIN users a ON t.approver_id = a.id
+            WHERE t.status = 'APPROVED' AND (t.requester_id != ? OR ? = 0)
+            ORDER BY t.created_at ASC
+            """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, currentUserId);
+            ps.setInt(2, currentUserId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        }
+        return list;
+    }
+
     public boolean create(Transaction t) throws SQLException {
         String sql = """
             INSERT INTO transactions
