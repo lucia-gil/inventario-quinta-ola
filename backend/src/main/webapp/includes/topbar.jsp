@@ -1,36 +1,25 @@
-<%--
-    ════════════════════════════════════════════════════════════════════
-     topbar.jsp — Barra superior con información del usuario
-    ════════════════════════════════════════════════════════════════════
-
-     PROPÓSITO:
-     Mostrar arriba en cada vista interna:
-       - Nombre del usuario logueado
-       - Su rol
-       - Su avatar (foto o iniciales como fallback)
-
-     ¿DE DÓNDE SACAMOS LOS DATOS?
-     - userName, roleName, avatarUrl → session
-
-     UBICACIÓN EN EL LAYOUT:
-     Va dentro de .main-content, antes del <main>.
-     Se ve a la derecha por defecto, con flex justify-content: flex-end.
-    ════════════════════════════════════════════════════════════════════
---%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.quintaola.dao.NotificationDAO" %>
 <%
     String ctxTop  = request.getContextPath();
     String userNameTop = (String) session.getAttribute("userName");
     String roleNameTop = (String) session.getAttribute("roleName");
     String avatarUrl   = (String) session.getAttribute("avatarUrl");
+    Integer topbarUserId = (Integer) session.getAttribute("userId");
 
     if (userNameTop == null) userNameTop = "Usuario";
     if (roleNameTop == null) roleNameTop = "";
 
+    // ─── Notificaciones en tiempo real trasladadas al topbar ───
+    int unreadNotifsTop = 0;
+    if (topbarUserId != null && !"SuperAdmin".equals(roleNameTop)) {
+        try {
+            NotificationDAO topNotifDao = new NotificationDAO();
+            unreadNotifsTop = topNotifDao.getUnreadCount(topbarUserId);
+        } catch (Exception ignored) {}
+    }
+
     // ─── Iniciales del usuario para el avatar fallback ───
-    // Ej: "Pedro Administrador" -> "PA"
-    //     "Carmen del Depósito" -> "CD"
-    //     "Ana" -> "AN"
     String iniciales = "U";
     if (userNameTop != null && !userNameTop.trim().isEmpty()) {
         String[] partes = userNameTop.trim().split("\\s+");
@@ -43,9 +32,7 @@
         }
     }
 
-    // ─── Traducir rol técnico al español del cliente ───
-    // Internamente usamos Viewer/Member/Manager pero al usuario
-    // le mostramos el nombre del cliente real.
+    // ─── Traducir rol técnico al español ───
     String roleDisplay = roleNameTop;
     switch (roleNameTop) {
         case "Viewer":        roleDisplay = "Solicitante"; break;
@@ -58,21 +45,34 @@
 
 <header class="topbar">
 
-    <%-- Espacio vacio a la izquierda (para que el contenido del usuario quede a la derecha) --%>
-    <div class="topbar-spacer"></div>
+    <!-- Buscador Integrado a la izquierda -->
+    <div class="topbar-search-container">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Buscar en el panel de inventarios...">
+    </div>
 
-    <%-- Info del usuario alineada a la derecha --%>
+    <!-- Info del usuario alineada a la derecha -->
     <div class="topbar-user">
 
+        <%-- Campana de Notificaciones Profesional --%>
+        <% if (!"SuperAdmin".equals(roleNameTop)) { %>
+        <a href="<%= ctxTop %>/NotificationServlet" class="topbar-bell-btn" title="Ver Notificaciones">
+            <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+            <% if (unreadNotifsTop > 0) { %>
+            <span class="topbar-bell-badge"><%= unreadNotifsTop %></span>
+            <% } %>
+        </a>
+        <% } %>
+
+        <!-- Datos textuales -->
         <div class="topbar-user-text">
             <p class="topbar-user-name"><%= userNameTop %></p>
             <p class="topbar-user-role"><%= roleDisplay %></p>
         </div>
 
-        <%-- Avatar: si hay foto la usa, si no muestra iniciales con gradiente --%>
+        <%-- Avatar redondo con fallback dinámico --%>
         <a href="<%= ctxTop %>/ProfileServlet" class="topbar-avatar-link" title="Ir a Mi Perfil">
             <% if (avatarUrl != null && !avatarUrl.trim().isEmpty()) { %>
-            <%-- Si el usuario subió foto, la mostramos --%>
             <img src="<%= avatarUrl %>"
                  alt="<%= userNameTop %>"
                  class="topbar-avatar-img"
@@ -81,7 +81,6 @@
                 <%= iniciales %>
             </div>
             <% } else { %>
-            <%-- Si no hay foto, mostramos las iniciales con gradiente --%>
             <div class="topbar-avatar-fallback">
                 <%= iniciales %>
             </div>

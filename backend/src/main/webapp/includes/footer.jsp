@@ -4,12 +4,12 @@
 <footer class="footer">
     <div class="footer-inner">
         <div class="footer-brand">
-            <img src="<%= ctx %>/img/QuintaOlaLogo.png" class="h-14"/>
+            <img src="<%= ctx %>/img/QuintaOlaLogo.png" style="height: 45px; width: auto; object-fit: contain;" alt="Quinta Ola"/>
             <p class="footer-desc">
                 Sistema de gestión de inventarios interno de Quinta Ola.
             </p>
         </div>
-        <div class="space-y-4">
+        <div>
             <h4 class="footer-col-title">Menú</h4>
             <ul class="space-y-3">
                 <li><a href="<%= ctx %>/HomeServlet"      class="footer-link">Inicio</a></li>
@@ -18,7 +18,7 @@
                 <li><a href="<%= ctx %>/InventoryServlet" class="footer-link">Inventario</a></li>
             </ul>
         </div>
-        <div class="space-y-4">
+        <div>
             <h4 class="footer-col-title">Mi Cuenta</h4>
             <ul class="space-y-3">
                 <li><a href="<%= ctx %>/ProfileServlet" class="footer-link">Mi Perfil</a></li>
@@ -31,12 +31,7 @@
     </div>
 </footer>
 
-<%-- ════════════════════════════════════════════════════════════════
-     LUCIDE ICONS — carga global (una sola vez por página)
-     ════════════════════════════════════════════════════════════════
-     Cualquier <i data-lucide="nombre-del-icono"></i> se renderiza
-     automáticamente como SVG cuando se llama a lucide.createIcons().
-     ════════════════════════════════════════════════════════════════ --%>
+<!-- LUCIDE ICONS (Inyección Segura DomContentLoaded) -->
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
