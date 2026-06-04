@@ -26,7 +26,7 @@
 
 <nav class="sidebar">
     <div class="sidebar-header">
-        <a href="<%= ctx %>/DashboardServlet">
+        <a href="<%= ctx %>/<%= "SuperAdmin".equals(roleName) ? "RoleServlet" : "HomeServlet" %>">
             <img src="<%= ctx %>/img/QuintaOlaLogo.png" alt="Quinta Ola" class="sidebar-logo"/>
         </a>
     </div>

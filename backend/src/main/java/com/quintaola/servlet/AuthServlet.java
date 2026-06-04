@@ -100,13 +100,12 @@ public class AuthServlet extends HttpServlet {
                         sess.setAttribute("roleName",  user.getRoleName());
 
                         // Redirigir según rol
-                        String redirect = switch (user.getRoleName()) {
-                            case "SuperAdmin"    -> "/PermissionServlet";
-                            case "Administrador" -> "/DashboardServlet";
-                            case "Manager"       -> "/DashboardServlet";
-                            case "Member"        -> "/DepositServlet";
-                            default              -> "/HomeServlet";
-                        };
+                        // Redirigir según rol — todos van a HomeServlet excepto SuperAdmin
+                        // (SuperAdmin no tiene Home porque su perfil es exclusivo de auditoría)
+                        String redirect = "SuperAdmin".equals(user.getRoleName())
+                                ? "/RoleServlet"   // SuperAdmin → directo a Roles
+                                : "/HomeServlet";  // Todos los demás → Inicio
+
                         response.sendRedirect(request.getContextPath() + redirect);
                     }
                 } catch (Exception e) {
