@@ -126,6 +126,20 @@ public class TransactionServlet extends HttpServlet {
                 try {
                     com.quintaola.dao.ItemDAO itemDao = new com.quintaola.dao.ItemDAO();
                     request.setAttribute("items", itemDao.getAll());
+
+                    // ─── Pre-seleccion de item si viene desde el catalogo ───
+                    // Si la URL trae ?itemId=X, lo pasamos a la vista para que
+                    // el <select> del JSP marque esa opcion como "selected"
+                    String itemIdParam = request.getParameter("itemId");
+                    if (itemIdParam != null && !itemIdParam.trim().isEmpty()) {
+                        try {
+                            int itemIdPre = Integer.parseInt(itemIdParam);
+                            request.setAttribute("itemPreseleccionado", itemIdPre);
+                        } catch (NumberFormatException ignored) {
+                            // Si el itemId no es valido, simplemente no se preselecciona
+                        }
+                    }
+
                 } catch (Exception e) {
                     System.out.println("Error cargando items: " + e.getMessage());
                 }
