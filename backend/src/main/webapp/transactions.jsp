@@ -67,7 +67,7 @@
                             <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">Solicitante</th>
                             <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">Material</th>
                             <th class="th-center" style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.875rem;">Cantidad</th>
-                            <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">Fecha</th>
+                            <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">Fecha de Entrega</th>
                             <th class="th-center" style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.875rem;">Detalle</th>
                             <% if (roleId != null && roleId >= 3) { %>
                             <th class="th-center" style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.875rem;">Acciones</th>
@@ -95,7 +95,7 @@
                                 <%= tx.getQuantity() %> <%= tx.getItemUnit() != null ? tx.getItemUnit() : "" %>
                             </td>
                             <td class="td-light text-xs" style="padding: 1rem; color: #6b7280; font-size: 0.75rem;">
-                                <%= tx.getCreatedAt() != null ? tx.getCreatedAt() : "—" %>
+                                <%= tx.getEstimatedDelivery() != null ? tx.getEstimatedDelivery() : "—" %>
                             </td>
 
                             <%-- Nuevo Botón de DETALLE (Reemplaza al Estado) --%>

@@ -173,12 +173,13 @@ public class TransactionServlet extends HttpServlet {
 
                     String notasFinales = "";
                     if (fecha != null && !fecha.trim().isEmpty()) {
-                        notasFinales = "Para " + fecha + " | " + notas;
+                        notasFinales = "Fecha de entrega estimada:  " + fecha + " | " + notas;
+                        t.setEstimatedDelivery(fecha);
                     } else {
                         notasFinales = notas;
+                        t.setEstimatedDelivery(null);
                     }
                     t.setNotes(notasFinales);
-
                     txDao.create(t);
                     response.sendRedirect(request.getContextPath() + "/HistoryServlet?action=lista");
                 } catch (Exception e) {

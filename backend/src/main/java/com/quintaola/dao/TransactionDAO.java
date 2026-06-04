@@ -151,7 +151,7 @@ public class TransactionDAO {
             JOIN users u ON t.requester_id = u.id
             LEFT JOIN users a ON t.approver_id = a.id
             WHERE t.status = 'PENDING' AND (t.requester_id != ? OR ? = 0)
-            ORDER BY t.created_at DESC
+            ORDER BY t.estimated_delivery IS NULL, t.estimated_delivery ASC, t.created_at DESC
             """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -190,8 +190,8 @@ public class TransactionDAO {
     public boolean create(Transaction t) throws SQLException {
         String sql = """
             INSERT INTO transactions
-            (item_id, requester_id, type, quantity, status, notes)
-            VALUES (?, ?, 'OUT', ?, 'PENDING', ?)
+            (item_id, requester_id, type, quantity, status, notes, estimated_delivery)
+            VALUES (?, ?, 'OUT', ?, 'PENDING', ?, ?)
             """;
 
         try (Connection conn = DatabaseConnection.getConnection()) {
@@ -203,6 +203,11 @@ public class TransactionDAO {
                     ps.setInt   (2, t.getRequesterId());
                     ps.setInt   (3, t.getQuantity());
                     ps.setString(4, t.getNotes());
+                    if (t.getEstimatedDelivery() != null && !t.getEstimatedDelivery().trim().isEmpty()) {
+                        ps.setDate(5, java.sql.Date.valueOf(t.getEstimatedDelivery()));
+                    } else {
+                        ps.setNull(5, java.sql.Types.DATE);
+                    }
                     ps.executeUpdate();
 
                     try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -424,6 +429,7 @@ public class TransactionDAO {
         t.setNotes        (rs.getString("notes"));
         t.setCreatedAt    (rs.getString("created_at"));
         t.setProcessedAt  (rs.getString("processed_at"));
+        t.setEstimatedDelivery(rs.getString("estimated_delivery"));
         try { t.setItemName     (rs.getString("item_name")); } catch (Exception ignored) {}
         try { t.setItemUnit     (rs.getString("item_unit")); } catch (Exception ignored) {}
         try { t.setItemImg      (rs.getString("item_img"));  } catch (Exception ignored) {}
