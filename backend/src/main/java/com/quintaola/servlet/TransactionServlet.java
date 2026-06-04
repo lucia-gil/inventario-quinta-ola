@@ -181,23 +181,48 @@ public class TransactionServlet extends HttpServlet {
 
                     txDao.create(t);
                     response.sendRedirect(request.getContextPath() + "/HistoryServlet?action=lista");
+
+                } catch (java.sql.SQLException sqlEx) {
+                    // Capturar error específico de stock insuficiente
+                    String msg = sqlEx.getMessage();
+                    if (msg != null && msg.contains("Stock insuficiente")) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=formCrear&error=" + msg.replace(" ", "+"));
+                    } else {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=formCrear&error=Error+al+crear+solicitud");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=formCrear&error=Error+al+crear+solicitud");
+                    response.sendRedirect(request.getContextPath()
+                            + "/TransactionServlet?action=formCrear&error=Error+al+crear+solicitud");
                 }
                 break;
 
             case "aprobar":
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
-                    String notas = request.getParameter("notas") != null ? request.getParameter("notas") : "";
+                    String notas = request.getParameter("notas") != null
+                            ? request.getParameter("notas") : "";
 
                     txDao.approve(id, userId, notas);
-                    // Como ahora solo hay pendientes, quitamos el status=PENDING de la URL
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&success=Solicitud+aprobada+correctamente");
+                    response.sendRedirect(request.getContextPath()
+                            + "/TransactionServlet?action=lista&success=Solicitud+aprobada+y+stock+descontado");
+
+                } catch (java.sql.SQLException sqlEx) {
+                    // Capturar errores específicos: stock insuficiente o estado inválido
+                    String msg = sqlEx.getMessage();
+                    if (msg != null && (msg.contains("Stock insuficiente") || msg.contains("ya fue procesada"))) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=lista&error=" + msg.replace(" ", "+"));
+                    } else {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=lista&error=Error+al+aprobar+la+solicitud");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&error=Error+al+aprobar+la+solicitud");
+                    response.sendRedirect(request.getContextPath()
+                            + "/TransactionServlet?action=lista&error=Error+al+aprobar+la+solicitud");
                 }
                 break;
 

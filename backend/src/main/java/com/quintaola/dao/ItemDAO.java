@@ -319,4 +319,26 @@ public class ItemDAO {
         PreparedStatement ps = conn.prepareStatement(sql);
         return ps.executeQuery();
     }
+
+    // ============================================================
+    // getAvailableStock — Obtener cantidad disponible de un item
+    // ============================================================
+    // Usado para validar si hay stock suficiente antes de aprobar
+    // una solicitud (o al momento de crearla).
+
+    public int getAvailableStock(int itemId) throws SQLException {
+        String sql = "SELECT cached_quantity FROM items WHERE id = ? AND activo = 1";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, itemId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("cached_quantity");
+                }
+            }
+        }
+        return 0;  // Si el item no existe o está inactivo
+    }
 }
