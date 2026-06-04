@@ -20,6 +20,7 @@ public class Transaction {
     private String itemImg;
     private String requesterName;
     private String approverName;
+    private String estimatedDelivery;
 
     public Transaction() {}
 
@@ -82,4 +83,7 @@ public class Transaction {
             default                -> this.status;
         };
     }
+
+    public String getEstimatedDelivery() { return estimatedDelivery; }
+    public void setEstimatedDelivery(String estimatedDelivery) { this.estimatedDelivery = estimatedDelivery; }
 }

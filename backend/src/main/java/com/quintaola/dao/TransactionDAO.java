@@ -151,7 +151,7 @@ public class TransactionDAO {
             JOIN users u ON t.requester_id = u.id
             LEFT JOIN users a ON t.approver_id = a.id
             WHERE t.status = 'PENDING' AND (t.requester_id != ? OR ? = 0)
-            ORDER BY t.created_at DESC
+            ORDER BY t.estimated_delivery IS NULL, t.estimated_delivery ASC, t.created_at DESC
             """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -188,62 +188,26 @@ public class TransactionDAO {
     }
 
     public boolean create(Transaction t) throws SQLException {
-
-        // ─── VALIDACIÓN: ¿hay stock suficiente para esta solicitud? ───
-        // Sumamos el stock actual + cuánto ya tienen "reservado" otras
-        // solicitudes PENDIENTES o APROBADAS del mismo item, y validamos
-        // que la nueva solicitud no exceda lo realmente disponible.
-        String sqlCheck = """
-        SELECT i.cached_quantity,
-               COALESCE(SUM(CASE
-                   WHEN t.status IN ('PENDING', 'APPROVED')
-                        AND t.type = 'OUT'
-                   THEN t.quantity ELSE 0 END), 0) AS reservado
-        FROM items i
-        LEFT JOIN transactions t ON t.item_id = i.id
-        WHERE i.id = ? AND i.activo = 1
-        GROUP BY i.id
-        """;
+        String sql = """
+            INSERT INTO transactions
+            (item_id, requester_id, type, quantity, status, notes, estimated_delivery)
+            VALUES (?, ?, 'OUT', ?, 'PENDING', ?, ?)
+            """;
 
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-
-                // 1. Validar stock disponible
-                int stockActual = 0;
-                int reservado = 0;
-                try (PreparedStatement psCheck = conn.prepareStatement(sqlCheck)) {
-                    psCheck.setInt(1, t.getItemId());
-                    try (ResultSet rs = psCheck.executeQuery()) {
-                        if (rs.next()) {
-                            stockActual = rs.getInt("cached_quantity");
-                            reservado = rs.getInt("reservado");
-                        }
-                    }
-                }
-
-                int disponibleReal = stockActual - reservado;
-                if (t.getQuantity() > disponibleReal) {
-                    conn.rollback();
-                    throw new SQLException(
-                            "Stock insuficiente. Disponible real: " + disponibleReal +
-                                    " (stock actual " + stockActual + " - reservado en pendientes/aprobadas " + reservado + ")"
-                    );
-                }
-
-                // 2. Crear la transacción
-                String sql = """
-                INSERT INTO transactions
-                (item_id, requester_id, type, quantity, status, notes)
-                VALUES (?, ?, 'OUT', ?, 'PENDING', ?)
-                """;
-
                 int txId = 0;
                 try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt   (1, t.getItemId());
                     ps.setInt   (2, t.getRequesterId());
                     ps.setInt   (3, t.getQuantity());
                     ps.setString(4, t.getNotes());
+                    if (t.getEstimatedDelivery() != null && !t.getEstimatedDelivery().trim().isEmpty()) {
+                        ps.setDate(5, java.sql.Date.valueOf(t.getEstimatedDelivery()));
+                    } else {
+                        ps.setNull(5, java.sql.Types.DATE);
+                    }
                     ps.executeUpdate();
 
                     try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -251,7 +215,8 @@ public class TransactionDAO {
                     }
                 }
 
-                // 3. Notificar a Managers y Administradores
+                // Alerta automática para Managers y Administradores
+                // role_id 3 = Manager, role_id 4 = Administrador
                 String sqlManagers = "SELECT id FROM users WHERE role_id IN (3, 4) AND activo = 1";
                 try (PreparedStatement psM = conn.prepareStatement(sqlManagers);
                      ResultSet rsM = psM.executeQuery()) {
@@ -282,134 +247,49 @@ public class TransactionDAO {
     }
 
     public boolean approve(int id, int approverId, String notes) throws SQLException {
+        String sql = """
+            UPDATE transactions
+            SET status = 'APPROVED', approver_id = ?, notes = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'PENDING'
+            """;
 
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-
-                // 1. Traer datos de la transacción: item_id, quantity, requester_id, status
-                String sqlGet = """
-                SELECT item_id, quantity, requester_id, status, type
-                FROM transactions
-                WHERE id = ?
-                """;
-                int itemId = 0, quantity = 0, requesterId = 0;
-                String currentStatus = null, type = null;
-
-                try (PreparedStatement ps = conn.prepareStatement(sqlGet)) {
-                    ps.setInt(1, id);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            itemId        = rs.getInt   ("item_id");
-                            quantity      = rs.getInt   ("quantity");
-                            requesterId   = rs.getInt   ("requester_id");
-                            currentStatus = rs.getString("status");
-                            type          = rs.getString("type");
-                        }
-                    }
-                }
-
-                // 2. Validar estado actual: solo se aprueba si está PENDING
-                if (!"PENDING".equals(currentStatus)) {
-                    conn.rollback();
-                    throw new SQLException("La solicitud ya fue procesada (estado: " + currentStatus + ")");
-                }
-
-                // 3. Validar stock disponible (solo para OUT)
-                if ("OUT".equals(type)) {
-                    String sqlStock = "SELECT cached_quantity FROM items WHERE id = ? AND activo = 1";
-                    int stockActual = 0;
-
-                    try (PreparedStatement ps = conn.prepareStatement(sqlStock)) {
-                        ps.setInt(1, itemId);
-                        try (ResultSet rs = ps.executeQuery()) {
-                            if (rs.next()) stockActual = rs.getInt("cached_quantity");
-                        }
-                    }
-
-                    if (quantity > stockActual) {
-                        conn.rollback();
-                        throw new SQLException(
-                                "Stock insuficiente. Solicitado: " + quantity +
-                                        " | Disponible: " + stockActual
-                        );
-                    }
-                }
-
-                // 4. Cambiar status a APPROVED
-                String sqlUpdate = """
-                UPDATE transactions
-                SET status = 'APPROVED', approver_id = ?, notes = ?,
-                    processed_at = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND status = 'PENDING'
-                """;
                 boolean ok;
-                try (PreparedStatement ps = conn.prepareStatement(sqlUpdate)) {
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     ps.setInt   (1, approverId);
                     ps.setString(2, notes);
                     ps.setInt   (3, id);
                     ok = ps.executeUpdate() > 0;
                 }
 
-                if (!ok) {
-                    conn.rollback();
-                    return false;
-                }
-
-                // 5. DESCONTAR el stock del item (solo si es OUT)
-                if ("OUT".equals(type)) {
-                    String sqlStock = """
-                    UPDATE items
-                    SET cached_quantity = cached_quantity - ?,
-                        status = CASE
-                            WHEN cached_quantity - ? <= 0            THEN 'UNAVAILABLE'
-                            WHEN cached_quantity - ? <= min_quantity THEN 'LOW'
-                            ELSE 'OK'
-                        END
-                    WHERE id = ?
-                    """;
-                    try (PreparedStatement ps = conn.prepareStatement(sqlStock)) {
-                        ps.setInt(1, quantity);
-                        ps.setInt(2, quantity);
-                        ps.setInt(3, quantity);
-                        ps.setInt(4, itemId);
-                        ps.executeUpdate();
+                if (ok) {
+                    // Obtener solicitante para notificarle la aprobación
+                    String sqlGetReq = "SELECT requester_id FROM transactions WHERE id = ?";
+                    int requesterId = 0;
+                    try (PreparedStatement psR = conn.prepareStatement(sqlGetReq)) {
+                        psR.setInt(1, id);
+                        try (ResultSet rsR = psR.executeQuery()) {
+                            if (rsR.next()) requesterId = rsR.getInt("requester_id");
+                        }
                     }
-                }
 
-                // 6. Notificar al solicitante
-                if (requesterId > 0) {
-                    crearNotificacion(
-                            conn,
-                            requesterId,
-                            "request_approved",
-                            "¡Tu solicitud fue Aprobada!",
-                            "Tu requerimiento de materiales ha sido aprobado. Se ha reservado el stock para tu pedido.",
-                            id
-                    );
-                }
-
-                // 7. Notificar al encargado de depósito (rol Member)
-                String sqlDeposito = "SELECT id FROM users WHERE role_id = 2 AND activo = 1";
-                try (PreparedStatement psD = conn.prepareStatement(sqlDeposito);
-                     ResultSet rsD = psD.executeQuery()) {
-                    while (rsD.next()) {
-                        int depositoId = rsD.getInt("id");
+                    if (requesterId > 0) {
                         crearNotificacion(
                                 conn,
-                                depositoId,
-                                "ready_to_deliver",
-                                "Pedido aprobado listo para preparar",
-                                "Una solicitud fue aprobada y está lista para que la entregues.",
+                                requesterId,
+                                "request_approved",
+                                "¡Tu solicitud fue Aprobada!",
+                                "Tu requerimiento de materiales ha sido aprobado y pasará a preparación.",
                                 id
                         );
                     }
                 }
 
                 conn.commit();
-                return true;
-
+                return ok;
             } catch (SQLException e) {
                 conn.rollback();
                 throw e;
@@ -473,61 +353,56 @@ public class TransactionDAO {
     }
 
     public boolean deliver(int id) throws SQLException {
-
         try (Connection conn = DatabaseConnection.getConnection()) {
-            conn.setAutoCommit(false);
             try {
+                conn.setAutoCommit(false);
 
-                // 1. Validar que está APPROVED
-                String sqlGet = "SELECT status, requester_id FROM transactions WHERE id = ?";
-                String currentStatus = null;
-                int requesterId = 0;
+                String sqlGet = "SELECT item_id, quantity, type FROM transactions WHERE id = ?";
+                int itemId = 0;
+                int quantity = 0;
+                String type = null;
 
                 try (PreparedStatement ps = conn.prepareStatement(sqlGet)) {
                     ps.setInt(1, id);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
-                            currentStatus = rs.getString("status");
-                            requesterId   = rs.getInt   ("requester_id");
+                            itemId   = rs.getInt   ("item_id");
+                            quantity = rs.getInt   ("quantity");
+                            type     = rs.getString("type");
                         }
                     }
                 }
 
-                if (!"APPROVED".equals(currentStatus)) {
-                    conn.rollback();
-                    throw new SQLException(
-                            "Solo se pueden entregar solicitudes APROBADAS. Estado actual: " + currentStatus
-                    );
-                }
+                if (itemId == 0) { conn.rollback(); return false; }
 
-                // 2. Cambiar status a COMPLETED (el stock ya estaba descontado desde la aprobación)
                 String sqlComplete = """
-                UPDATE transactions
-                SET status = 'COMPLETED',
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND status = 'APPROVED'
-                """;
-                boolean ok;
+                    UPDATE transactions
+                    SET status = 'COMPLETED', processed_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """;
                 try (PreparedStatement ps = conn.prepareStatement(sqlComplete)) {
                     ps.setInt(1, id);
-                    ok = ps.executeUpdate() > 0;
+                    ps.executeUpdate();
                 }
 
-                if (!ok) {
-                    conn.rollback();
-                    return false;
-                }
-
-                // 3. Notificar al solicitante: entrega completa
-                if (requesterId > 0) {
-                    crearNotificacion(
-                            conn,
-                            requesterId,
-                            "request_delivered",
-                            "¡Materiales entregados!",
-                            "Tu pedido ha sido entregado físicamente. Confirma la recepción.",
-                            id
-                    );
+                int delta = type.equals("IN") ? quantity : -quantity;
+                String sqlStock = """
+                    UPDATE items
+                    SET cached_quantity = cached_quantity + ?,
+                        status = CASE
+                            WHEN cached_quantity + ? <= 0            THEN 'UNAVAILABLE'
+                            WHEN cached_quantity + ? <= min_quantity THEN 'LOW'
+                            ELSE 'OK'
+                        END
+                    WHERE id = ?
+                    """;
+                try (PreparedStatement ps = conn.prepareStatement(sqlStock)) {
+                    ps.setInt(1, delta);
+                    ps.setInt(2, delta);
+                    ps.setInt(3, delta);
+                    ps.setInt(4, itemId);
+                    ps.executeUpdate();
                 }
 
                 conn.commit();
@@ -554,6 +429,7 @@ public class TransactionDAO {
         t.setNotes        (rs.getString("notes"));
         t.setCreatedAt    (rs.getString("created_at"));
         t.setProcessedAt  (rs.getString("processed_at"));
+        t.setEstimatedDelivery(rs.getString("estimated_delivery"));
         try { t.setItemName     (rs.getString("item_name")); } catch (Exception ignored) {}
         try { t.setItemUnit     (rs.getString("item_unit")); } catch (Exception ignored) {}
         try { t.setItemImg      (rs.getString("item_img"));  } catch (Exception ignored) {}
