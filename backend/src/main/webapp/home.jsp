@@ -48,6 +48,7 @@
     <jsp:include page="includes/navbar.jsp"/>
 
     <div class="main-content">
+        <jsp:include page="includes/topbar.jsp"/>
 
         <main class="page-main">
 

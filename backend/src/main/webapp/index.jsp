@@ -18,7 +18,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quinta Ola | Sistema Inteligente de Inventario</title>
 
-    <link href="<%= ctx %>/css/style.css" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
 
     <script src="https://unpkg.com/lucide@latest"></script>
 

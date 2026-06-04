@@ -6,7 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Crear Cuenta | Quinta Ola</title>
-    <link href="${pageContext.request.contextPath}/css/style.css" rel="stylesheet" />
+    <link href="${pageContext.request.contextPath}/css/style.css?v=3" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 

@@ -33,7 +33,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Gestión de Roles | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
 </head>
 <body class="page-body">
 
@@ -42,6 +42,7 @@
     <jsp:include page="includes/navbar.jsp"/>
 
     <div class="main-content">
+        <jsp:include page="includes/topbar.jsp"/>
 
         <main class="page-main">
 

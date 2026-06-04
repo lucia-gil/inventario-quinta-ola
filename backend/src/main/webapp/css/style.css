@@ -116,22 +116,26 @@
 }
 
 /* ============================================================
-   LUCIDE ICONS — estilos globales
+   LUCIDE ICONS — estilos globales (con specificity fuerte)
    ============================================================ */
 
-/* Iconos del sidebar */
+/* Forzar tamaño de iconos del sidebar en TODAS las vistas */
+.sidebar .sidebar-link i[data-lucide],
+.sidebar .sidebar-link-active i[data-lucide],
 .sidebar-icon {
-    width: 18px;
-    height: 18px;
+    width: 18px !important;
+    height: 18px !important;
     stroke-width: 2;
     margin-right: 0.6rem;
     flex-shrink: 0;
 }
 
-.sidebar-link,
-.sidebar-link-active {
+/* Forzar layout flex en todos los links del sidebar */
+.sidebar .sidebar-link,
+.sidebar .sidebar-link-active {
     display: flex !important;
-    align-items: center;
+    align-items: center !important;
+    gap: 0;
 }
 
 /* Botones con icono */
@@ -141,20 +145,135 @@
     gap: 0.5rem;
 }
 
-.btn-icon i {
-    width: 16px;
-    height: 16px;
+.btn-icon i[data-lucide] {
+    width: 16px !important;
+    height: 16px !important;
 }
 
 /* Iconos en stat-cards */
-.stat-card-icon i {
-    width: 24px;
-    height: 24px;
+.stat-card-icon i[data-lucide] {
+    width: 24px !important;
+    height: 24px !important;
 }
 
 /* Iconos en quick-cards */
-.quick-card-icon i {
-    width: 28px;
-    height: 28px;
-    margin-bottom: 0.5rem;
+.quick-card-icon i[data-lucide] {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+/* Resto de iconos sueltos */
+.sidebar-bell i[data-lucide] {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* ============================================================
+   TOPBAR — Barra superior con info del usuario
+   ============================================================ */
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 0.75rem 2rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    min-height: 64px;
+}
+
+.topbar-spacer {
+    flex: 1;
+}
+
+.topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+}
+
+.topbar-user-text {
+    text-align: right;
+    line-height: 1.2;
+}
+
+.topbar-user-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.topbar-user-role {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin: 0;
+    margin-top: 2px;
+}
+
+.topbar-avatar-link {
+    display: block;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.topbar-avatar-link:hover {
+    transform: scale(1.05);
+}
+
+.topbar-avatar-img,
+.topbar-avatar-fallback {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fdf2f8;
+    box-shadow: 0 2px 4px rgba(219, 39, 119, 0.15);
+}
+
+.topbar-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ec4899 0%, #9333ea 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+/* ─── Ajuste: que el page-body deje de tener padding-top fijo
+   cuando hay sidebar+topbar ─── */
+.layout-wrapper .page-body {
+    padding-top: 0 !important;
+}
+
+.layout-wrapper .main-content > .topbar {
+    margin-top: 0;
+}
+
+/* Cuando hay topbar, el padding del page-main se reduce arriba */
+.layout-wrapper .main-content > .page-main,
+.layout-wrapper .main-content > .page-main-narrow {
+    padding-top: 1.5rem;
+}
+
+/* Responsive: en pantallas pequeñas que se vea ordenado */
+@media (max-width: 640px) {
+    .topbar {
+        padding: 0.5rem 1rem;
+    }
+    .topbar-user-text {
+        display: none; /* En móvil solo mostrar el avatar */
+    }
+    .topbar-avatar-img,
+    .topbar-avatar-fallback {
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
 }

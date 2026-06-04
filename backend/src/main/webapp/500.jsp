@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error del Servidor | 500</title>
-    <link href="${pageContext.request.contextPath}/src/style.css" rel="stylesheet" />
+    <link href="${pageContext.request.contextPath}/src/style.css?v=3" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center text-center p-6 font-sans">

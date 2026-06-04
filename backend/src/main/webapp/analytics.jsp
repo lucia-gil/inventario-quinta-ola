@@ -26,7 +26,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Análisis de Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>

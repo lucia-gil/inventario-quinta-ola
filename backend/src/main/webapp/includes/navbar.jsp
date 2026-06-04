@@ -100,45 +100,44 @@
     </div>
 
     <div class="sidebar-footer">
-        <div class="sidebar-user-info">
-            <div>
-                <p class="sidebar-user-name"><%= userName %></p>
-                <p class="sidebar-user-role"><%= roleName %></p>
-            </div>
-            <% if (!"SuperAdmin".equals(roleName)) { %>
-            <a href="<%= ctx %>/NotificationServlet"
-               class="sidebar-bell"
-               title="Notificaciones"
-               style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
-                <i data-lucide="bell" style="width: 20px; height: 20px; color: #db2777;"></i>
-                <% if (unreadNotifs > 0) { %>
-                <span style="
-                            position: absolute;
-                            top: -5px;
-                            right: -5px;
-                            background-color: #db2777;
-                            color: white;
-                            font-size: 10px;
-                            font-weight: bold;
-                            border-radius: 9999px;
-                            min-width: 16px;
-                            height: 16px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            padding: 0 3px;
-                            border: 2px solid white;
-                            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-                        ">
-                            <%= unreadNotifs %>
-                        </span>
-                <% } %>
-            </a>
+
+        <%-- Solo la campana de notificaciones (centrada) --%>
+        <% if (!"SuperAdmin".equals(roleName)) { %>
+        <a href="<%= ctx %>/NotificationServlet"
+           class="sidebar-bell"
+           title="Notificaciones"
+           style="position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+            <i data-lucide="bell" style="width: 22px; height: 22px; color: #db2777;"></i>
+            <% if (unreadNotifs > 0) { %>
+            <span style="
+                    position: absolute;
+                    top: -5px;
+                    right: 50%;
+                    margin-right: -18px;
+                    background-color: #db2777;
+                    color: white;
+                    font-size: 10px;
+                    font-weight: bold;
+                    border-radius: 9999px;
+                    min-width: 16px;
+                    height: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 3px;
+                    border: 2px solid white;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                ">
+                    <%= unreadNotifs %>
+                </span>
             <% } %>
-        </div>
+        </a>
+        <% } %>
+
         <div class="sidebar-actions">
             <a href="<%= ctx %>/ProfileServlet" class="sidebar-profile">Mi Perfil</a>
             <a href="<%= ctx %>/AuthServlet?action=logout" class="sidebar-logout">Salir</a>
         </div>
+
     </div>
 </nav>

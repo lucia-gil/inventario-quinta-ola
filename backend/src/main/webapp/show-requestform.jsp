@@ -12,7 +12,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Nueva Solicitud | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
 </head>
 <body class="page-body bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 

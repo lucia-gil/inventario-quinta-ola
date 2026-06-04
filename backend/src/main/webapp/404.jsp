@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>¡Ups! Perdido en la Ola | 404</title>
-    <link href="${pageContext.request.contextPath}/src/style.css" rel="stylesheet" />
+    <link href="${pageContext.request.contextPath}/src/style.css?v=3" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Animación de las olas en el fondo del juego */

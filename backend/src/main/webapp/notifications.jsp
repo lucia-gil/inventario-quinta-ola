@@ -22,7 +22,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Notificaciones | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
 </head>
 <body class="page-body">
 
@@ -32,6 +32,7 @@
     <jsp:include page="includes/navbar.jsp"/>
 
     <div class="main-content">
+        <jsp:include page="includes/topbar.jsp"/>
 
         <%-- Tu etiqueta <main> original pero con padding para separarse del borde superior --%>
         <main class="page-main-narrow" style="padding: 2rem 0;">
