@@ -12,15 +12,13 @@
 
     String ctx = request.getContextPath();
 
-    // ─── CONSULTAR NOTIFICACIONES NO LEÍDAS ───
+    // ─── Notificaciones no leídas ───
     int unreadNotifs = 0;
     if (navUserId != null && !"SuperAdmin".equals(roleName)) {
         try {
             NotificationDAO navNotifDao = new NotificationDAO();
             unreadNotifs = navNotifDao.getUnreadCount(navUserId);
-        } catch (Exception ignored) {
-            // Failsafe para evitar que se rompa el renderizado si la BD falla
-        }
+        } catch (Exception ignored) {}
     }
 %>
 
@@ -32,24 +30,73 @@
     </div>
 
     <div class="sidebar-menu">
+
         <%-- ── Links para todos EXCEPTO SuperAdmin ── --%>
         <% if (!"SuperAdmin".equals(roleName)) { %>
-        <a href="<%= ctx %>/HomeServlet" class="<%= activeMenu.equals("home") ? "sidebar-link-active" : "sidebar-link" %>">🏠 Inicio</a>
-        <a href="<%= ctx %>/DashboardServlet" class="<%= activeMenu.equals("dashboard") ? "sidebar-link-active" : "sidebar-link" %>">📊 Dashboard</a>
-        <a href="<%= ctx %>/TransactionServlet" class="<%= activeMenu.equals("transactions") ? "sidebar-link-active" : "sidebar-link" %>">🔄 Transacciones</a>
-        <a href="<%= ctx %>/InventoryServlet" class="<%= activeMenu.equals("inventory") ? "sidebar-link-active" : "sidebar-link" %>">📦 Inventario</a>
-        <a href="<%= ctx %>/HistoryServlet" class="<%= activeMenu.equals("history") ? "sidebar-link-active" : "sidebar-link" %>">📋 Historial</a>
+
+        <a href="<%= ctx %>/HomeServlet"
+           class="<%= activeMenu.equals("home") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="home" class="sidebar-icon"></i>
+            <span>Inicio</span>
+        </a>
+
+        <a href="<%= ctx %>/DashboardServlet"
+           class="<%= activeMenu.equals("dashboard") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="layout-dashboard" class="sidebar-icon"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a href="<%= ctx %>/TransactionServlet"
+           class="<%= activeMenu.equals("transactions") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="repeat" class="sidebar-icon"></i>
+            <span>Transacciones</span>
+        </a>
+
+        <a href="<%= ctx %>/InventoryServlet"
+           class="<%= activeMenu.equals("inventory") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="package" class="sidebar-icon"></i>
+            <span>Inventario</span>
+        </a>
+
+        <a href="<%= ctx %>/HistoryServlet"
+           class="<%= activeMenu.equals("history") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="file-text" class="sidebar-icon"></i>
+            <span>Historial</span>
+        </a>
+
         <% if ("Administrador".equals(roleName)) { %>
-        <a href="<%= ctx %>/UserServlet" class="<%= activeMenu.equals("members") ? "sidebar-link-active" : "sidebar-link" %>">👥 Miembros</a>
+        <a href="<%= ctx %>/UserServlet"
+           class="<%= activeMenu.equals("members") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="users" class="sidebar-icon"></i>
+            <span>Miembros</span>
+        </a>
         <% } %>
+
         <% } %>
 
         <%-- ── Links SuperAdmin ── --%>
         <% if ("SuperAdmin".equals(roleName)) { %>
-        <a href="<%= ctx %>/RoleServlet" class="<%= activeMenu.equals("roles") ? "sidebar-link-active" : "sidebar-link" %>">🔑 Roles (SA)</a>
-        <a href="<%= ctx %>/PermissionServlet" class="<%= activeMenu.equals("permissions") ? "sidebar-link-active" : "sidebar-link" %>">🛡️ Permisos (SA)</a>
-        <a href="<%= ctx %>/AuditServlet" class="<%= activeMenu.equals("audit") ? "sidebar-link-active" : "sidebar-link" %>">🔍 Auditoría (SA)</a>
+
+        <a href="<%= ctx %>/RoleServlet"
+           class="<%= activeMenu.equals("roles") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="key-round" class="sidebar-icon"></i>
+            <span>Roles (SA)</span>
+        </a>
+
+        <a href="<%= ctx %>/PermissionServlet"
+           class="<%= activeMenu.equals("permissions") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="shield" class="sidebar-icon"></i>
+            <span>Permisos (SA)</span>
+        </a>
+
+        <a href="<%= ctx %>/AuditServlet"
+           class="<%= activeMenu.equals("audit") ? "sidebar-link-active" : "sidebar-link" %>">
+            <i data-lucide="search" class="sidebar-icon"></i>
+            <span>Auditoría (SA)</span>
+        </a>
+
         <% } %>
+
     </div>
 
     <div class="sidebar-footer">
@@ -59,30 +106,32 @@
                 <p class="sidebar-user-role"><%= roleName %></p>
             </div>
             <% if (!"SuperAdmin".equals(roleName)) { %>
-            <%-- Modificado sutilmente con position inline-relative para albergar el contador flotante --%>
-            <a href="<%= ctx %>/NotificationServlet" class="sidebar-bell" title="Notificaciones" style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
-                🔔
+            <a href="<%= ctx %>/NotificationServlet"
+               class="sidebar-bell"
+               title="Notificaciones"
+               style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+                <i data-lucide="bell" style="width: 20px; height: 20px; color: #db2777;"></i>
                 <% if (unreadNotifs > 0) { %>
                 <span style="
-                    position: absolute;
-                    top: -5px;
-                    right: -5px;
-                    background-color: #db2777; /* Rosa fuerte corporativo */
-                    color: white;
-                    font-size: 10px;
-                    font-weight: bold;
-                    border-radius: 9999px;
-                    min-width: 16px;
-                    height: 16px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 0 3px;
-                    border: 2px solid white;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-                ">
-                    <%= unreadNotifs %>
-                </span>
+                            position: absolute;
+                            top: -5px;
+                            right: -5px;
+                            background-color: #db2777;
+                            color: white;
+                            font-size: 10px;
+                            font-weight: bold;
+                            border-radius: 9999px;
+                            min-width: 16px;
+                            height: 16px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 0 3px;
+                            border: 2px solid white;
+                            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                        ">
+                            <%= unreadNotifs %>
+                        </span>
                 <% } %>
             </a>
             <% } %>
