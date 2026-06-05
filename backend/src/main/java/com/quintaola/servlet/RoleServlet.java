@@ -1,6 +1,7 @@
 package com.quintaola.servlet;
 
 import com.quintaola.dao.RoleDAO;
+import com.quintaola.dao.UserDAO;
 import com.quintaola.model.Role;
 import com.quintaola.model.User;
 import jakarta.servlet.RequestDispatcher;
@@ -20,12 +21,13 @@ import java.util.Map;
    Muestra los 5 roles del sistema con la lista de usuarios
    que pertenecen a cada uno.
 
-   No tiene crear/editar/eliminar porque los roles son fijos.
-   Lo unico que se hace es VER y luego desde ahi cambiar
-   usuarios de rol (eso lo maneja UserServlet).
+   Desde esta vista el SuperAdmin puede:
+   - Cambiar el rol de cualquier usuario
+   - Desactivar / reactivar cuentas
+   - Aprobar / rechazar usuarios pendientes
 
-   URLs:
-     GET /RoleServlet           -> lista de roles + usuarios
+   Las acciones se delegan a UserServlet (cambiarRol,
+   desactivarUsuario, reactivarUsuario, approveUser, rejectUser).
    ============================================================ */
 @WebServlet(name = "RoleServlet", value = "/RoleServlet")
 public class RoleServlet extends HttpServlet {
@@ -34,7 +36,6 @@ public class RoleServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Solo SuperAdmin puede entrar
         Integer roleId = (Integer) request.getSession().getAttribute("roleId");
         if (roleId == null || roleId != 5) {
             response.sendRedirect(request.getContextPath() + "/HomeServlet");
@@ -42,6 +43,7 @@ public class RoleServlet extends HttpServlet {
         }
 
         RoleDAO roleDao = new RoleDAO();
+        UserDAO userDao = new UserDAO();
         RequestDispatcher view;
 
         try {
@@ -49,16 +51,18 @@ public class RoleServlet extends HttpServlet {
             List<Role> roles = roleDao.getAll();
 
             // 2. Para cada rol, traer su lista de usuarios
-            // Lo guardamos en un Map donde la clave es el roleId
             Map<Integer, List<User>> usuariosPorRol = new HashMap<>();
             for (Role rol : roles) {
                 List<User> usuarios = roleDao.getUsersByRole(rol.getId());
                 usuariosPorRol.put(rol.getId(), usuarios);
             }
 
-            // 3. Inyectar todo a la vista
+            // 3. Estado de usuarios inactivos (distinguir pendiente vs desactivado)
+            Map<Integer, String> inactiveStatus = userDao.getInactiveUsersStatus();
+
             request.setAttribute("roles", roles);
             request.setAttribute("usuariosPorRol", usuariosPorRol);
+            request.setAttribute("inactiveStatus", inactiveStatus);
             request.setAttribute("activeMenu", "roles");
 
             view = request.getRequestDispatcher("roles-list.jsp");

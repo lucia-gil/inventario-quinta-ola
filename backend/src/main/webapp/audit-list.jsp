@@ -24,18 +24,14 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* ═════ Estilos de auditoría ═════ */
-
         .audit-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
-
-        @media (max-width: 768px) {
-            .audit-stats { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 1024px) { .audit-stats { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px)  { .audit-stats { grid-template-columns: 1fr; } }
 
         .audit-stat {
             background: var(--white);
@@ -47,13 +43,9 @@
             gap: 0.85rem;
             box-shadow: var(--shadow-sm);
         }
-
         .audit-stat-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 42px;
-            height: 42px;
+            display: flex; align-items: center; justify-content: center;
+            width: 42px; height: 42px;
             border-radius: var(--radius-sm);
             flex-shrink: 0;
         }
@@ -62,58 +54,41 @@
         .audit-stat-icon.purple { background: var(--purple-bg); color: var(--purple); }
         .audit-stat-icon.pink   { background: var(--pink-bg);   color: var(--pink); }
         .audit-stat-icon.yellow { background: var(--yellow-bg); color: var(--orange-dark); }
+        .audit-stat-icon.green  { background: var(--green-bg);  color: var(--green-dark); }
+        .audit-stat-icon.red    { background: var(--red-bg);    color: var(--red-dark); }
+        .audit-stat-icon.gray   { background: var(--gray-200);  color: var(--gray-700); }
 
         .audit-stat-value {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--gray-800);
-            line-height: 1;
+            font-size: 1.4rem; font-weight: 800;
+            color: var(--gray-800); line-height: 1;
         }
-
         .audit-stat-label {
-            font-size: 0.78rem;
-            color: var(--gray-500);
-            font-weight: 600;
-            margin-top: 0.25rem;
+            font-size: 0.78rem; color: var(--gray-500);
+            font-weight: 600; margin-top: 0.25rem;
         }
 
-        /* ── Filtros ── */
         .audit-filters {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
+            display: flex; gap: 0.5rem;
+            margin-bottom: 1.5rem; flex-wrap: wrap;
         }
-
         .filter-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
+            display: inline-flex; align-items: center; gap: 0.4rem;
             padding: 0.45rem 0.9rem;
             border: 1.5px solid var(--gray-200);
             border-radius: var(--radius-full);
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--gray-700);
-            background: var(--white);
+            font-size: 0.8rem; font-weight: 600;
+            color: var(--gray-700); background: var(--white);
             transition: all var(--transition);
-            cursor: pointer;
+            cursor: pointer; text-decoration: none;
         }
-
         .filter-chip:hover {
-            border-color: var(--purple);
-            color: var(--purple);
+            border-color: var(--purple); color: var(--purple);
         }
-
         .filter-chip.active {
-            background: var(--purple);
-            border-color: var(--purple);
-            color: var(--white);
+            background: var(--purple); border-color: var(--purple); color: var(--white);
         }
-
         .filter-chip i { width: 14px; height: 14px; }
 
-        /* ── Tabla bitácora ── */
         .audit-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -123,147 +98,105 @@
         }
 
         .action-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
+            display: inline-flex; align-items: center; gap: 0.35rem;
             padding: 0.3rem 0.75rem;
             border-radius: var(--radius-full);
-            font-size: 0.72rem;
-            font-weight: 700;
+            font-size: 0.72rem; font-weight: 700;
             letter-spacing: 0.3px;
+            white-space: nowrap;
         }
         .action-badge i { width: 12px; height: 12px; }
 
-        .action-CAMBIO_ROL   { background: var(--yellow-bg); color: var(--orange-dark); }
-        .action-CREAR_USUARIO{ background: var(--green-bg);  color: var(--green-dark); }
-        .action-APROBAR      { background: var(--blue-bg);   color: var(--blue-dark); }
-        .action-RECHAZAR     { background: var(--red-bg);    color: var(--red-dark); }
-        .action-default      { background: var(--gray-100);  color: var(--gray-600); }
+        /* Paleta para cada tipo de acción */
+        .action-cambio-rol      { background: var(--yellow-bg); color: var(--orange-dark); }
+        .action-crear-usuario   { background: var(--green-bg);  color: var(--green-dark); }
+        .action-aprobar         { background: var(--blue-bg);   color: var(--blue-dark); }
+        .action-rechazar        { background: var(--red-bg);    color: var(--red-dark); }
+        .action-desactivar      { background: var(--gray-200);  color: var(--gray-700); }
+        .action-reactivar       { background: var(--purple-bg); color: var(--purple); }
+        .action-default         { background: var(--gray-100);  color: var(--gray-600); }
 
         .entity-tag {
             display: inline-block;
             padding: 0.2rem 0.6rem;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--purple);
-            background: var(--purple-bg);
+            font-size: 0.7rem; font-weight: 700;
+            color: var(--purple); background: var(--purple-bg);
             border-radius: var(--radius-sm);
             font-family: 'Courier New', monospace;
         }
 
         .actor-cell {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
+            display: flex; align-items: center; gap: 0.65rem;
         }
-
         .actor-avatar {
-            width: 32px;
-            height: 32px;
+            width: 32px; height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--purple-light) 0%, var(--pink) 100%);
             color: var(--white);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.72rem;
-            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem; font-weight: 700;
             flex-shrink: 0;
         }
-
         .actor-info-name {
-            font-weight: 700;
-            color: var(--gray-800);
-            font-size: 0.85rem;
+            font-weight: 700; color: var(--gray-800); font-size: 0.85rem;
         }
-
         .actor-info-role {
-            font-size: 0.7rem;
-            color: var(--gray-500);
-            font-weight: 600;
+            font-size: 0.7rem; color: var(--gray-500); font-weight: 600;
         }
 
         .details-cell {
-            font-size: 0.85rem;
-            color: var(--gray-700);
-            line-height: 1.5;
-            max-width: 400px;
+            font-size: 0.85rem; color: var(--gray-700);
+            line-height: 1.5; max-width: 400px;
         }
 
         .empty-state {
-            padding: 4rem 2rem;
-            text-align: center;
+            padding: 4rem 2rem; text-align: center;
         }
-
         .empty-state i {
-            width: 56px;
-            height: 56px;
+            width: 56px; height: 56px;
             color: var(--gray-300);
             margin: 0 auto 1rem;
         }
-
         .empty-state h3 {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--gray-700);
-            margin-bottom: 0.4rem;
+            font-size: 1.05rem; font-weight: 700;
+            color: var(--gray-700); margin-bottom: 0.4rem;
         }
-
         .empty-state p {
-            font-size: 0.88rem;
-            color: var(--gray-500);
+            font-size: 0.88rem; color: var(--gray-500);
         }
 
         .info-banner {
-            display: flex;
-            gap: 0.85rem;
-            align-items: flex-start;
+            display: flex; gap: 0.85rem; align-items: flex-start;
             background: linear-gradient(135deg, var(--purple-bg) 0%, var(--pink-bg) 100%);
             border: 1px solid var(--pink-light);
             border-radius: var(--radius-md);
             padding: 1rem 1.25rem;
             margin-bottom: 1.5rem;
         }
-
         .info-banner-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px;
             border-radius: var(--radius-sm);
-            background: var(--purple);
-            color: var(--white);
+            background: var(--purple); color: var(--white);
             flex-shrink: 0;
         }
         .info-banner-icon i { width: 18px; height: 18px; }
-
         .info-banner-title {
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: var(--purple);
-            margin-bottom: 0.25rem;
+            font-size: 0.88rem; font-weight: 700;
+            color: var(--purple); margin-bottom: 0.25rem;
         }
-
         .info-banner-text {
-            font-size: 0.82rem;
-            color: var(--gray-700);
-            line-height: 1.55;
+            font-size: 0.82rem; color: var(--gray-700); line-height: 1.55;
         }
 
         .alert {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
+            display: flex; align-items: center; gap: 0.6rem;
             padding: 0.9rem 1.1rem;
             border-radius: var(--radius-sm);
-            font-size: 0.88rem;
-            font-weight: 600;
+            font-size: 0.88rem; font-weight: 600;
             margin-bottom: 1.25rem;
-            border: 1px solid;
-            background: var(--red-bg);
-            color: var(--red-dark);
-            border-color: #FECACA;
+            border: 1px solid #FECACA;
+            background: var(--red-bg); color: var(--red-dark);
         }
         .alert i { width: 18px; height: 18px; flex-shrink: 0; }
     </style>
@@ -289,7 +222,7 @@
                         Bitácora de Auditoría
                     </h1>
                     <p class="page-subtitle">
-                        Historial de todos los cambios críticos del sistema
+                        Historial inmutable de todos los cambios críticos del sistema
                     </p>
                 </div>
             </div>
@@ -302,9 +235,9 @@
                 <div>
                     <p class="info-banner-title">Registro inmutable</p>
                     <p class="info-banner-text">
-                        Esta bitácora se actualiza automáticamente cada vez que un SuperAdmin
-                        o Administrador realiza acciones críticas (creación de usuarios, cambios de rol,
-                        aprobaciones). Los registros no se pueden editar ni eliminar.
+                        Esta bitácora se actualiza automáticamente cuando se realizan acciones críticas:
+                        creación de usuarios, cambios de rol, aprobaciones, rechazos, desactivaciones
+                        y reactivaciones. Los registros no se pueden editar ni eliminar.
                     </p>
                 </div>
             </div>
@@ -316,14 +249,17 @@
             </div>
             <% } %>
 
-            <%-- Stats --%>
-            <% int totalRegistros = registros != null ? registros.size() : 0;
-                int countCambios = 0, countCreaciones = 0, countOtros = 0;
+            <%-- Stats: ahora cuatro tarjetas --%>
+            <%
+                int totalRegistros = registros != null ? registros.size() : 0;
+                int countCambios = 0, countCreaciones = 0, countAprobaciones = 0, countDesactivaciones = 0;
                 if (registros != null) {
                     for (AuditLog a : registros) {
-                        if ("CAMBIO_ROL".equals(a.getAction())) countCambios++;
-                        else if ("CREAR_USUARIO".equals(a.getAction())) countCreaciones++;
-                        else countOtros++;
+                        String act = a.getAction();
+                        if ("CAMBIO_ROL".equals(act))            countCambios++;
+                        else if ("CREAR_USUARIO".equals(act))    countCreaciones++;
+                        else if ("APROBAR_USUARIO".equals(act))  countAprobaciones++;
+                        else if ("DESACTIVAR_USUARIO".equals(act)) countDesactivaciones++;
                     }
                 }
             %>
@@ -349,12 +285,22 @@
                 </div>
 
                 <div class="audit-stat">
-                    <div class="audit-stat-icon pink">
+                    <div class="audit-stat-icon green">
                         <i data-lucide="user-plus"></i>
                     </div>
                     <div>
-                        <div class="audit-stat-value"><%= countCreaciones %></div>
-                        <div class="audit-stat-label">Usuarios creados</div>
+                        <div class="audit-stat-value"><%= countCreaciones + countAprobaciones %></div>
+                        <div class="audit-stat-label">Usuarios habilitados</div>
+                    </div>
+                </div>
+
+                <div class="audit-stat">
+                    <div class="audit-stat-icon gray">
+                        <i data-lucide="ban"></i>
+                    </div>
+                    <div>
+                        <div class="audit-stat-value"><%= countDesactivaciones %></div>
+                        <div class="audit-stat-label">Cuentas desactivadas</div>
                     </div>
                 </div>
             </div>
@@ -409,29 +355,49 @@
 
                         <% for (AuditLog log : registros) {
                             String actionClass = "action-default";
-                            String actionIcon = "circle";
+                            String actionIcon  = "circle";
                             String actionLabel = log.getAction();
 
                             switch (log.getAction()) {
                                 case "CAMBIO_ROL":
-                                    actionClass = "action-CAMBIO_ROL";
-                                    actionIcon = "refresh-cw";
+                                    actionClass = "action-cambio-rol";
+                                    actionIcon  = "refresh-cw";
                                     actionLabel = "Cambio de rol";
                                     break;
                                 case "CREAR_USUARIO":
-                                    actionClass = "action-CREAR_USUARIO";
-                                    actionIcon = "user-plus";
+                                    actionClass = "action-crear-usuario";
+                                    actionIcon  = "user-plus";
                                     actionLabel = "Crear usuario";
                                     break;
+                                case "APROBAR_USUARIO":
+                                    actionClass = "action-aprobar";
+                                    actionIcon  = "check-circle";
+                                    actionLabel = "Aprobar usuario";
+                                    break;
+                                case "RECHAZAR_USUARIO":
+                                    actionClass = "action-rechazar";
+                                    actionIcon  = "x-circle";
+                                    actionLabel = "Rechazar usuario";
+                                    break;
+                                case "DESACTIVAR_USUARIO":
+                                    actionClass = "action-desactivar";
+                                    actionIcon  = "ban";
+                                    actionLabel = "Desactivar usuario";
+                                    break;
+                                case "REACTIVAR_USUARIO":
+                                    actionClass = "action-reactivar";
+                                    actionIcon  = "rotate-ccw";
+                                    actionLabel = "Reactivar usuario";
+                                    break;
                                 case "APROBAR":
-                                    actionClass = "action-APROBAR";
-                                    actionIcon = "check-circle";
-                                    actionLabel = "Aprobar";
+                                    actionClass = "action-aprobar";
+                                    actionIcon  = "check-circle";
+                                    actionLabel = "Aprobar solicitud";
                                     break;
                                 case "RECHAZAR":
-                                    actionClass = "action-RECHAZAR";
-                                    actionIcon = "x-circle";
-                                    actionLabel = "Rechazar";
+                                    actionClass = "action-rechazar";
+                                    actionIcon  = "x-circle";
+                                    actionLabel = "Rechazar solicitud";
                                     break;
                             }
 

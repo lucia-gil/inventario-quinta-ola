@@ -2,6 +2,17 @@
     ════════════════════════════════════════════════════════════════════
      roles-list.jsp — Gestión de Roles (SuperAdmin)
     ════════════════════════════════════════════════════════════════════
+     Esta vista es el panel de control del SuperAdmin sobre los roles
+     del sistema. Aquí NO hay aprobar/rechazar (eso vive en
+     admin-users.jsp para el flujo de signup externo).
+
+     Acciones por estado:
+       Activo       → Cambiar rol + Desactivar cuenta
+       Pendiente    → Cambiar rol + Desactivar cuenta
+       Desactivado  → Reactivar
+       Es él mismo  → Tag "Tú"
+       Otro SA      → Solo Cambiar rol
+    ════════════════════════════════════════════════════════════════════
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
@@ -12,6 +23,9 @@
     String ctx = request.getContextPath();
     List<Role> roles = (List<Role>) request.getAttribute("roles");
     Map<Integer, List<User>> usuariosPorRol = (Map<Integer, List<User>>) request.getAttribute("usuariosPorRol");
+    Map<Integer, String> inactiveStatus = (Map<Integer, String>) request.getAttribute("inactiveStatus");
+
+    Integer userIdSession = (Integer) session.getAttribute("userId");
 
     String success = request.getParameter("success");
     String errParam = request.getParameter("error");
@@ -29,8 +43,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* ═════ Estilos específicos de la vista ═════ */
-
         .info-banner {
             display: flex;
             gap: 0.85rem;
@@ -40,37 +52,23 @@
             border-radius: var(--radius-md);
             padding: 1rem 1.25rem;
         }
-
         .info-banner-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px;
             border-radius: var(--radius-sm);
-            background: var(--blue);
-            color: var(--white);
+            background: var(--blue); color: var(--white);
             flex-shrink: 0;
         }
-
         .info-banner-icon i { width: 18px; height: 18px; }
-
         .info-banner-title {
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: var(--blue-dark);
-            margin-bottom: 0.25rem;
+            font-size: 0.88rem; font-weight: 700;
+            color: var(--blue-dark); margin-bottom: 0.25rem;
         }
-
         .info-banner-text {
-            font-size: 0.82rem;
-            color: var(--gray-700);
-            line-height: 1.55;
+            font-size: 0.82rem; color: var(--gray-700); line-height: 1.55;
         }
-
         .info-banner-text strong { color: var(--purple); }
 
-        /* ── Card de rol ── */
         .role-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -79,42 +77,27 @@
             overflow: hidden;
             margin-bottom: 1.5rem;
         }
-
         .role-card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
             gap: 1rem;
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--gray-100);
         }
-
-        /* Cada rol con un color distinto sutil en el header */
         .role-card-header.role-1 { background: linear-gradient(to right, var(--pink-bg), var(--white)); }
         .role-card-header.role-2 { background: linear-gradient(to right, var(--green-bg), var(--white)); }
         .role-card-header.role-3 { background: linear-gradient(to right, var(--yellow-bg), var(--white)); }
         .role-card-header.role-4 { background: linear-gradient(to right, var(--purple-bg), var(--white)); }
         .role-card-header.role-5 { background: linear-gradient(to right, var(--blue-bg),    var(--white)); }
 
-        .role-header-info {
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-        }
-
+        .role-header-info { display: flex; align-items: center; gap: 0.85rem; }
         .role-header-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 42px;
-            height: 42px;
+            display: flex; align-items: center; justify-content: center;
+            width: 42px; height: 42px;
             border-radius: var(--radius-sm);
-            background: var(--white);
-            box-shadow: var(--shadow-sm);
+            background: var(--white); box-shadow: var(--shadow-sm);
             flex-shrink: 0;
         }
         .role-header-icon i { width: 20px; height: 20px; }
-
         .role-header-icon.role-1 i { color: var(--pink); }
         .role-header-icon.role-2 i { color: var(--green-dark); }
         .role-header-icon.role-3 i { color: var(--orange-dark); }
@@ -122,129 +105,159 @@
         .role-header-icon.role-5 i { color: var(--blue-dark); }
 
         .role-header-text h2 {
-            font-size: 1rem;
-            font-weight: 800;
-            color: var(--gray-800);
-            margin: 0;
+            font-size: 1rem; font-weight: 800;
+            color: var(--gray-800); margin: 0;
         }
-
         .role-header-text p {
-            font-size: 0.78rem;
-            color: var(--gray-500);
-            margin: 0.15rem 0 0 0;
-            font-weight: 500;
+            font-size: 0.78rem; color: var(--gray-500);
+            margin: 0.15rem 0 0 0; font-weight: 500;
         }
-
         .role-count-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
+            display: inline-flex; align-items: center; gap: 0.4rem;
             padding: 0.4rem 0.85rem;
             border-radius: var(--radius-full);
-            background: var(--purple);
-            color: var(--white);
-            font-size: 0.78rem;
-            font-weight: 700;
+            background: var(--purple); color: var(--white);
+            font-size: 0.78rem; font-weight: 700;
         }
-
         .role-count-badge i { width: 14px; height: 14px; }
-
-        /* ── Tabla de usuarios ── */
-        .role-card-body {
-            padding: 0;
-        }
+        .role-card-body { padding: 0; }
 
         .empty-row {
-            padding: 2rem;
-            text-align: center;
-            color: var(--gray-400);
-            font-size: 0.88rem;
+            padding: 2rem; text-align: center;
+            color: var(--gray-400); font-size: 0.88rem;
             font-style: italic;
+        }
+
+        .row-deactivated {
+            opacity: 0.55;
+            background: var(--gray-50);
+        }
+        .row-deactivated .user-cell-name { text-decoration: line-through; }
+
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.72rem; font-weight: 700;
+            white-space: nowrap;
+        }
+        .status-pill i { width: 12px; height: 12px; }
+        .status-pill-active      { background: var(--green-bg);  color: var(--green-dark); }
+        .status-pill-pending     { background: var(--yellow-bg); color: var(--orange-dark); }
+        .status-pill-deactivated { background: var(--gray-200);  color: var(--gray-700); }
+
+        .actions-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            align-items: stretch;
+            min-width: 200px;
         }
 
         .change-role-form {
             display: inline-flex;
-            gap: 0.5rem;
+            gap: 0.4rem;
             align-items: center;
+            justify-content: flex-start;
         }
-
         .change-role-select {
-            padding: 0.45rem 0.75rem;
+            padding: 0.4rem 0.7rem;
             border: 1.5px solid var(--gray-200);
             border-radius: var(--radius-sm);
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--gray-700);
             background: var(--gray-50);
             font-family: inherit;
-            cursor: pointer;
-            outline: none;
+            cursor: pointer; outline: none;
             transition: all var(--transition);
+            min-width: 130px;
         }
-
         .change-role-select:focus {
             border-color: var(--purple);
             background: var(--white);
             box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
         }
 
-        .change-role-btn {
+        .btn-action {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.35rem;
-            background: var(--pink);
-            color: var(--white);
-            padding: 0.5rem 0.85rem;
+            padding: 0.45rem 0.85rem;
             border-radius: var(--radius-sm);
-            border: none;
-            font-size: 0.78rem;
-            font-weight: 700;
+            border: 1px solid transparent;
+            font-size: 0.75rem; font-weight: 700;
             cursor: pointer;
             transition: all var(--transition);
+            font-family: inherit;
         }
-
-        .change-role-btn:hover {
+        .btn-change-role {
+            background: var(--pink);
+            color: var(--white);
+            border-color: var(--pink);
+        }
+        .btn-change-role:hover {
             background: var(--purple);
+            border-color: var(--purple);
             transform: translateY(-1px);
         }
+        .btn-change-role i { width: 13px; height: 13px; }
 
-        .change-role-btn i { width: 13px; height: 13px; }
-
-        /* ── Avatar pequeño en la tabla ── */
-        .user-cell {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
+        .btn-deactivate {
+            background: var(--white);
+            color: var(--red-dark);
+            border-color: #FECACA;
         }
+        .btn-deactivate:hover {
+            background: var(--red);
+            color: var(--white);
+            border-color: var(--red);
+        }
+        .btn-deactivate i { width: 13px; height: 13px; }
 
+        .btn-reactivate {
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+            color: var(--white);
+            border-color: transparent;
+        }
+        .btn-reactivate:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(34, 197, 94, 0.3);
+        }
+        .btn-reactivate i { width: 13px; height: 13px; }
+
+        .self-tag {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.4rem 0.85rem;
+            background: var(--purple-bg);
+            color: var(--purple);
+            border-radius: var(--radius-full);
+            font-size: 0.72rem; font-weight: 700;
+        }
+        .self-tag i { width: 12px; height: 12px; }
+
+        .user-cell {
+            display: flex; align-items: center; gap: 0.7rem;
+        }
         .user-cell-avatar {
-            width: 32px;
-            height: 32px;
+            width: 32px; height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--purple-light) 0%, var(--pink) 100%);
             color: var(--white);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
             flex-shrink: 0;
         }
-
         .user-cell-name {
-            font-weight: 700;
-            color: var(--gray-800);
+            font-weight: 700; color: var(--gray-800);
             font-size: 0.88rem;
         }
 
-        /* ── Alertas ── */
         .alert {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
+            display: flex; align-items: center; gap: 0.6rem;
             padding: 0.9rem 1.1rem;
             border-radius: var(--radius-sm);
-            font-size: 0.88rem;
-            font-weight: 600;
+            font-size: 0.88rem; font-weight: 600;
             margin-bottom: 1.25rem;
             border: 1px solid;
         }
@@ -266,7 +279,6 @@
 
         <main class="page-main">
 
-            <%-- Cabecera --%>
             <div class="page-header">
                 <div>
                     <h1 class="page-title">
@@ -312,8 +324,8 @@
                     <p class="info-banner-title">Cómo funciona</p>
                     <p class="info-banner-text">
                         Los <strong>5 roles del sistema</strong> son fijos según el modelo del cliente.
-                        Para cambiar el rol de un usuario, usa el desplegable junto a su nombre.
-                        Cada cambio queda registrado en la <strong>bitácora de auditoría</strong>.
+                        Desde aquí puedes cambiar el rol o desactivar/reactivar cuentas. Cada acción
+                        queda en la <strong>bitácora de auditoría</strong>.
                     </p>
                 </div>
             </div>
@@ -322,16 +334,15 @@
             <% if (roles != null) {
                 for (Role rol : roles) {
                     List<User> usuariosDelRol = usuariosPorRol.get(rol.getId());
-                    int roleColorId = rol.getId(); // 1-5
+                    int roleColorId = rol.getId();
 
-                    // AQUÍ ESTÁ EL CAMBIO SOLICITADO: Sintaxis clásica de Java compatible con Tomcat
                     String iconName = "circle";
                     switch (rol.getId()) {
-                        case 1: iconName = "user"; break;              // Viewer
-                        case 2: iconName = "truck"; break;             // Member
-                        case 3: iconName = "check-square"; break;      // Manager
-                        case 4: iconName = "shield"; break;            // Administrador
-                        case 5: iconName = "shield-check"; break;      // SuperAdmin
+                        case 1: iconName = "user"; break;
+                        case 2: iconName = "truck"; break;
+                        case 3: iconName = "check-square"; break;
+                        case 4: iconName = "shield"; break;
+                        case 5: iconName = "shield-check"; break;
                     }
             %>
 
@@ -368,11 +379,24 @@
                                 <th class="th">Usuario</th>
                                 <th class="th">Email</th>
                                 <th class="th">DNI</th>
-                                <th class="th">Cambiar Rol</th>
+                                <th class="th-center">Estado</th>
+                                <th class="th-center" style="min-width: 240px;">Acciones</th>
                             </tr>
                             </thead>
                             <tbody class="table-body">
+
                             <% for (User u : usuariosDelRol) {
+                                boolean isSelf       = (userIdSession != null && userIdSession == u.getId());
+                                boolean isSuperAdminRow = (u.getRoleId() == 5);
+                                boolean isInactive   = (u.getActivo() == 0);
+
+                                String inactiveType = null;
+                                if (isInactive && inactiveStatus != null) {
+                                    inactiveType = inactiveStatus.get(u.getId());
+                                }
+                                boolean isDeactivated = "DEACTIVATED".equals(inactiveType);
+                                boolean isPending = isInactive && !isDeactivated;
+
                                 String ini = "U";
                                 if (u.getName() != null && !u.getName().trim().isEmpty()) {
                                     String[] partes = u.getName().trim().split("\\s+");
@@ -383,40 +407,118 @@
                                     }
                                 }
                             %>
-                            <tr class="table-row">
+
+                            <tr class="table-row <%= isDeactivated ? "row-deactivated" : "" %>">
+
                                 <td class="td">
                                     <div class="user-cell">
                                         <div class="user-cell-avatar"><%= ini %></div>
                                         <span class="user-cell-name"><%= u.getName() %></span>
                                     </div>
                                 </td>
+
                                 <td class="td-light"><%= u.getEmail() %></td>
+
                                 <td class="td-light" style="font-family: 'Courier New', monospace;">
                                     <%= u.getDni() != null ? u.getDni() : "—" %>
                                 </td>
-                                <td class="td">
-                                    <form action="<%= ctx %>/UserServlet"
-                                          method="POST"
-                                          onsubmit="return confirm('¿Cambiar el rol de <%= u.getName() %>? Este cambio quedará registrado en la bitácora.');"
-                                          class="change-role-form">
 
-                                        <input type="hidden" name="action" value="cambiarRol"/>
+                                <td class="td-center">
+                                    <% if (u.getActivo() == 1) { %>
+                                    <span class="status-pill status-pill-active">
+                                            <i data-lucide="check"></i>
+                                            Activo
+                                        </span>
+                                    <% } else if (isDeactivated) { %>
+                                    <span class="status-pill status-pill-deactivated">
+                                            <i data-lucide="ban"></i>
+                                            Desactivado
+                                        </span>
+                                    <% } else { %>
+                                    <span class="status-pill status-pill-pending">
+                                            <i data-lucide="clock"></i>
+                                            Pendiente
+                                        </span>
+                                    <% } %>
+                                </td>
+
+                                <td class="td-center">
+
+                                    <% if (isSelf) { %>
+
+                                    <%-- Soy yo: no me puedo tocar --%>
+                                    <span class="self-tag">
+                                            <i data-lucide="user"></i>
+                                            Tú
+                                        </span>
+
+                                    <% } else if (isDeactivated) { %>
+
+                                    <%-- Usuario desactivado: solo reactivar --%>
+                                    <% if (!isSuperAdminRow) { %>
+                                    <form action="<%= ctx %>/UserServlet" method="POST"
+                                          onsubmit="return confirm('¿Reactivar a <%= u.getName() %>? Podrá iniciar sesión nuevamente.');"
+                                          style="margin:0;">
+                                        <input type="hidden" name="action" value="reactivarUsuario"/>
                                         <input type="hidden" name="userId" value="<%= u.getId() %>"/>
-
-                                        <select name="nuevoRolId" class="change-role-select">
-                                            <% for (Role r : roles) { %>
-                                            <option value="<%= r.getId() %>"
-                                                    <%= r.getId() == u.getRoleId() ? "selected" : "" %>>
-                                                <%= r.getName() %>
-                                            </option>
-                                            <% } %>
-                                        </select>
-
-                                        <button type="submit" class="change-role-btn">
-                                            <i data-lucide="refresh-cw"></i>
-                                            Cambiar
+                                        <input type="hidden" name="redirectTo" value="roles"/>
+                                        <button type="submit" class="btn-action btn-reactivate">
+                                            <i data-lucide="rotate-ccw"></i>
+                                            Reactivar
                                         </button>
                                     </form>
+                                    <% } %>
+
+                                    <% } else { %>
+
+                                    <%--
+                                        Estados Activo o Pendiente:
+                                        siempre mostramos cambio de rol + desactivar
+                                        (excepto desactivar a otro SuperAdmin)
+                                    --%>
+                                    <div class="actions-stack">
+
+                                        <form action="<%= ctx %>/UserServlet"
+                                              method="POST"
+                                              onsubmit="return confirm('¿Cambiar el rol de <%= u.getName() %>? Quedará en la bitácora.');"
+                                              class="change-role-form">
+
+                                            <input type="hidden" name="action" value="cambiarRol"/>
+                                            <input type="hidden" name="userId" value="<%= u.getId() %>"/>
+                                            <input type="hidden" name="redirectTo" value="roles"/>
+
+                                            <select name="nuevoRolId" class="change-role-select">
+                                                <% for (Role r : roles) { %>
+                                                <option value="<%= r.getId() %>"
+                                                        <%= r.getId() == u.getRoleId() ? "selected" : "" %>>
+                                                    <%= r.getName() %>
+                                                </option>
+                                                <% } %>
+                                            </select>
+
+                                            <button type="submit" class="btn-action btn-change-role">
+                                                <i data-lucide="refresh-cw"></i>
+                                                Cambiar
+                                            </button>
+                                        </form>
+
+                                        <% if (!isSuperAdminRow) { %>
+                                        <form action="<%= ctx %>/UserServlet" method="POST"
+                                              onsubmit="return confirm('¿Desactivar la cuenta de <%= u.getName() %>?\n\nEl usuario no podrá iniciar sesión. Su historial y aprobaciones se conservarán. Esta acción quedará en la bitácora.');"
+                                              style="margin:0;">
+                                            <input type="hidden" name="action" value="desactivarUsuario"/>
+                                            <input type="hidden" name="userId" value="<%= u.getId() %>"/>
+                                            <input type="hidden" name="redirectTo" value="roles"/>
+                                            <button type="submit" class="btn-action btn-deactivate">
+                                                <i data-lucide="ban"></i>
+                                                Desactivar cuenta
+                                            </button>
+                                        </form>
+                                        <% } %>
+
+                                    </div>
+                                    <% } %>
+
                                 </td>
                             </tr>
                             <% } %>

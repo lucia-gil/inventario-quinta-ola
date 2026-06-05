@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="com.quintaola.model.User" %>
 <%
     String ctx = request.getContextPath();
@@ -12,9 +13,11 @@
         return;
     }
 
-    List<User> usuarios = (List<User>) request.getAttribute("usuarios");
+    boolean esSuperAdmin = (roleIdSession == 5);
 
-    // Mensajes (atributos forward + params)
+    List<User> usuarios = (List<User>) request.getAttribute("usuarios");
+    Map<Integer, String> inactiveStatus = (Map<Integer, String>) request.getAttribute("inactiveStatus");
+
     String successParam = request.getParameter("success");
     String errorParam = request.getParameter("error");
     String mensajeExito = (String) request.getAttribute("mensajeExito");
@@ -85,6 +88,13 @@
             font-weight: 700; color: var(--gray-800); font-size: 0.9rem;
         }
 
+        /* Fila atenuada para usuarios desactivados */
+        .row-deactivated {
+            opacity: 0.55;
+            background: var(--gray-50);
+        }
+        .row-deactivated .user-cell-name { text-decoration: line-through; }
+
         .role-pill {
             display: inline-block;
             padding: 0.3rem 0.75rem;
@@ -109,8 +119,9 @@
             font-weight: 700;
         }
         .status-pill i { width: 12px; height: 12px; }
-        .status-pill-active  { background: var(--green-bg); color: var(--green-dark); }
-        .status-pill-pending { background: var(--red-bg);   color: var(--red-dark); }
+        .status-pill-active      { background: var(--green-bg); color: var(--green-dark); }
+        .status-pill-pending     { background: var(--yellow-bg); color: var(--orange-dark); }
+        .status-pill-deactivated { background: var(--gray-200); color: var(--gray-700); }
 
         .change-role-form {
             display: inline-flex;
@@ -136,40 +147,59 @@
             background: var(--white);
             box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
         }
-        .change-role-select:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+
+        .actions-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            align-items: stretch;
         }
 
-        .btn-change-role {
+        .btn-action {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.3rem;
-            background: var(--pink);
-            color: var(--white);
             padding: 0.45rem 0.8rem;
             border-radius: var(--radius-sm);
-            border: none;
-            font-size: 0.75rem;
+            border: 1px solid transparent;
+            font-size: 0.74rem;
             font-weight: 700;
             cursor: pointer;
             transition: all var(--transition);
+            font-family: inherit;
         }
-        .btn-change-role:hover {
-            background: var(--purple);
-            transform: translateY(-1px);
+        .btn-change-role {
+            background: var(--pink);
+            color: var(--white);
         }
-        .btn-change-role:disabled {
-            background: var(--gray-300);
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-change-role:hover { background: var(--purple); transform: translateY(-1px); }
         .btn-change-role i { width: 12px; height: 12px; }
+
+        .btn-deactivate {
+            background: var(--white);
+            color: var(--red-dark);
+            border-color: #FECACA;
+        }
+        .btn-deactivate:hover {
+            background: var(--red);
+            color: var(--white);
+            border-color: var(--red);
+        }
+        .btn-deactivate i { width: 12px; height: 12px; }
+
+        .btn-reactivate {
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+            color: var(--white);
+        }
+        .btn-reactivate:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(34, 197, 94, 0.3); }
+        .btn-reactivate i { width: 12px; height: 12px; }
 
         .pending-actions {
             display: flex;
             gap: 0.4rem;
             align-items: center;
+            justify-content: center;
         }
 
         .btn-approve, .btn-reject {
@@ -183,6 +213,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: all var(--transition);
+            font-family: inherit;
         }
         .btn-approve {
             background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
@@ -302,15 +333,23 @@
                         <% } else {
                             for (User u : usuarios) {
                                 boolean isSelf       = (userIdSession != null && userIdSession == u.getId());
-                                boolean isSuperAdmin = (u.getRoleId() == 5);
+                                boolean isSuperAdminRow = (u.getRoleId() == 5);
                                 boolean isAdminRow   = (u.getRoleId() == 4);
-                                boolean isPending    = (u.getActivo() == 0);
+                                boolean isInactive   = (u.getActivo() == 0);
+
+                                // Distinguir pendiente vs desactivado
+                                String inactiveType = null;
+                                if (isInactive && inactiveStatus != null) {
+                                    inactiveType = inactiveStatus.get(u.getId());
+                                }
+                                boolean isDeactivated = "DEACTIVATED".equals(inactiveType);
+                                boolean isPending = isInactive && !isDeactivated;
 
                                 // Admin no puede tocar a otros Admin ni a SuperAdmin
-                                boolean adminBloqueado = (roleIdSession == 4 && (isAdminRow || isSuperAdmin));
-                                boolean cannotEdit     = isSelf || isSuperAdmin || adminBloqueado;
+                                boolean adminBloqueado = (roleIdSession == 4 && (isAdminRow || isSuperAdminRow));
+                                boolean cannotEdit = isSelf || isSuperAdminRow || adminBloqueado;
                         %>
-                        <tr class="table-row">
+                        <tr class="table-row <%= isDeactivated ? "row-deactivated" : "" %>">
                             <td class="td">
                                 <div class="user-cell">
                                     <div class="user-cell-avatar"><%= getInitials(u.getName()) %></div>
@@ -335,6 +374,11 @@
                                             <i data-lucide="check"></i>
                                             Activo
                                         </span>
+                                <% } else if (isDeactivated) { %>
+                                <span class="status-pill status-pill-deactivated">
+                                            <i data-lucide="ban"></i>
+                                            Desactivado
+                                        </span>
                                 <% } else { %>
                                 <span class="status-pill status-pill-pending">
                                             <i data-lucide="clock"></i>
@@ -350,7 +394,6 @@
                             <td class="td-center">
 
                                 <% if (isSelf) { %>
-                                <%-- No puedes editar tu propio rol --%>
                                 <span class="self-tag">
                                             <i data-lucide="user"></i>
                                             Tú
@@ -381,39 +424,69 @@
                                     </form>
                                 </div>
 
+                                <% } else if (isDeactivated) { %>
+                                <%-- Usuario desactivado: solo SuperAdmin puede reactivar --%>
+                                <% if (esSuperAdmin && !isSuperAdminRow) { %>
+                                <form action="<%= ctx %>/UserServlet" method="POST"
+                                      onsubmit="return confirm('¿Reactivar a <%= u.getName() %>? Podrá iniciar sesión nuevamente.');"
+                                      style="margin:0;">
+                                    <input type="hidden" name="action" value="reactivarUsuario"/>
+                                    <input type="hidden" name="userId" value="<%= u.getId() %>"/>
+                                    <button type="submit" class="btn-action btn-reactivate">
+                                        <i data-lucide="rotate-ccw"></i>
+                                        Reactivar
+                                    </button>
+                                </form>
+                                <% } else { %>
+                                <span class="blocked-tag">— Desactivado —</span>
+                                <% } %>
+
                                 <% } else if (cannotEdit) { %>
-                                <%-- Admin viendo a otro Admin o SA --%>
                                 <span class="blocked-tag">— Sin permisos —</span>
 
                                 <% } else { %>
                                 <%--
-                                    Form completo: select + botón submit.
-                                    Las opciones que ve cada rol:
-                                    - SuperAdmin: 1, 2, 3, 4
-                                    - Admin: solo 1, 2, 3
+                                    Usuario activo: cambiar rol + (si soy SA) desactivar
                                 --%>
-                                <form action="<%= ctx %>/UserServlet" method="POST"
-                                      onsubmit="return confirm('¿Cambiar el rol de <%= u.getName() %>? Este cambio quedará registrado en la bitácora.');"
-                                      class="change-role-form">
+                                <div class="actions-stack">
 
-                                    <input type="hidden" name="action" value="cambiarRol"/>
-                                    <input type="hidden" name="userId" value="<%= u.getId() %>"/>
+                                    <form action="<%= ctx %>/UserServlet" method="POST"
+                                          onsubmit="return confirm('¿Cambiar el rol de <%= u.getName() %>? Quedará en la bitácora.');"
+                                          class="change-role-form">
 
-                                    <select name="nuevoRolId" class="change-role-select">
-                                        <option value="1" <%= u.getRoleId() == 1 ? "selected" : "" %>>Solicitante</option>
-                                        <option value="2" <%= u.getRoleId() == 2 ? "selected" : "" %>>Encargado(a) Depósito</option>
-                                        <option value="3" <%= u.getRoleId() == 3 ? "selected" : "" %>>Aprobador(a)</option>
+                                        <input type="hidden" name="action" value="cambiarRol"/>
+                                        <input type="hidden" name="userId" value="<%= u.getId() %>"/>
 
-                                        <% if (roleIdSession == 5) { %>
-                                        <option value="4" <%= u.getRoleId() == 4 ? "selected" : "" %>>Administrador(a)</option>
-                                        <% } %>
-                                    </select>
+                                        <select name="nuevoRolId" class="change-role-select">
+                                            <option value="1" <%= u.getRoleId() == 1 ? "selected" : "" %>>Solicitante</option>
+                                            <option value="2" <%= u.getRoleId() == 2 ? "selected" : "" %>>Encargado(a) Depósito</option>
+                                            <option value="3" <%= u.getRoleId() == 3 ? "selected" : "" %>>Aprobador(a)</option>
+                                            <% if (esSuperAdmin) { %>
+                                            <option value="4" <%= u.getRoleId() == 4 ? "selected" : "" %>>Administrador(a)</option>
+                                            <% } %>
+                                        </select>
 
-                                    <button type="submit" class="btn-change-role">
-                                        <i data-lucide="refresh-cw"></i>
-                                        Cambiar
-                                    </button>
-                                </form>
+                                        <button type="submit" class="btn-action btn-change-role">
+                                            <i data-lucide="refresh-cw"></i>
+                                            Cambiar
+                                        </button>
+                                    </form>
+
+                                    <%-- Solo SuperAdmin puede desactivar, y no a otro SA --%>
+                                    <% if (esSuperAdmin && !isSuperAdminRow) { %>
+                                    <form action="<%= ctx %>/UserServlet" method="POST"
+                                          onsubmit="return confirm('¿Desactivar la cuenta de <%= u.getName() %>?\n\nEl usuario no podrá iniciar sesión. Su historial y aprobaciones se conservarán. Esta acción quedará en la bitácora.');"
+                                          style="margin:0;">
+                                        <input type="hidden" name="action" value="desactivarUsuario"/>
+                                        <input type="hidden" name="userId" value="<%= u.getId() %>"/>
+                                        <button type="submit" class="btn-action btn-deactivate">
+                                            <i data-lucide="ban"></i>
+                                            Desactivar cuenta
+                                        </button>
+                                    </form>
+                                    <% } %>
+
+                                </div>
                                 <% } %>
 
                             </td>

@@ -15,13 +15,15 @@ import java.util.List;
    necesitamos LEER, no crear/editar/eliminar.
 
    Metodos:
-   - getAll()             -> los 5 roles con conteo de usuarios
+   - getAll()             -> los 5 roles con conteo de usuarios activos
    - getById(int)         -> un rol concreto
-   - getUsersByRole(int)  -> lista de usuarios que tienen ese rol
+   - getUsersByRole(int)  -> TODOS los usuarios de ese rol (activos,
+                             pendientes y desactivados). El JSP decide
+                             cómo pintarlos.
    ============================================================ */
 public class RoleDAO {
 
-    // ─── GET ALL: los 5 roles con count de usuarios ───
+    // ─── GET ALL: los 5 roles con count de usuarios activos ───
     public List<Role> getAll() throws SQLException {
         List<Role> list = new ArrayList<>();
 
@@ -64,9 +66,14 @@ public class RoleDAO {
         return null;
     }
 
-    // ─── GET USERS BY ROLE: usuarios que tienen un rol especifico ───
-    // Devuelve lista de User (no de Role) porque vamos a mostrarlos
-    // como sub-lista debajo de cada rol en roles-list.jsp
+    /**
+     * ─── GET USERS BY ROLE ───
+     * Devuelve TODOS los usuarios con ese rol, sin filtrar por activo.
+     * El SuperAdmin necesita ver también a los desactivados para poder
+     * reactivarlos desde la vista de gestión de roles.
+     *
+     * Orden: activos primero, luego pendientes/desactivados, alfabético.
+     */
     public List<User> getUsersByRole(int roleId) throws SQLException {
         List<User> list = new ArrayList<>();
 
@@ -75,8 +82,8 @@ public class RoleDAO {
                    u.created_at, u.activo, r.name AS role_name
             FROM users u
             JOIN roles r ON u.role_id = r.id
-            WHERE u.role_id = ? AND u.activo = 1
-            ORDER BY u.name ASC
+            WHERE u.role_id = ?
+            ORDER BY u.activo DESC, u.name ASC
             """;
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -94,6 +101,7 @@ public class RoleDAO {
                     u.setAvatarUrl(rs.getString("avatar_url"));
                     u.setCreatedAt(rs.getString("created_at"));
                     u.setRoleName(rs.getString("role_name"));
+                    u.setActivo(rs.getInt("activo"));  // ← CLAVE: ahora sí seteamos activo
                     list.add(u);
                 }
             }

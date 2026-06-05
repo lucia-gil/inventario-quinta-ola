@@ -13,16 +13,8 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
-/* ============================================================
-   UserServlet
-   ============================================================
-   Reglas de roles para gestión de usuarios:
-   - SuperAdmin (5): puede crear/cambiar a CUALQUIER rol (1-5)
-   - Administrador (4): puede crear/cambiar SOLO a roles inferiores
-                        (1=Viewer, 2=Member, 3=Manager). NO puede
-                        crear ni cambiar a rol 4 ni 5 por seguridad.
-   ============================================================ */
 @WebServlet(name = "UserServlet", value = "/UserServlet")
 public class UserServlet extends HttpServlet {
 
@@ -48,9 +40,11 @@ public class UserServlet extends HttpServlet {
                 try {
                     List<User> usuarios = userDao.getAll();
                     List<Role> roles = roleDao.getAll();
+                    Map<Integer, String> inactiveStatus = userDao.getInactiveUsersStatus();
 
                     request.setAttribute("usuarios", usuarios);
                     request.setAttribute("roles", roles);
+                    request.setAttribute("inactiveStatus", inactiveStatus);
                     request.setAttribute("activeMenu", "members");
 
                     view = request.getRequestDispatcher("admin-users.jsp");
@@ -107,6 +101,18 @@ public class UserServlet extends HttpServlet {
         String actorRole = (String) sesion.getAttribute("roleName");
         if (actorRole == null) actorRole = "Usuario";
 
+        // ─── DETECTAR DESDE DÓNDE VINO LA ACCIÓN ───
+        // Si el form envió redirectTo=roles, regresa a /RoleServlet.
+        // Si no, sigue el comportamiento por defecto (admin-users).
+        String redirectTo = request.getParameter("redirectTo");
+        String redirectBase;
+        if ("roles".equals(redirectTo)) {
+            redirectBase = "/RoleServlet";
+        } else {
+            redirectBase = "/UserServlet";
+        }
+        String ctx = request.getContextPath();
+
         switch (action) {
 
             // ─── APROBAR USUARIO PENDIENTE ───
@@ -129,30 +135,17 @@ public class UserServlet extends HttpServlet {
                             auditDao.log(actorId, "APROBAR_USUARIO", "USER", userId, detalles);
                         } catch (Exception ignored) {}
 
-                        request.setAttribute("mensajeExito", "El usuario ha sido aprobado y ya puede iniciar sesión.");
+                        response.sendRedirect(ctx + redirectBase + "?success=Usuario+aprobado.+Ya+puede+iniciar+sesion");
                     } else {
-                        request.setAttribute("error", "No se pudo aprobar al usuario.");
+                        response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+aprobar+al+usuario");
                     }
 
-                    List<User> usuarios = userDao.getAll();
-                    request.setAttribute("usuarios", usuarios);
-                    request.setAttribute("activeMenu", "members");
-
-                    RequestDispatcher view = request.getRequestDispatcher("admin-users.jsp");
-                    view.forward(request, response);
-
                 } catch (Exception e) {
-                    request.setAttribute("error", "Error del servidor: " + e.getMessage());
-                    try {
-                        List<User> usuarios = userDao.getAll();
-                        request.setAttribute("usuarios", usuarios);
-                    } catch (Exception ignored) {}
-                    RequestDispatcher view = request.getRequestDispatcher("admin-users.jsp");
-                    view.forward(request, response);
+                    response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }
                 break;
 
-            // ─── RECHAZAR (desactivar) USUARIO PENDIENTE ───
+            // ─── RECHAZAR USUARIO PENDIENTE ───
             case "rejectUser":
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
@@ -172,21 +165,104 @@ public class UserServlet extends HttpServlet {
                             auditDao.log(actorId, "RECHAZAR_USUARIO", "USER", userId, detalles);
                         } catch (Exception ignored) {}
 
-                        request.setAttribute("mensajeExito", "La solicitud de registro fue rechazada.");
+                        response.sendRedirect(ctx + redirectBase + "?success=Solicitud+de+registro+rechazada");
                     } else {
-                        request.setAttribute("error", "No se pudo rechazar al usuario.");
+                        response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+rechazar+al+usuario");
                     }
 
-                    List<User> usuarios = userDao.getAll();
-                    request.setAttribute("usuarios", usuarios);
-                    request.setAttribute("activeMenu", "members");
+                } catch (Exception e) {
+                    response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
+                }
+                break;
 
-                    RequestDispatcher view = request.getRequestDispatcher("admin-users.jsp");
-                    view.forward(request, response);
+            // ─── DESACTIVAR USUARIO (solo SuperAdmin) ───
+            case "desactivarUsuario":
+                try {
+                    int userId = Integer.parseInt(request.getParameter("userId"));
+
+                    if (actorRoleId == null || actorRoleId != 5) {
+                        response.sendRedirect(ctx + redirectBase + "?error=Solo+el+SuperAdmin+puede+desactivar+usuarios");
+                        return;
+                    }
+
+                    if (actorId != null && actorId == userId) {
+                        response.sendRedirect(ctx + redirectBase + "?error=No+puedes+desactivarte+a+ti+mismo");
+                        return;
+                    }
+
+                    User aDesactivar = userDao.getById(userId);
+                    if (aDesactivar == null) {
+                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado");
+                        return;
+                    }
+
+                    if (aDesactivar.getRoleId() == 5) {
+                        response.sendRedirect(ctx + redirectBase + "?error=No+se+puede+desactivar+al+SuperAdmin");
+                        return;
+                    }
+
+                    boolean ok = userDao.disable(userId);
+
+                    if (ok) {
+                        try {
+                            String detalles = String.format(
+                                    "El %s desactivó la cuenta de '%s' (id=%d, email=%s, rol=%s). El usuario ya no podrá iniciar sesión.",
+                                    actorRole,
+                                    aDesactivar.getName(),
+                                    userId,
+                                    aDesactivar.getEmail(),
+                                    aDesactivar.getRoleName()
+                            );
+                            auditDao.log(actorId, "DESACTIVAR_USUARIO", "USER", userId, detalles);
+                        } catch (Exception ignored) {}
+
+                        response.sendRedirect(ctx + redirectBase + "?success=Usuario+desactivado+correctamente");
+                    } else {
+                        response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+desactivar");
+                    }
 
                 } catch (Exception e) {
-                    response.sendRedirect(request.getContextPath()
-                            + "/UserServlet?error=" + e.getMessage().replace(" ", "+"));
+                    response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
+                }
+                break;
+
+            // ─── REACTIVAR USUARIO (solo SuperAdmin) ───
+            case "reactivarUsuario":
+                try {
+                    int userId = Integer.parseInt(request.getParameter("userId"));
+
+                    if (actorRoleId == null || actorRoleId != 5) {
+                        response.sendRedirect(ctx + redirectBase + "?error=Solo+el+SuperAdmin+puede+reactivar+usuarios");
+                        return;
+                    }
+
+                    User aReactivar = userDao.getById(userId);
+                    if (aReactivar == null) {
+                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado");
+                        return;
+                    }
+
+                    boolean ok = userDao.enable(userId);
+
+                    if (ok) {
+                        try {
+                            String detalles = String.format(
+                                    "El %s reactivó la cuenta de '%s' (id=%d, email=%s). El usuario ya puede iniciar sesión nuevamente.",
+                                    actorRole,
+                                    aReactivar.getName(),
+                                    userId,
+                                    aReactivar.getEmail()
+                            );
+                            auditDao.log(actorId, "REACTIVAR_USUARIO", "USER", userId, detalles);
+                        } catch (Exception ignored) {}
+
+                        response.sendRedirect(ctx + redirectBase + "?success=Usuario+reactivado+correctamente");
+                    } else {
+                        response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+reactivar");
+                    }
+
+                } catch (Exception e) {
+                    response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }
                 break;
 
@@ -199,11 +275,8 @@ public class UserServlet extends HttpServlet {
                     String password = request.getParameter("password");
                     int roleId = Integer.parseInt(request.getParameter("roleId"));
 
-                    // ─── VALIDACIÓN JERÁRQUICA ───
-                    // Admin (4) solo puede crear usuarios con roles 1, 2, 3
                     if (actorRoleId != null && actorRoleId == 4 && roleId >= 4) {
-                        response.sendRedirect(request.getContextPath()
-                                + "/UserServlet?action=formCrear&error=No+tienes+permiso+para+crear+ese+rol");
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=No+tienes+permiso+para+crear+ese+rol");
                         return;
                     }
 
@@ -212,8 +285,7 @@ public class UserServlet extends HttpServlet {
                             || dni == null || dni.length() != 8
                             || password == null || password.length() < 6) {
 
-                        response.sendRedirect(request.getContextPath()
-                                + "/UserServlet?action=formCrear&error=Datos+invalidos");
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Datos+invalidos");
                         return;
                     }
 
@@ -244,15 +316,13 @@ public class UserServlet extends HttpServlet {
                             auditDao.log(actorId, "CREAR_USUARIO", "USER", 0, detalles);
                         } catch (Exception ignored) {}
 
-                        // SuperAdmin va a RoleServlet, Admin se queda en su vista
                         String redirect = (actorRoleId != null && actorRoleId == 5)
                                 ? "/RoleServlet?success=Usuario+creado+correctamente"
                                 : "/UserServlet?success=Usuario+creado+correctamente";
 
-                        response.sendRedirect(request.getContextPath() + redirect);
+                        response.sendRedirect(ctx + redirect);
                     } else {
-                        response.sendRedirect(request.getContextPath()
-                                + "/UserServlet?action=formCrear&error=No+se+pudo+crear");
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=No+se+pudo+crear");
                     }
 
                 } catch (Exception e) {
@@ -260,8 +330,7 @@ public class UserServlet extends HttpServlet {
                     if (msg != null && msg.contains("Duplicate")) {
                         msg = "Email o DNI ya registrado";
                     }
-                    response.sendRedirect(request.getContextPath()
-                            + "/UserServlet?action=formCrear&error=" + msg.replace(" ", "+"));
+                    response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=" + msg.replace(" ", "+"));
                 }
                 break;
 
@@ -271,45 +340,33 @@ public class UserServlet extends HttpServlet {
                     int userId = Integer.parseInt(request.getParameter("userId"));
                     int nuevoRolId = Integer.parseInt(request.getParameter("nuevoRolId"));
 
-                    // 1. Capturar el rol anterior y datos del afectado
                     User afectado = userDao.getById(userId);
                     if (afectado == null) {
-                        response.sendRedirect(request.getContextPath()
-                                + "/UserServlet?error=Usuario+no+encontrado");
+                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado");
                         return;
                     }
                     String rolAnterior = afectado.getRoleName();
                     String nombreAfectado = afectado.getName();
 
-                    // ─── VALIDACIÓN JERÁRQUICA ───
-                    // No se puede cambiar el propio rol
                     if (actorId != null && actorId == userId) {
-                        response.sendRedirect(request.getContextPath()
-                                + "/UserServlet?error=No+puedes+cambiar+tu+propio+rol");
+                        response.sendRedirect(ctx + redirectBase + "?error=No+puedes+cambiar+tu+propio+rol");
                         return;
                     }
 
-                    // Admin (4) no puede:
-                    //   - cambiar el rol de otro Admin o de un SuperAdmin
-                    //   - asignar rol 4 o 5
                     if (actorRoleId != null && actorRoleId == 4) {
                         if (afectado.getRoleId() >= 4) {
-                            response.sendRedirect(request.getContextPath()
-                                    + "/UserServlet?error=No+tienes+permiso+para+modificar+a+ese+usuario");
+                            response.sendRedirect(ctx + redirectBase + "?error=No+tienes+permiso+para+modificar+a+ese+usuario");
                             return;
                         }
                         if (nuevoRolId >= 4) {
-                            response.sendRedirect(request.getContextPath()
-                                    + "/UserServlet?error=No+puedes+asignar+ese+rol");
+                            response.sendRedirect(ctx + redirectBase + "?error=No+puedes+asignar+ese+rol");
                             return;
                         }
                     }
 
-                    // 2. Aplicar el cambio
                     boolean ok = userDao.changeRole(userId, nuevoRolId);
 
                     if (ok) {
-                        // 3. Auditoría
                         try {
                             RoleDAO rdao = new RoleDAO();
                             Role rolNuevo = rdao.getById(nuevoRolId);
@@ -326,25 +383,18 @@ public class UserServlet extends HttpServlet {
                             auditDao.log(actorId, "CAMBIO_ROL", "USER", userId, detalles);
                         } catch (Exception ignored) {}
 
-                        // SuperAdmin va a RoleServlet, Admin se queda en su vista
-                        String redirect = (actorRoleId != null && actorRoleId == 5)
-                                ? "/RoleServlet?success=Rol+actualizado+correctamente"
-                                : "/UserServlet?success=Rol+actualizado+correctamente";
-
-                        response.sendRedirect(request.getContextPath() + redirect);
+                        response.sendRedirect(ctx + redirectBase + "?success=Rol+actualizado+correctamente");
                     } else {
-                        response.sendRedirect(request.getContextPath()
-                                + "/UserServlet?error=No+se+pudo+cambiar+el+rol");
+                        response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+cambiar+el+rol");
                     }
 
                 } catch (Exception e) {
-                    response.sendRedirect(request.getContextPath()
-                            + "/UserServlet?error=" + e.getMessage().replace(" ", "+"));
+                    response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }
                 break;
 
             default:
-                response.sendRedirect(request.getContextPath() + "/UserServlet");
+                response.sendRedirect(ctx + "/UserServlet");
                 break;
         }
     }
