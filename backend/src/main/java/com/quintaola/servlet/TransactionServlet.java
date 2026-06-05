@@ -13,7 +13,14 @@ import java.util.stream.Collectors;
 
 /**
  * ════════════════════════════════════════════════════════════════════
- * TransactionServlet — Bandeja de Entrada de Solicitudes Pendientes
+ * TransactionServlet — Bandeja de Aprobaciones y Solicitudes
+ * ════════════════════════════════════════════════════════════════════
+ *
+ * Reglas de permisos:
+ * - Viewer (1), Member (2): solo solicitan
+ * - Manager (3), Administrador (4): solicitan + aprueban,
+ *   PERO no pueden aprobar/rechazar las suyas propias
+ * - SuperAdmin (5): NO solicita ni aprueba (solo audita)
  * ════════════════════════════════════════════════════════════════════
  */
 @WebServlet(name = "TransactionServlet", value = "/TransactionServlet")
@@ -30,10 +37,18 @@ public class TransactionServlet extends HttpServlet {
         TransactionDAO txDao = new TransactionDAO();
         RequestDispatcher view;
 
-        // Validar sesión antes de cualquier acción
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("userId") == null) {
             response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+            return;
+        }
+
+        Integer roleIdGuard = (Integer) session.getAttribute("roleId");
+        int roleGuard = roleIdGuard != null ? roleIdGuard : 0;
+
+        // 🚫 SuperAdmin no puede operar transacciones
+        if (roleGuard == 5) {
+            response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
         }
 
@@ -41,7 +56,6 @@ public class TransactionServlet extends HttpServlet {
 
             case "lista":
                 try {
-                    // 1. Recuperamos credenciales
                     Integer userIdSession = (Integer) session.getAttribute("userId");
                     Integer roleIdSession = (Integer) session.getAttribute("roleId");
                     int currentUserId = userIdSession != null ? userIdSession : 0;
@@ -49,23 +63,23 @@ public class TransactionServlet extends HttpServlet {
 
                     List<Transaction> todasPendientes;
 
-                    // 2. Lógica: SOLO traemos transacciones PENDIENTES
                     if (currentRoleId == 1) {
-                        // Rol 1 (Viewer): Filtramos en memoria solo sus pendientes
+                        // Viewer: solo sus pendientes
                         todasPendientes = txDao.getByUser(currentUserId).stream()
                                 .filter(t -> "PENDING".equals(t.getStatus()))
                                 .collect(Collectors.toList());
-                    } else if (currentRoleId == 4 || currentRoleId == 5) {
-                        // Rol 4 y 5 (Admin/SA): Ven TODAS las pendientes de la empresa
-                        todasPendientes = txDao.getPendingExcludingSelf(0);
+                    } else if (currentRoleId == 3 || currentRoleId == 4) {
+                        // Manager y Administrador: ven todas las pendientes
+                        // EXCEPTO las suyas propias (segregación de funciones)
+                        todasPendientes = txDao.getPendingExcludingSelf(currentUserId);
                     } else {
-                        // Rol 2 y 3 (Member/Manager): Ven pendientes EXCEPTO las suyas
+                        // Member (2): ve todas las pendientes excluyendo las suyas
                         todasPendientes = txDao.getPendingExcludingSelf(currentUserId);
                     }
 
-                    // 3. LÓGICA DE PAGINACIÓN (Súper Profesional)
+                    // Paginación
                     int pageNum = 1;
-                    int pageSize = 8; // <-- Muestra 8 solicitudes por página (puedes cambiarlo)
+                    int pageSize = 8;
 
                     if (request.getParameter("page") != null) {
                         try {
@@ -78,18 +92,15 @@ public class TransactionServlet extends HttpServlet {
                     int totalRecords = todasPendientes.size();
                     int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
 
-                    // Validar límites de página
                     if (pageNum < 1) pageNum = 1;
                     if (pageNum > totalPages && totalPages > 0) pageNum = totalPages;
 
-                    // Extraer la "tajada" (subList) correspondiente a la página actual
                     int startIndex = (pageNum - 1) * pageSize;
                     int endIndex = Math.min(startIndex + pageSize, totalRecords);
                     List<Transaction> listaPaginada = todasPendientes.isEmpty()
                             ? todasPendientes
                             : todasPendientes.subList(startIndex, endIndex);
 
-                    // 4. Enviamos datos a la vista
                     request.setAttribute("transacciones", listaPaginada);
                     request.setAttribute("currentPage", pageNum);
                     request.setAttribute("totalPages", totalPages);
@@ -127,17 +138,12 @@ public class TransactionServlet extends HttpServlet {
                     com.quintaola.dao.ItemDAO itemDao = new com.quintaola.dao.ItemDAO();
                     request.setAttribute("items", itemDao.getAll());
 
-                    // ─── Pre-seleccion de item si viene desde el catalogo ───
-                    // Si la URL trae ?itemId=X, lo pasamos a la vista para que
-                    // el <select> del JSP marque esa opcion como "selected"
                     String itemIdParam = request.getParameter("itemId");
                     if (itemIdParam != null && !itemIdParam.trim().isEmpty()) {
                         try {
                             int itemIdPre = Integer.parseInt(itemIdParam);
                             request.setAttribute("itemPreseleccionado", itemIdPre);
-                        } catch (NumberFormatException ignored) {
-                            // Si el itemId no es valido, simplemente no se preselecciona
-                        }
+                        } catch (NumberFormatException ignored) {}
                     }
 
                 } catch (Exception e) {
@@ -170,6 +176,14 @@ public class TransactionServlet extends HttpServlet {
         }
 
         Integer userId = (Integer) session.getAttribute("userId");
+        Integer roleIdGuard = (Integer) session.getAttribute("roleId");
+        int roleGuard = roleIdGuard != null ? roleIdGuard : 0;
+
+        // 🚫 SuperAdmin no opera transacciones
+        if (roleGuard == 5) {
+            response.sendRedirect(request.getContextPath() + "/HomeServlet");
+            return;
+        }
 
         switch (action) {
 
@@ -198,7 +212,6 @@ public class TransactionServlet extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/HistoryServlet?action=lista");
 
                 } catch (java.sql.SQLException sqlEx) {
-                    // Capturar error específico de stock insuficiente
                     String msg = sqlEx.getMessage();
                     if (msg != null && msg.contains("Stock insuficiente")) {
                         response.sendRedirect(request.getContextPath()
@@ -220,12 +233,26 @@ public class TransactionServlet extends HttpServlet {
                     String notas = request.getParameter("notas") != null
                             ? request.getParameter("notas") : "";
 
+                    // 🛡️ Solo Manager (3) y Administrador (4) pueden aprobar
+                    if (roleGuard != 3 && roleGuard != 4) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=lista&error=No+tienes+permiso+para+aprobar");
+                        return;
+                    }
+
+                    // 🛡️ Segregación de funciones: no puedes aprobar tus propias solicitudes
+                    Transaction txExistente = txDao.getById(id);
+                    if (txExistente != null && txExistente.getRequesterId() == userId) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=lista&error=No+puedes+aprobar+tus+propias+solicitudes");
+                        return;
+                    }
+
                     txDao.approve(id, userId, notas);
                     response.sendRedirect(request.getContextPath()
                             + "/TransactionServlet?action=lista&success=Solicitud+aprobada+y+stock+descontado");
 
                 } catch (java.sql.SQLException sqlEx) {
-                    // Capturar errores específicos: stock insuficiente o estado inválido
                     String msg = sqlEx.getMessage();
                     if (msg != null && (msg.contains("Stock insuficiente") || msg.contains("ya fue procesada"))) {
                         response.sendRedirect(request.getContextPath()
@@ -244,13 +271,31 @@ public class TransactionServlet extends HttpServlet {
             case "rechazar":
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
-                    String notas = request.getParameter("notas") != null ? request.getParameter("notas") : "Rechazado sin comentarios.";
+                    String notas = request.getParameter("notas") != null
+                            ? request.getParameter("notas") : "Rechazado sin comentarios.";
+
+                    // 🛡️ Solo Manager (3) y Administrador (4) pueden rechazar
+                    if (roleGuard != 3 && roleGuard != 4) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=lista&error=No+tienes+permiso+para+rechazar");
+                        return;
+                    }
+
+                    // 🛡️ Segregación de funciones: no puedes rechazar tus propias solicitudes
+                    Transaction txExistente = txDao.getById(id);
+                    if (txExistente != null && txExistente.getRequesterId() == userId) {
+                        response.sendRedirect(request.getContextPath()
+                                + "/TransactionServlet?action=lista&error=No+puedes+rechazar+tus+propias+solicitudes");
+                        return;
+                    }
 
                     txDao.reject(id, userId, notas);
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&success=Solicitud+rechazada+correctamente");
+                    response.sendRedirect(request.getContextPath()
+                            + "/TransactionServlet?action=lista&success=Solicitud+rechazada+correctamente");
                 } catch (Exception e) {
                     e.printStackTrace();
-                    response.sendRedirect(request.getContextPath() + "/TransactionServlet?action=lista&error=Error+al+rechazar+la+solicitud");
+                    response.sendRedirect(request.getContextPath()
+                            + "/TransactionServlet?action=lista&error=Error+al+rechazar+la+solicitud");
                 }
                 break;
 

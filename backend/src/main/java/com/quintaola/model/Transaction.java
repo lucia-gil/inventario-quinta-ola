@@ -13,6 +13,7 @@ public class Transaction {
     private String createdAt;
     private String updatedAt;
     private String processedAt;
+    private String deliveredAt;
 
     // Campos extra para el frontend (JOINs)
     private String itemName;
@@ -56,6 +57,10 @@ public class Transaction {
 
     public String getProcessedAt()                  { return processedAt; }
     public void setProcessedAt(String processedAt)  { this.processedAt = processedAt; }
+
+    // ⬅️ NUEVO: getter/setter de deliveredAt
+    public String getDeliveredAt()                  { return deliveredAt; }
+    public void setDeliveredAt(String deliveredAt)  { this.deliveredAt = deliveredAt; }
 
     public String getItemName()                 { return itemName; }
     public void setItemName(String itemName)    { this.itemName = itemName; }

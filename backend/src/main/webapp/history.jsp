@@ -1,6 +1,6 @@
 <%--
     ════════════════════════════════════════════════════════════════════
-     history.jsp — Vista del historial de transacciones
+     history.jsp — Historial de transacciones (rediseño Quinta Ola)
     ════════════════════════════════════════════════════════════════════
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -8,7 +8,6 @@
 <%@ page import="com.quintaola.model.Transaction" %>
 
 <%!
-    /* Métodos auxiliares de la clase JSP */
     private String traducirStatus(String status) {
         if (status == null) return "—";
         switch (status.toUpperCase().trim()) {
@@ -21,19 +20,18 @@
     }
 
     private String claseBadgeStatus(String status) {
-        if (status == null) return "status-badge bg-gray-100 text-gray-600";
+        if (status == null) return "status-badge";
         switch (status.toUpperCase().trim()) {
             case "PENDING":   return "status-pending";
             case "APPROVED":  return "status-approved";
             case "REJECTED":  return "status-rejected";
             case "COMPLETED": return "status-delivered";
-            default:          return "status-badge bg-gray-100 text-gray-600";
+            default:          return "status-badge";
         }
     }
 %>
 
 <%
-    /* BLOQUE DE PREPARACIÓN DE DATOS */
     String ctx = request.getContextPath();
 
     List<Transaction> transacciones = (List<Transaction>) request.getAttribute("transacciones");
@@ -44,8 +42,6 @@
     String filtroStatus = (String) request.getAttribute("filtroStatus");
     if (filtroTexto == null)  filtroTexto = "";
     if (filtroStatus == null) filtroStatus = "";
-
-    // Normalizamos para evitar errores de comparación en los selectores
     filtroStatus = filtroStatus.toUpperCase().trim();
 
     String error = (String) request.getAttribute("error");
@@ -58,19 +54,174 @@
 
     String pageTitle    = esViewer ? "Mi Historial"                       : "Historial Completo";
     String pageSubtitle = esViewer ? "Todas las solicitudes que has hecho" : "Todas las solicitudes del sistema";
+
+    request.setAttribute("activeMenu", "history");
 %>
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Historial | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ═════ Filtros ═════ */
+        .filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-100);
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-search {
+            position: relative;
+            flex-grow: 1;
+            min-width: 250px;
+        }
+
+        .filter-search i {
+            position: absolute;
+            left: 0.95rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .filter-search input {
+            width: 100%;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-full);
+            padding: 0.6rem 1rem 0.6rem 2.65rem;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all var(--transition);
+            background: var(--gray-50);
+            font-family: inherit;
+        }
+
+        .filter-search input:focus {
+            border-color: var(--purple);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+        }
+
+        .filter-select {
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 0.9rem;
+            font-size: 0.85rem;
+            background: var(--gray-50);
+            color: var(--gray-700);
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            transition: all var(--transition);
+            min-width: 170px;
+        }
+
+        .filter-select:focus {
+            border-color: var(--purple);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        /* ═════ Type badges (IN/OUT) ═════ */
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.65rem;
+            border-radius: var(--radius-full);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
+        .type-badge i { width: 12px; height: 12px; }
+
+        .type-in  { background: var(--green-bg); color: var(--green-dark); }
+        .type-out { background: var(--blue-bg);  color: var(--blue-dark); }
+
+        /* ═════ Link Ver detalle ═════ */
+        .detail-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--pink);
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: color var(--transition);
+        }
+        .detail-link:hover { color: var(--purple); }
+        .detail-link i { width: 14px; height: 14px; }
+
+        /* ═════ Empty state ═════ */
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .empty-state-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            background: var(--purple-bg);
+            color: var(--purple);
+            border-radius: 50%;
+            margin-bottom: 1rem;
+        }
+        .empty-state-icon i { width: 30px; height: 30px; }
+        .empty-state-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 0.4rem;
+        }
+        .empty-state-desc {
+            font-size: 0.88rem;
+            color: var(--gray-500);
+        }
+
+        /* ═════ Alertas ═════ */
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            border: 1px solid var(--red-bg);
+            background: var(--red-bg);
+            color: var(--red-dark);
+            border-color: #FECACA;
+        }
+        .alert i { width: 18px; height: 18px; flex-shrink: 0; }
+    </style>
 </head>
 
 <body class="page-body">
 
-<%-- 🛡️ ENVOLTURA PARA EVITAR EL SOLAPAMIENTO DEL SIDEBAR --%>
 <div class="layout-wrapper">
 
     <jsp:include page="includes/navbar.jsp"/>
@@ -81,53 +232,71 @@
         <main class="page-main">
 
             <%-- CABECERA --%>
-            <div class="page-header flex justify-between items-center w-full">
+            <div class="page-header">
                 <div>
-                    <h1 class="page-title"><%= pageTitle %></h1>
+                    <h1 class="page-title">
+                        <i data-lucide="history" style="display:inline-block; width:24px; height:24px; vertical-align:middle; margin-right:8px; color:var(--purple);"></i>
+                        <%= pageTitle %>
+                    </h1>
                     <p class="page-subtitle"><%= pageSubtitle %></p>
                 </div>
 
                 <% if (puedeVerAnalisis) { %>
-                <a href="<%= ctx %>/AnalyticsServlet" class="btn-page-primary flex items-center gap-2">
-                    📊 Ver Análisis Visual
+                <a href="<%= ctx %>/AnalyticsServlet" class="btn-page-primary btn-icon">
+                    <i data-lucide="bar-chart-3"></i>
+                    Ver Análisis Visual
                 </a>
                 <% } %>
             </div>
 
-            <%-- Mensaje de error --%>
+            <%-- Alerta error --%>
             <% if (error != null) { %>
-            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3">
-                ❌ <%= error %>
+            <div class="alert">
+                <i data-lucide="alert-circle"></i>
+                <span><%= error %></span>
             </div>
             <% } %>
 
-            <%-- BARRA DE BÚSQUEDA Y FILTROS --%>
-            <form action="<%= ctx %>/HistoryServlet" method="GET" class="search-bar">
+            <%-- FILTROS --%>
+            <form action="<%= ctx %>/HistoryServlet" method="GET" class="filter-bar">
                 <input type="hidden" name="action" value="lista"/>
 
-                <div class="search-input-wrap">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                <div class="filter-search">
+                    <i data-lucide="search"></i>
                     <input type="text" name="q"
                            value="<%= filtroTexto %>"
-                           placeholder="Buscar por solicitante, material o ID..."
-                           class="input-icon"/>
+                           placeholder="Buscar por solicitante, material o ID..."/>
                 </div>
 
-                <div class="flex gap-3">
-                    <select name="status" class="select-page w-auto">
-                        <option value="" <%= filtroStatus.isEmpty() ? "selected" : "" %>>Todos los estados</option>
-                        <option value="PENDING" <%= "PENDING".equals(filtroStatus) ? "selected" : "" %>>Pendiente</option>
-                        <option value="APPROVED" <%= "APPROVED".equals(filtroStatus) ? "selected" : "" %>>Aprobada</option>
-                        <option value="REJECTED" <%= "REJECTED".equals(filtroStatus) ? "selected" : "" %>>Rechazada</option>
-                        <option value="COMPLETED" <%= "COMPLETED".equals(filtroStatus) ? "selected" : "" %>>Entregada</option>
+                <div class="filter-actions">
+                    <select name="status" class="filter-select">
+                        <option value=""           <%= filtroStatus.isEmpty()              ? "selected" : "" %>>Todos los estados</option>
+                        <option value="PENDING"    <%= "PENDING".equals(filtroStatus)      ? "selected" : "" %>>Pendiente</option>
+                        <option value="APPROVED"   <%= "APPROVED".equals(filtroStatus)     ? "selected" : "" %>>Aprobada</option>
+                        <option value="REJECTED"   <%= "REJECTED".equals(filtroStatus)     ? "selected" : "" %>>Rechazada</option>
+                        <option value="COMPLETED"  <%= "COMPLETED".equals(filtroStatus)    ? "selected" : "" %>>Entregada</option>
                     </select>
 
-                    <button type="submit" class="btn-page-primary">Filtrar</button>
+                    <button type="submit" class="btn-page-primary btn-icon">
+                        <i data-lucide="filter"></i>
+                        Filtrar
+                    </button>
                 </div>
             </form>
 
-            <%-- TABLA DE TRANSACCIONES --%>
+            <%-- TABLA --%>
             <div class="table-panel">
+
+                <% if (transacciones == null || transacciones.isEmpty()) { %>
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i data-lucide="inbox"></i>
+                    </div>
+                    <p class="empty-state-title">Sin resultados</p>
+                    <p class="empty-state-desc">No hay transacciones que coincidan con tu búsqueda.</p>
+                </div>
+                <% } else { %>
+
                 <div class="table-wrapper">
                     <table class="table">
 
@@ -145,13 +314,7 @@
                         </thead>
 
                         <tbody class="table-body">
-                        <% if (transacciones == null || transacciones.isEmpty()) { %>
-                        <tr>
-                            <td colspan="8" class="py-10 text-center text-gray-400">
-                                No hay transacciones que coincidan con tu búsqueda.
-                            </td>
-                        </tr>
-                        <% } else { %>
+
                         <% for (Transaction tx : transacciones) { %>
                         <tr class="table-row">
 
@@ -163,7 +326,7 @@
                                 <%= tx.getRequesterName() != null ? tx.getRequesterName() : "—" %>
                             </td>
 
-                            <td class="td font-medium text-gray-700">
+                            <td class="td" style="font-weight: 600; color: var(--gray-800);">
                                 <%= tx.getItemName() != null ? tx.getItemName() : "—" %>
                             </td>
 
@@ -176,34 +339,43 @@
 
                             <td class="td-center">
                                 <% if ("IN".equals(tx.getType())) { %>
-                                <span class="type-in">IN</span>
+                                <span class="type-badge type-in">
+                                        <i data-lucide="arrow-down-circle"></i>
+                                        IN
+                                    </span>
                                 <% } else if ("OUT".equals(tx.getType())) { %>
-                                <span class="type-out">OUT</span>
+                                <span class="type-badge type-out">
+                                        <i data-lucide="arrow-up-circle"></i>
+                                        OUT
+                                    </span>
                                 <% } else { %>
-                                <span class="text-xs text-gray-500"><%= tx.getType() %></span>
+                                <span class="type-badge" style="background: var(--gray-100); color: var(--gray-600);">
+                                        <%= tx.getType() %>
+                                    </span>
                                 <% } %>
                             </td>
 
-                            <td class="td-light text-xs">
+                            <td class="td-light" style="font-family: 'Courier New', monospace; font-size: 0.78rem;">
                                 <%= tx.getCreatedAt() != null ? tx.getCreatedAt() : "—" %>
                             </td>
 
                             <td class="td-center">
-                                                <span class="<%= claseBadgeStatus(tx.getStatus()) %>">
-                                                    <%= traducirStatus(tx.getStatus()) %>
-                                                </span>
+                                <span class="<%= claseBadgeStatus(tx.getStatus()) %>">
+                                    <%= traducirStatus(tx.getStatus()) %>
+                                </span>
                             </td>
 
                             <td class="td-center">
-                                <a href="<%= ctx %>/RequestDetailServlet?id=<%= tx.getId() %>"
-                                   class="text-accent hover:text-pink-600 font-bold text-sm">
-                                    👁️ Ver
+                                <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>"
+                                   class="detail-link">
+                                    <i data-lucide="eye"></i>
+                                    Ver
                                 </a>
                             </td>
 
                         </tr>
                         <% } %>
-                        <% } %>
+
                         </tbody>
 
                     </table>
@@ -211,10 +383,16 @@
 
                 <div class="panel-footer">
                     <p class="panel-count-text">
-                        Mostrando <%= transacciones != null ? transacciones.size() : 0 %>
-                        de <%= totalTx %> transacciones
+                        Mostrando
+                        <strong style="color: var(--gray-800);"><%= transacciones.size() %></strong>
+                        de
+                        <strong style="color: var(--gray-800);"><%= totalTx %></strong>
+                        transacciones
                     </p>
                 </div>
+
+                <% } %>
+
             </div>
 
         </main>
@@ -223,6 +401,12 @@
 
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+</script>
 
 </body>
 </html>

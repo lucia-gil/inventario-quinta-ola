@@ -5,7 +5,6 @@
     String ctx = request.getContextPath();
     List<Transaction> transacciones = (List<Transaction>) request.getAttribute("transacciones");
 
-    // Variables de paginación enviadas por el Servlet
     Integer currentPage = (Integer) request.getAttribute("currentPage");
     Integer totalPages = (Integer) request.getAttribute("totalPages");
     Integer totalRecords = (Integer) request.getAttribute("totalRecords");
@@ -19,13 +18,178 @@
     String errParam = request.getParameter("error");
 
     Integer roleId = (Integer) session.getAttribute("roleId");
+    Integer currentUserIdSession = (Integer) session.getAttribute("userId");
+    int currentUserId = currentUserIdSession != null ? currentUserIdSession : 0;
+
+    // Solo Manager (3) y Administrador (4) pueden aprobar/rechazar
+    boolean puedeAprobar = (roleId != null && (roleId == 3 || roleId == 4));
+
+    // Solo NO-SuperAdmin puede crear solicitudes
+    boolean puedeSolicitar = (roleId != null && roleId != 5);
+
+    request.setAttribute("activeMenu", "transactions");
 %>
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Bandeja de Aprobaciones | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        .actions-cell {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .btn-approve,
+        .btn-reject {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all var(--transition);
+        }
+
+        .btn-approve {
+            background: var(--green-bg);
+            color: var(--green-dark);
+            border-color: #BBF7D0;
+        }
+        .btn-approve:hover {
+            background: var(--green);
+            color: var(--white);
+            transform: translateY(-1px);
+        }
+
+        .btn-reject {
+            background: var(--red-bg);
+            color: var(--red-dark);
+            border-color: #FECACA;
+        }
+        .btn-reject:hover {
+            background: var(--red);
+            color: var(--white);
+            transform: translateY(-1px);
+        }
+
+        .btn-approve i,
+        .btn-reject i { width: 13px; height: 13px; }
+
+        .own-request-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-full);
+            background: var(--purple-bg);
+            color: var(--purple);
+            font-size: 0.72rem;
+            font-weight: 700;
+            font-style: italic;
+        }
+        .own-request-tag i { width: 13px; height: 13px; }
+
+        .detail-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--pink);
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: color var(--transition);
+        }
+        .detail-link:hover { color: var(--purple); }
+        .detail-link i { width: 14px; height: 14px; }
+
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .empty-state-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            background: var(--green-bg);
+            color: var(--green-dark);
+            border-radius: 50%;
+            margin-bottom: 1rem;
+        }
+        .empty-state-icon i { width: 30px; height: 30px; }
+        .empty-state-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 0.4rem;
+        }
+        .empty-state-desc {
+            font-size: 0.88rem;
+            color: var(--gray-500);
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+
+        .pagination a,
+        .pagination .pagination-current {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition);
+        }
+
+        .pagination a {
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            color: var(--gray-700);
+        }
+        .pagination a:hover {
+            background: var(--purple-bg);
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+        .pagination a i { width: 13px; height: 13px; }
+
+        .pagination-current {
+            background: var(--purple);
+            color: var(--white);
+            border: 1.5px solid var(--purple);
+        }
+
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            border: 1px solid;
+        }
+        .alert-error   { background: var(--red-bg);   color: var(--red-dark);   border-color: #FECACA; }
+        .alert-success { background: var(--green-bg); color: var(--green-dark); border-color: #BBF7D0; }
+        .alert i { width: 18px; height: 18px; flex-shrink: 0; }
+    </style>
 </head>
 <body class="page-body">
 
@@ -34,131 +198,176 @@
 
     <div class="main-content">
         <jsp:include page="includes/topbar.jsp"/>
-        <main class="page-main" style="padding: 2rem;">
 
-            <div class="page-header" style="margin-bottom: 2rem;">
+        <main class="page-main">
+
+            <%-- Cabecera --%>
+            <div class="page-header">
                 <div>
-                    <h1 class="page-title" style="font-size: 1.5rem; font-weight: bold; color: #111827;">Bandeja de Aprobaciones</h1>
-                    <p class="page-subtitle" style="color: #6b7280;">Solicitudes pendientes que requieren tu atención</p>
+                    <h1 class="page-title">
+                        <i data-lucide="inbox" style="display:inline-block; width:24px; height:24px; vertical-align:middle; margin-right:8px; color:var(--purple);"></i>
+                        Bandeja de Aprobaciones
+                    </h1>
+                    <p class="page-subtitle">Solicitudes pendientes que requieren tu atención</p>
                 </div>
-                <a href="<%= ctx %>/TransactionServlet?action=formCrear" class="btn-page-primary" style="background-color: #db2777; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; text-decoration: none; font-weight: bold;">
-                    ➕ Nueva Solicitud
+
+                <% if (puedeSolicitar) { %>
+                <a href="<%= ctx %>/TransactionServlet?action=formCrear" class="btn-page-primary btn-icon">
+                    <i data-lucide="plus"></i>
+                    Nueva Solicitud
                 </a>
+                <% } %>
             </div>
 
-            <%-- Mensajes de feedback --%>
+            <%-- Alertas --%>
             <% if (success != null) { %>
-            <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3" style="margin-bottom: 1rem; background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; padding: 1rem; border-radius: 0.5rem;">
-                ✅ <%= success %>
+            <div class="alert alert-success">
+                <i data-lucide="check-circle"></i>
+                <span><%= success %></span>
             </div>
             <% } %>
             <% if (errParam != null || error != null) { %>
-            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3" style="margin-bottom: 1rem; background-color: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 1rem; border-radius: 0.5rem;">
-                ❌ <%= errParam != null ? errParam : error %>
+            <div class="alert alert-error">
+                <i data-lucide="alert-circle"></i>
+                <span><%= errParam != null ? errParam : error %></span>
             </div>
             <% } %>
 
-            <%-- Tabla de transacciones PENDIENTES --%>
-            <div class="table-panel" style="background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+            <%-- Tabla --%>
+            <div class="table-panel">
+
+                <% if (transacciones == null || transacciones.isEmpty()) { %>
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i data-lucide="check-check"></i>
+                    </div>
+                    <p class="empty-state-title">¡Todo al día!</p>
+                    <p class="empty-state-desc">No tienes solicitudes pendientes por aprobar.</p>
+                </div>
+                <% } else { %>
+
                 <div class="table-wrapper">
-                    <table class="table" style="width: 100%; border-collapse: collapse;">
-                        <thead class="table-head" style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                    <table class="table">
+                        <thead class="table-head">
                         <tr>
-                            <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">ID</th>
-                            <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">Solicitante</th>
-                            <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">Material</th>
-                            <th class="th-center" style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.875rem;">Cantidad</th>
-                            <th class="th" style="padding: 1rem; text-align: left; color: #6b7280; font-size: 0.875rem;">Fecha de Entrega</th>
-                            <th class="th-center" style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.875rem;">Detalle</th>
-                            <% if (roleId != null && roleId >= 3) { %>
-                            <th class="th-center" style="padding: 1rem; text-align: center; color: #6b7280; font-size: 0.875rem;">Acciones</th>
+                            <th class="th">ID</th>
+                            <th class="th">Solicitante</th>
+                            <th class="th">Material</th>
+                            <th class="th-center">Cantidad</th>
+                            <th class="th">Fecha de Entrega</th>
+                            <th class="th-center">Detalle</th>
+                            <% if (puedeAprobar) { %>
+                            <th class="th-center">Acciones</th>
                             <% } %>
                         </tr>
                         </thead>
                         <tbody class="table-body">
-                        <% if (transacciones == null || transacciones.isEmpty()) { %>
-                        <tr>
-                            <td colspan="7" class="py-10 text-center text-gray-400" style="padding: 4rem; text-align: center; color: #9ca3af;">
-                                🎉 ¡Todo al día! No tienes solicitudes pendientes por aprobar.
-                            </td>
-                        </tr>
-                        <% } else { %>
+
                         <% for (Transaction tx : transacciones) { %>
-                        <tr class="table-row" style="border-bottom: 1px solid #e5e7eb; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f9fafb';" onmouseout="this.style.backgroundColor='transparent';">
-                            <td class="td-id" style="padding: 1rem; font-weight: bold; color: #111827;">TXN-<%= String.format("%04d", tx.getId()) %></td>
-                            <td class="td" style="padding: 1rem; color: #4b5563;">
+                        <tr class="table-row">
+                            <td class="td-id">TXN-<%= String.format("%04d", tx.getId()) %></td>
+
+                            <td class="td">
                                 <%= tx.getRequesterName() != null ? tx.getRequesterName() : "—" %>
                             </td>
-                            <td class="td font-medium" style="padding: 1rem; color: #111827; font-weight: 500;">
+
+                            <td class="td" style="font-weight: 600; color: var(--gray-800);">
                                 <%= tx.getItemName() != null ? tx.getItemName() : "—" %>
                             </td>
-                            <td class="td-center" style="padding: 1rem; text-align: center; color: #4b5563;">
+
+                            <td class="td-center">
                                 <%= tx.getQuantity() %> <%= tx.getItemUnit() != null ? tx.getItemUnit() : "" %>
                             </td>
-                            <td class="td-light text-xs" style="padding: 1rem; color: #6b7280; font-size: 0.75rem;">
+
+                            <td class="td-light" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
                                 <%= tx.getEstimatedDelivery() != null ? tx.getEstimatedDelivery() : "—" %>
                             </td>
 
-                            <%-- Nuevo Botón de DETALLE (Reemplaza al Estado) --%>
-                            <td class="td-center" style="padding: 1rem; text-align: center;">
+                            <td class="td-center">
                                 <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>"
-                                   style="color: #db2777; text-decoration: none; font-weight: 600; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 0.25rem;">
-                                    👁️ Ver
+                                   class="detail-link">
+                                    <i data-lucide="eye"></i>
+                                    Ver
                                 </a>
                             </td>
 
-                            <%-- Botones de Acción directos --%>
-                            <% if (roleId != null && roleId >= 3) { %>
-                            <td class="td-center" style="padding: 1rem; text-align: center;">
-                                <div class="flex gap-2 justify-center" style="display: flex; gap: 0.5rem; justify-content: center;">
-                                    <form action="<%= ctx %>/TransactionServlet" method="POST" onsubmit="return confirm('¿Aprobar esta solicitud?');" style="margin: 0;">
+                            <% if (puedeAprobar) { %>
+                            <td class="td-center">
+                                <% if (tx.getRequesterId() == currentUserId) { %>
+                                <%-- Es la propia solicitud del aprobador → no puede auto-aprobar --%>
+                                <span class="own-request-tag" title="No puedes aprobar tus propias solicitudes">
+                                        <i data-lucide="user"></i>
+                                        Tu solicitud
+                                    </span>
+                                <% } else { %>
+                                <div class="actions-cell">
+                                    <form action="<%= ctx %>/TransactionServlet" method="POST"
+                                          onsubmit="return confirm('¿Aprobar esta solicitud?');"
+                                          style="margin: 0;">
                                         <input type="hidden" name="action" value="aprobar"/>
                                         <input type="hidden" name="id" value="<%= tx.getId() %>"/>
                                         <input type="hidden" name="notas" value="Aprobado"/>
-                                        <button type="submit" style="background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: 0.2s;" onmouseover="this.style.backgroundColor='#d1fae5'" onmouseout="this.style.backgroundColor='#ecfdf5'">
-                                            ✅ Aprobar
+                                        <button type="submit" class="btn-approve">
+                                            <i data-lucide="check"></i>
+                                            Aprobar
                                         </button>
                                     </form>
-                                    <button onclick="rechazarTx(<%= tx.getId() %>)" style="background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: 0.2s;" onmouseover="this.style.backgroundColor='#fee2e2'" onmouseout="this.style.backgroundColor='#fef2f2'">
-                                        ❌ Rechazar
+
+                                    <button onclick="rechazarTx(<%= tx.getId() %>)" class="btn-reject">
+                                        <i data-lucide="x"></i>
+                                        Rechazar
                                     </button>
                                 </div>
+                                <% } %>
                             </td>
                             <% } %>
                         </tr>
                         <% } %>
-                        <% } %>
+
                         </tbody>
                     </table>
                 </div>
 
-                <%-- 📄 FOOTER CON PAGINACIÓN --%>
-                <div class="panel-footer flex justify-between items-center" style="padding: 1rem 1.5rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-                    <p class="text-sm" style="color: #6b7280; margin: 0; font-size: 0.875rem;">
-                        Mostrando <span style="font-weight: 600; color: #111827;"><%= transacciones != null ? transacciones.size() : 0 %></span> de <span style="font-weight: 600; color: #111827;"><%= totalRecords %></span> pendientes
+                <%-- Footer con paginación --%>
+                <div class="panel-footer">
+                    <p class="panel-count-text">
+                        Mostrando
+                        <strong style="color: var(--gray-800);"><%= transacciones.size() %></strong>
+                        de
+                        <strong style="color: var(--gray-800);"><%= totalRecords %></strong>
+                        pendientes
                     </p>
 
                     <% if (totalPages > 1) { %>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div class="pagination">
                         <% if (currentPage > 1) { %>
-                        <a href="<%= ctx %>/TransactionServlet?action=lista&page=<%= currentPage - 1 %>" style="padding: 0.25rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; color: #374151; text-decoration: none; font-size: 0.875rem;">Anterior</a>
+                        <a href="<%= ctx %>/TransactionServlet?action=lista&page=<%= currentPage - 1 %>">
+                            <i data-lucide="chevron-left"></i>
+                            Anterior
+                        </a>
                         <% } %>
 
-                        <span style="padding: 0.25rem 0.75rem; background: #f3f4f6; border-radius: 0.375rem; color: #374151; font-size: 0.875rem; font-weight: 500;">
+                        <span class="pagination-current">
                                 Pág <%= currentPage %> de <%= totalPages %>
                             </span>
 
                         <% if (currentPage < totalPages) { %>
-                        <a href="<%= ctx %>/TransactionServlet?action=lista&page=<%= currentPage + 1 %>" style="padding: 0.25rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: white; color: #374151; text-decoration: none; font-size: 0.875rem;">Siguiente</a>
+                        <a href="<%= ctx %>/TransactionServlet?action=lista&page=<%= currentPage + 1 %>">
+                            Siguiente
+                            <i data-lucide="chevron-right"></i>
+                        </a>
                         <% } %>
                     </div>
                     <% } %>
                 </div>
+
+                <% } %>
+
             </div>
 
         </main>
 
-        <%-- Form oculto JS --%>
+        <%-- Form oculto rechazar --%>
         <form id="rejectForm" action="<%= ctx %>/TransactionServlet" method="POST" style="display:none;">
             <input type="hidden" name="action" value="rechazar"/>
             <input type="hidden" name="id" id="rejectTxId"/>
@@ -176,10 +385,15 @@
                     alert('El motivo es obligatorio.');
                 }
             }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            });
         </script>
 
         <jsp:include page="includes/footer.jsp"/>
     </div>
 </div>
+
 </body>
 </html>

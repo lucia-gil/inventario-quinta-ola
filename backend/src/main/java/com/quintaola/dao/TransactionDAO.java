@@ -432,6 +432,7 @@ public class TransactionDAO {
         String sql = """
             UPDATE transactions
             SET status = 'REJECTED', approver_id = ?, notes = ?,
+                processed_at = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ? AND status = 'PENDING'
             """;
@@ -516,6 +517,7 @@ public class TransactionDAO {
                 String sqlComplete = """
                     UPDATE transactions
                     SET status = 'COMPLETED',
+                        delivered_at = CURRENT_TIMESTAMP,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ? AND status = 'APPROVED'
                     """;
@@ -565,13 +567,22 @@ public class TransactionDAO {
         t.setStatus       (rs.getString("status"));
         t.setNotes        (rs.getString("notes"));
         t.setCreatedAt    (rs.getString("created_at"));
-        t.setProcessedAt  (rs.getString("processed_at"));
-        t.setEstimatedDelivery(rs.getString("estimated_delivery"));
-        try { t.setItemName     (rs.getString("item_name")); } catch (Exception ignored) {}
-        try { t.setItemUnit     (rs.getString("item_unit")); } catch (Exception ignored) {}
-        try { t.setItemImg      (rs.getString("item_img"));  } catch (Exception ignored) {}
+
+        // Campos de timestamps (try-catch por si algún SELECT no los trae)
+        try { t.setUpdatedAt   (rs.getString("updated_at"));   } catch (Exception ignored) {}
+        try { t.setProcessedAt (rs.getString("processed_at")); } catch (Exception ignored) {}
+        try { t.setDeliveredAt (rs.getString("delivered_at")); } catch (Exception ignored) {}
+
+        // Fecha estimada (en algunos SELECT se devuelve como DATE, otros como string)
+        try { t.setEstimatedDelivery(rs.getString("estimated_delivery")); } catch (Exception ignored) {}
+
+        // Campos del JOIN (no siempre vienen)
+        try { t.setItemName     (rs.getString("item_name"));      } catch (Exception ignored) {}
+        try { t.setItemUnit     (rs.getString("item_unit"));      } catch (Exception ignored) {}
+        try { t.setItemImg      (rs.getString("item_img"));       } catch (Exception ignored) {}
         try { t.setRequesterName(rs.getString("requester_name")); } catch (Exception ignored) {}
         try { t.setApproverName (rs.getString("approver_name")); } catch (Exception ignored) {}
+
         return t;
     }
 
