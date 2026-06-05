@@ -14,6 +14,9 @@ import java.util.List;
 @WebServlet(name = "InventoryServlet", value = "/InventoryServlet")
 public class InventoryServlet extends HttpServlet {
 
+    // Constante: items por página
+    private static final int PAGE_SIZE = 8;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -46,13 +49,14 @@ public class InventoryServlet extends HttpServlet {
                     if (filtroTag   == null) filtroTag = "";
                     if (filtroStock == null) filtroStock = "";
 
+                    // ─── 2. FILTRADO ───
                     List<Item> itemsFiltrados = new ArrayList<>();
 
                     for (Item item : todosLosItems) {
-                        // PREVENCIÓN DE NULL: Evita el error 500 si un item no tiene nombre en la BD
                         String itemName = item.getName() != null ? item.getName().toLowerCase() : "";
 
-                        boolean matchTexto = filtroTexto.isEmpty() || itemName.contains(filtroTexto.toLowerCase());
+                        boolean matchTexto = filtroTexto.isEmpty()
+                                || itemName.contains(filtroTexto.toLowerCase());
 
                         boolean matchTag = filtroTag.isEmpty()
                                 || (item.getTags() != null && item.getTags().contains(filtroTag));
@@ -65,12 +69,46 @@ public class InventoryServlet extends HttpServlet {
                         }
                     }
 
-                    request.setAttribute("items", itemsFiltrados);
-                    request.setAttribute("totalItems", todosLosItems.size());
-                    request.setAttribute("filtroTexto", filtroTexto);
-                    request.setAttribute("filtroTag", filtroTag);
-                    request.setAttribute("filtroStock", filtroStock);
-                    request.setAttribute("activeMenu", "inventory");
+                    // ─── 3. PAGINACIÓN ───
+                    int totalFiltrados = itemsFiltrados.size();
+                    int totalPages = (int) Math.ceil((double) totalFiltrados / PAGE_SIZE);
+                    if (totalPages < 1) totalPages = 1;
+
+                    int currentPage = 1;
+                    String pageParam = request.getParameter("page");
+                    if (pageParam != null && !pageParam.trim().isEmpty()) {
+                        try {
+                            currentPage = Integer.parseInt(pageParam);
+                        } catch (NumberFormatException e) {
+                            currentPage = 1;
+                        }
+                    }
+                    if (currentPage < 1) currentPage = 1;
+                    if (currentPage > totalPages) currentPage = totalPages;
+
+                    int start = (currentPage - 1) * PAGE_SIZE;
+                    int end   = Math.min(start + PAGE_SIZE, totalFiltrados);
+                    List<Item> itemsPaginados = totalFiltrados > 0
+                            ? itemsFiltrados.subList(start, end)
+                            : itemsFiltrados;
+
+                    // ─── 4. ENVIAR A LA VISTA ───
+                    request.setAttribute("items",          itemsPaginados);
+                    request.setAttribute("totalFiltrados", totalFiltrados);
+                    request.setAttribute("totalItems",     todosLosItems.size());
+                    request.setAttribute("filtroTexto",    filtroTexto);
+                    request.setAttribute("filtroTag",      filtroTag);
+                    request.setAttribute("filtroStock",    filtroStock);
+                    request.setAttribute("currentPage",    currentPage);
+                    request.setAttribute("totalPages",     totalPages);
+                    request.setAttribute("pageSize",       PAGE_SIZE);
+
+                    // Tags reales para el select de filtro
+                    List<String> tagsDisponibles = new ArrayList<>();
+                    try { tagsDisponibles = itemDao.getAllTagNames(); } catch (Exception ignored) {}
+                    request.setAttribute("tagsDisponibles", tagsDisponibles);
+
+                    request.setAttribute("activeMenu",     "inventory");
 
                     view = request.getRequestDispatcher("inventory.jsp");
                     view.forward(request, response);

@@ -134,6 +134,12 @@ public class TransactionServlet extends HttpServlet {
                 break;
 
             case "formCrear":
+                // 🛡Member (2) y SuperAdmin (5) NO solicitan materiales
+                if (roleGuard == 2) {
+                    response.sendRedirect(request.getContextPath()
+                            + "/InventoryServlet?error=No+puedes+crear+solicitudes+como+Encargado+de+Deposito");
+                    return;
+                }
                 try {
                     com.quintaola.dao.ItemDAO itemDao = new com.quintaola.dao.ItemDAO();
                     request.setAttribute("items", itemDao.getAll());
@@ -188,6 +194,12 @@ public class TransactionServlet extends HttpServlet {
         switch (action) {
 
             case "crear":
+                // Member (2) NO puede crear solicitudes (es operador, no consumidor)
+                if (roleGuard == 2) {
+                    response.sendRedirect(request.getContextPath()
+                            + "/HomeServlet?error=No+tienes+permiso+para+crear+solicitudes");
+                    return;
+                }
                 try {
                     int itemId = Integer.parseInt(request.getParameter("itemId"));
                     int quantity = Integer.parseInt(request.getParameter("cantidad"));
