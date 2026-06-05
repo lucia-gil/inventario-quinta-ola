@@ -2,23 +2,14 @@
     ════════════════════════════════════════════════════════════════════
      deposit.jsp — Vista del encargado de depósito (rediseño Quinta Ola)
     ════════════════════════════════════════════════════════════════════
-     CAMBIOS DE ESTILO REALIZADOS:
-     - Agregado layout-wrapper + main-content para que el sidebar no
-       solape el contenido (estaba traslapado en la captura).
-     - Incluido topbar.jsp (faltaba la barra superior).
-     - Reemplazados emojis por iconos que se ven mas profesionales
-       Lucide (package, info, check-circle, alert-circle, party-popper,
-       eye, arrow-right) consistentes con el resto del sistema.
-     - Cache buster CSS de v=3 a v=10.
-     - Alertas usando clases del sistema (.alert-success / .alert-error)
-       con iconos Lucide en vez de emojis y colores planos.
-     - Info banner rediseñado en gradient azul-morado con icono info.
-     - Tabla con badges TXN morados, link "Ver" con color del sistema,
-       botón "Marcar Entregada" con gradient pink-purple, icono y hover.
-     - Empty state cuando no hay solicitudes: icono party-popper en
-       círculo verde + título y descripción amigables.
-     - Header con icono package Lucide y botón "Ver historial completo"
-       con icono history y flecha que se desplaza al hover.
+     CAMBIOS NUEVOS DE ESTA ITERACIÓN:
+     - Eliminado el botón "Ver historial completo" del header (ya está
+       en la navbar lateral, era redundante).
+     - Texto del info banner reescrito según la lógica acordada:
+       el stock YA se descontó al aprobar; aquí solo se cierra el ciclo
+       confirmando la entrega física. No se vuelve a tocar inventario.
+     - Agregada paginación de 8 solicitudes por página, con preservación
+       de filtros futuros y estilo Quinta Ola (chevron-left/right).
     ════════════════════════════════════════════════════════════════════
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -30,6 +21,32 @@
     String error = (String) request.getAttribute("error");
     String errParam = request.getParameter("error");
     String success = request.getParameter("success");
+
+    // ─── PAGINACIÓN client-side (8 por página) ───
+    // Como el DepositServlet aún no pagina, lo hacemos aquí en memoria.
+    // Si en el futuro el servlet manda currentPage/totalPages como
+    // request attributes, la JSP los respeta automáticamente.
+    int pageSize = 8;
+    int currentPage = 1;
+    int totalPages = 1;
+    int totalSolicitudes = solicitudes != null ? solicitudes.size() : 0;
+    List<Transaction> solicitudesPagina = solicitudes;
+
+    if (solicitudes != null && !solicitudes.isEmpty()) {
+        String pageParam = request.getParameter("page");
+        if (pageParam != null) {
+            try { currentPage = Integer.parseInt(pageParam); } catch (Exception ignored) {}
+        }
+        if (currentPage < 1) currentPage = 1;
+
+        totalPages = (int) Math.ceil((double) totalSolicitudes / pageSize);
+        if (totalPages < 1) totalPages = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        int start = (currentPage - 1) * pageSize;
+        int end   = Math.min(start + pageSize, totalSolicitudes);
+        solicitudesPagina = solicitudes.subList(start, end);
+    }
 
     request.setAttribute("activeMenu", "deposit");
 %>
@@ -101,6 +118,7 @@
             color: var(--gray-700);
             line-height: 1.55;
         }
+        .info-banner-desc strong { color: var(--blue-dark); }
 
         /* ═════ Tabla — acción columna ═════ */
         .row-actions {
@@ -172,18 +190,43 @@
             color: var(--gray-500);
         }
 
-        /* ═════ Botón ghost con icono ═════ */
-        .btn-ghost-icon {
+        /* ═════ Paginación ═════ */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.4rem;
+            align-items: center;
+            margin-top: 0;
+            flex-wrap: wrap;
+        }
+        .pagination a,
+        .pagination .pagination-current {
             display: inline-flex;
             align-items: center;
-            gap: 0.45rem;
+            gap: 0.3rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition);
         }
-        .btn-ghost-icon i {
-            width: 14px;
-            height: 14px;
-            transition: transform var(--transition);
+        .pagination a {
+            background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            color: var(--gray-700);
         }
-        .btn-ghost-icon:hover i.arrow { transform: translateX(3px); }
+        .pagination a:hover {
+            background: var(--purple-bg);
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+        .pagination a i { width: 13px; height: 13px; }
+        .pagination-current {
+            background: var(--purple);
+            color: var(--white);
+            border: 1.5px solid var(--purple);
+        }
     </style>
 </head>
 
@@ -196,12 +239,12 @@
 
     <div class="main-content">
 
-        <%-- Topbar que faltaba en el diseño anterior --%>
+        <%-- Topbar --%>
         <jsp:include page="includes/topbar.jsp"/>
 
         <main class="page-main">
 
-            <%-- Cabecera con icono Lucide --%>
+            <%-- Cabecera (sin botón Historial, ya está en la navbar) --%>
             <div class="page-header">
                 <div>
                     <h1 class="page-title">
@@ -213,14 +256,9 @@
                         Solicitudes aprobadas listas para entrega física.
                     </p>
                 </div>
-                <a href="<%= ctx %>/HistoryServlet" class="btn-ghost btn-ghost-icon">
-                    <i data-lucide="history"></i>
-                    Ver historial completo
-                    <i data-lucide="arrow-right" class="arrow"></i>
-                </a>
             </div>
 
-            <%-- Mensajes de éxito / error con iconos Lucide --%>
+            <%-- Mensajes de éxito / error --%>
             <% if (success != null) { %>
             <div class="alert alert-success">
                 <i data-lucide="check-circle"></i>
@@ -240,17 +278,21 @@
             </div>
             <% } %>
 
-            <%-- Info banner azul-morado con icono Lucide --%>
+            <%--
+                Info banner reescrito según la lógica acordada:
+                el stock YA se descontó cuando el Manager aprobó.
+                Aquí solo cierras el ciclo confirmando la entrega física.
+            --%>
             <div class="info-banner">
                 <div class="info-banner-icon">
                     <i data-lucide="info"></i>
                 </div>
                 <div>
-                    <p class="info-banner-title">Recuerda antes de entregar</p>
+                    <p class="info-banner-title">¿Cómo funciona la entrega?</p>
                     <p class="info-banner-desc">
-                        Cuando marques una solicitud como entregada, el stock del material se
-                        descontará automáticamente del inventario. Asegúrate de haber entregado
-                        físicamente el material antes de confirmar.
+                        El stock <strong>ya fue descontado del inventario cuando esta solicitud fue aprobada</strong>.
+                        Al marcarla como entregada solo confirmas que el material salió físicamente del depósito y
+                        se cierra el ciclo de la solicitud. <strong>No se vuelve a tocar el inventario</strong>.
                     </p>
                 </div>
             </div>
@@ -258,9 +300,8 @@
             <%-- Tabla de solicitudes aprobadas --%>
             <div class="table-panel">
 
-                <% if (solicitudes == null || solicitudes.isEmpty()) { %>
+                <% if (solicitudesPagina == null || solicitudesPagina.isEmpty()) { %>
 
-                <%-- Empty state con icono party-popper en círculo verde --%>
                 <div class="empty-state">
                     <div class="empty-state-icon">
                         <i data-lucide="party-popper"></i>
@@ -288,7 +329,7 @@
                         </thead>
                         <tbody class="table-body">
 
-                        <% for (Transaction tx : solicitudes) { %>
+                        <% for (Transaction tx : solicitudesPagina) { %>
                         <tr class="table-row">
 
                             <td class="td-id">
@@ -306,8 +347,8 @@
                             <td class="td-center" style="font-weight: 700; color: var(--gray-800);">
                                 <%= tx.getQuantity() %>
                                 <span style="font-weight: 500; color: var(--gray-500); font-size: 0.8rem;">
-                                            <%= tx.getItemUnit() != null ? tx.getItemUnit() : "" %>
-                                        </span>
+                                    <%= tx.getItemUnit() != null ? tx.getItemUnit() : "" %>
+                                </span>
                             </td>
 
                             <td class="td">
@@ -321,9 +362,8 @@
                             <td class="td-center">
                                 <div class="row-actions">
 
-                                    <%-- Botón para marcar como entregada --%>
                                     <form action="<%= ctx %>/DepositServlet" method="POST"
-                                          onsubmit="return confirm('¿Confirmas que entregaste físicamente este material? Esto descontará del stock.');"
+                                          onsubmit="return confirm('¿Confirmas que entregaste físicamente este material? Esta acción cierra el ciclo de la solicitud.');"
                                           style="display:inline; margin:0;">
                                         <input type="hidden" name="action" value="entregar"/>
                                         <input type="hidden" name="id" value="<%= tx.getId() %>"/>
@@ -333,7 +373,6 @@
                                         </button>
                                     </form>
 
-                                    <%-- Link al detalle --%>
                                     <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>"
                                        class="detail-link">
                                         <i data-lucide="eye"></i>
@@ -350,11 +389,37 @@
                     </table>
                 </div>
 
+                <%-- Footer con conteo + paginación --%>
                 <div class="panel-footer">
                     <p class="panel-count-text">
-                        <strong style="color: var(--gray-800);"><%= solicitudes.size() %></strong>
-                        solicitudes pendientes de entrega
+                        Mostrando
+                        <strong style="color: var(--gray-800);"><%= solicitudesPagina.size() %></strong>
+                        de
+                        <strong style="color: var(--gray-800);"><%= totalSolicitudes %></strong>
+                        solicitudes pendientes
                     </p>
+
+                    <% if (totalPages > 1) { %>
+                    <div class="pagination">
+                        <% if (currentPage > 1) { %>
+                        <a href="<%= ctx %>/DepositServlet?page=<%= currentPage - 1 %>">
+                            <i data-lucide="chevron-left"></i>
+                            Anterior
+                        </a>
+                        <% } %>
+
+                        <span class="pagination-current">
+                            Pág <%= currentPage %> de <%= totalPages %>
+                        </span>
+
+                        <% if (currentPage < totalPages) { %>
+                        <a href="<%= ctx %>/DepositServlet?page=<%= currentPage + 1 %>">
+                            Siguiente
+                            <i data-lucide="chevron-right"></i>
+                        </a>
+                        <% } %>
+                    </div>
+                    <% } %>
                 </div>
 
                 <% } %>
