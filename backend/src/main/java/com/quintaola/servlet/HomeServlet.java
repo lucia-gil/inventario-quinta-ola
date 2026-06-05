@@ -64,6 +64,30 @@ public class HomeServlet extends HttpServlet {
             java.time.LocalDate hoy = java.time.LocalDate.now();
             String inicioMes = hoy.withDayOfMonth(1).toString();
 
+            // Saludo y fecha dinámica (Con Lucide Icons)
+            java.time.LocalTime horaActual = java.time.LocalTime.now();
+            int hora = horaActual.getHour();
+
+            String saludoDinamico = "Buenas noches";
+            String iconDinamico = "moon"; // Icono de Lucide para la noche
+
+            if (hora >= 6 && hora < 12) {
+                saludoDinamico = "Buenos días";
+                iconDinamico = "coffee";   // Icono de Lucide para la mañana
+            } else if (hora >= 12 && hora < 19) {
+                saludoDinamico = "Buenas tardes";
+                iconDinamico = "sun";      // Icono de Lucide para la tarde
+            }
+
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", new java.util.Locale("es", "ES"));
+            String dia = hoy.format(formatter);
+            String fechaActual = "Hoy es " + dia.substring(0, 1).toUpperCase() + dia.substring(1);
+
+            request.setAttribute("saludoDinamico", saludoDinamico);
+            request.setAttribute("iconDinamico", iconDinamico); // Se envía el nombre del icono
+            request.setAttribute("fechaActual", fechaActual);
+            // fin uwu
+
             switch (roleId) {
 
                 case 1: { // Viewer — Solicitante

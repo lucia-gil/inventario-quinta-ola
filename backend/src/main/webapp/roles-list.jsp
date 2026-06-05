@@ -323,14 +323,16 @@
                 for (Role rol : roles) {
                     List<User> usuariosDelRol = usuariosPorRol.get(rol.getId());
                     int roleColorId = rol.getId(); // 1-5
-                    String iconName = switch (rol.getId()) {
-                        case 1 -> "user";              // Viewer
-                        case 2 -> "truck";             // Member
-                        case 3 -> "check-square";      // Manager
-                        case 4 -> "shield";            // Administrador
-                        case 5 -> "shield-check";      // SuperAdmin
-                        default -> "circle";
-                    };
+
+                    // AQUÍ ESTÁ EL CAMBIO SOLICITADO: Sintaxis clásica de Java compatible con Tomcat
+                    String iconName = "circle";
+                    switch (rol.getId()) {
+                        case 1: iconName = "user"; break;              // Viewer
+                        case 2: iconName = "truck"; break;             // Member
+                        case 3: iconName = "check-square"; break;      // Manager
+                        case 4: iconName = "shield"; break;            // Administrador
+                        case 5: iconName = "shield-check"; break;      // SuperAdmin
+                    }
             %>
 
             <div class="role-card">

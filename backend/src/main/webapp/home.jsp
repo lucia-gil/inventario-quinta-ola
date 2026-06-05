@@ -5,6 +5,7 @@
      Datos personalizados que recibe del HomeServlet:
      - stat1/stat2/stat3: números calculados desde BD según rol
      - label1/label2/label3: etiquetas adaptadas al rol
+     - saludoDinamico / iconDinamico / fechaActual: saludos según la hora
      Iconos: Lucide (cargado globalmente desde footer.jsp)
     ════════════════════════════════════════════════════════════════════
 --%>
@@ -31,6 +32,14 @@
     if (label2 == null) label2 = "—";
     if (label3 == null) label3 = "—";
 
+    // Recuperamos las variables del saludo dinámico
+    String saludoDinamico = (String) request.getAttribute("saludoDinamico");
+    String iconDinamico = (String) request.getAttribute("iconDinamico");
+    String fechaActual = (String) request.getAttribute("fechaActual");
+    if (saludoDinamico == null) saludoDinamico = "Hola";
+    if (iconDinamico == null) iconDinamico = "hand";
+    if (fechaActual == null) fechaActual = "";
+
     request.setAttribute("activeMenu", "home");
 %>
 <!DOCTYPE html>
@@ -52,22 +61,26 @@
 
         <main class="page-main">
 
-            <%-- ─── BANNER DE BIENVENIDA ─── --%>
+            <%-- ─── BANNER DE BIENVENIDA MODIFICADO ─── --%>
             <div class="panel-form flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div>
                     <h2 class="page-title mb-2" style="display: flex; align-items: center; gap: 0.5rem;">
-                        Hola, <%= userName %>
-                        <i data-lucide="hand" style="width: 26px; height: 26px; color: #db2777;"></i>
+                        <%= saludoDinamico %>, <%= userName %>
+                        <i data-lucide="<%= iconDinamico %>" style="width: 26px; height: 26px; color: var(--purple);"></i>
                     </h2>
                     <p class="text-gray-500 text-base max-w-2xl">
+                        <% if (!fechaActual.isEmpty()) { %>
+                        <span style="color: var(--purple); font-weight: 600;"><%= fechaActual %>.</span>
+                        <% } %>
+
                         <% if (roleId == 1) { %>
-                        Bienvenida a tu espacio personal. Aquí ves un resumen de tus solicitudes y puedes pedir nuevos materiales.
+                        Bienvenido(a) a tu espacio personal.
                         <% } else if (roleId == 2) { %>
-                        Bienvenida al panel de depósito. Aquí ves los pedidos esperando entrega y el estado del stock.
+                        Bienvenido(a) al panel de depósito.
                         <% } else if (roleId == 3) { %>
-                        Bienvenida al panel de aprobaciones. Aquí ves las solicitudes que necesitan tu revisión.
+                        Bienvenido(a) al panel de aprobaciones.
                         <% } else if (roleId == 4) { %>
-                        Bienvenida al panel de administración. Resumen ejecutivo del sistema.
+                        Bienvenido(a) al panel de administración.
                         <% } else { %>
                         Bienvenida al sistema de inventario de Quinta Ola.
                         <% } %>
