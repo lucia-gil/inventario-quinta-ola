@@ -1,1 +1,0 @@
-vite no procesa estos iconos NO BORRAR la carpeta, los iconos van en assets
