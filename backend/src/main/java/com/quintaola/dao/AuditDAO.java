@@ -19,7 +19,7 @@ import java.util.List;
 public class AuditDAO {
 
     /**
-     * Registra un evento en la bitácora.
+     * Registra un evento en la bitcora.
      * Se llama desde otros servlets cuando ocurre algo importante.
      */
     public boolean log(int actorId, String action, String entity, int entityId, String details) {

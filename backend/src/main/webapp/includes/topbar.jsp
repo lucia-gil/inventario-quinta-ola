@@ -65,17 +65,22 @@
                 <p class="topbar-user-role"><%= roleDisplay %></p>
             </div>
 
-            <a href="<%= ctxTop %>/ProfileServlet" class="topbar-avatar-link" title="Ir a Mi Perfil">
+            <a href="<%= ctxTop %>/ProfileServlet" class="topbar-avatar-link" title="Ir a Mi Perfil" style="text-decoration: none; display: inline-block;">
                 <% if (avatarUrl != null && !avatarUrl.trim().isEmpty()) { %>
-                <img src="<%= avatarUrl %>"
+                <%-- Caso A: El usuario SÍ tiene registrada una ruta de foto. Se dibuja SOLO la imagen --%>
+                <img src="<%= ctxTop %><%= avatarUrl %>"
                      alt="<%= userNameTop %>"
                      class="topbar-avatar-img"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"/>
-                <div class="topbar-avatar-fallback" style="display: none;">
+                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--purple-light); display: block;"
+                     onerror="this.style.display='none'; document.getElementById('topbar-fallback-safe').style.display='flex';"/>
+
+                <%-- Este contenedor interno permanece completamente invisible y SOLO se activa por ID único mediante JS si el archivo físico se borra del servidor accidentalmente --%>
+                <div id="topbar-fallback-safe" class="topbar-avatar-fallback" style="display: none; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--purple-light) 0%, var(--pink) 100%); color: white; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem;">
                     <%= iniciales %>
                 </div>
                 <% } else { %>
-                <div class="topbar-avatar-fallback">
+                <%-- Caso B: El usuario NO tiene foto de perfil. El servidor genera únicamente el círculo de iniciales --%>
+                <div class="topbar-avatar-fallback" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--purple-light) 0%, var(--pink) 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem;">
                     <%= iniciales %>
                 </div>
                 <% } %>

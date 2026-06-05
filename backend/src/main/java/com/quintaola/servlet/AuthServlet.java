@@ -83,7 +83,7 @@ public class AuthServlet extends HttpServlet {
                         view = request.getRequestDispatcher("login.jsp");
                         view.forward(request, response);
 
-                        // 🛡️ NUEVO: Validar si la cuenta está pendiente de aprobación
+                        // 🛡NUEVO: Validar si la cuenta está pendiente de aprobación
                         // Nota: Si en tu modelo User la propiedad es boolean, usa !user.isActivo()
                     } else if (user.getActivo() == 0) {
                         request.setAttribute("error", "Tu cuenta está pendiente de aprobación por un Administrador.");
@@ -99,7 +99,9 @@ public class AuthServlet extends HttpServlet {
                         sess.setAttribute("roleId",    user.getRoleId());
                         sess.setAttribute("roleName",  user.getRoleName());
 
-                        // Redirigir según rol
+                        // Guardamos el avatar en la sesión para que el Topbar lo renderice desde el inicio
+                        sess.setAttribute("avatarUrl",  user.getAvatarUrl());
+
                         // Redirigir según rol — todos van a HomeServlet excepto SuperAdmin
                         // (SuperAdmin no tiene Home porque su perfil es exclusivo de auditoría)
                         String redirect = "SuperAdmin".equals(user.getRoleName())

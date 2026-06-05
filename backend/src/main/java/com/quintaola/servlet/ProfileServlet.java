@@ -212,7 +212,6 @@ public class ProfileServlet extends HttpServlet {
         UserDAO userDao = new UserDAO();
         User user = userDao.getById(userId);
 
-        // ¡AQUÍ ESTÁ EL CAMBIO!
         // Se debe usar BCrypt para comprobar la contraseña encriptada
         if (!org.mindrot.jbcrypt.BCrypt.checkpw(currentPassword, user.getPasswordHash())) {
             response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=La+contraseña+actual+es+incorrecta");
