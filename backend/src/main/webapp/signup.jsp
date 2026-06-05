@@ -347,6 +347,75 @@
             flex-shrink: 0;
         }
 
+        .signup-success {
+            background: var(--green-bg);
+            border: 1.5px solid #BBF7D0;
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.1rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .signup-success-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--green);
+            color: var(--white);
+            margin: 0 auto 0.75rem;
+        }
+
+        .signup-success-icon i {
+            width: 26px;
+            height: 26px;
+        }
+
+        .signup-success-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--green-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .signup-success-desc {
+            font-size: 0.82rem;
+            color: var(--gray-700);
+            line-height: 1.55;
+            margin-bottom: 1rem;
+        }
+
+        .signup-success-desc strong {
+            color: var(--green-dark);
+        }
+
+        .signup-success-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%);
+            color: var(--white);
+            padding: 0.6rem 1.5rem;
+            border-radius: var(--radius-full);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all var(--transition);
+            box-shadow: 0 4px 12px rgba(233, 30, 140, 0.25);
+        }
+
+        .signup-success-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(233, 30, 140, 0.4);
+        }
+
+        .signup-success-btn i {
+            width: 14px;
+            height: 14px;
+        }
         .signup-footer {
             margin-top: 1rem;
             padding-top: 0.85rem;
@@ -460,6 +529,28 @@
                 <p>Ingresa tus datos para registrarte en el sistema</p>
             </div>
 
+            <% if (request.getAttribute("success") != null) { %>
+
+            <%-- ═══════ MENSAJE DE ÉXITO ═══════ --%>
+            <div class="signup-success">
+                <div class="signup-success-icon">
+                    <i data-lucide="check"></i>
+                </div>
+                <div class="signup-success-title">¡Cuenta creada con éxito!</div>
+                <div class="signup-success-desc">
+                    <%= request.getAttribute("success") %>
+                    <br/><br/>
+                    Recibirás acceso al sistema una vez que <strong>un Administrador apruebe tu cuenta</strong>.
+                </div>
+                <a href="<%= ctx %>/index.jsp" class="signup-success-btn">
+                    <i data-lucide="home"></i>
+                    Volver al inicio
+                </a>
+            </div>
+
+            <% } else { %>
+
+            <%-- ═══════ FORMULARIO DE REGISTRO ═══════ --%>
             <form action="<%= ctx %>/AuthServlet" method="POST" onsubmit="return validarPassword();">
 
                 <input type="hidden" name="action" value="register"/>
@@ -573,6 +664,8 @@
                 <i data-lucide="alert-circle"></i>
                 <span><%= request.getAttribute("error") %></span>
             </div>
+            <% } %>
+
             <% } %>
 
             <%-- Footer --%>

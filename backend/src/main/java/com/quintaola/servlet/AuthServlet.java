@@ -130,7 +130,7 @@ public class AuthServlet extends HttpServlet {
                     newUser.setEmail(request.getParameter("email"));
                     newUser.setPasswordHash(request.getParameter("password"));
 
-                    // 🛡️ NUEVO: Forzamos los valores de seguridad
+                    // NUEVO: Forzamos los valores de seguridad
                     // Nota: Si en tu modelo User 'activo' es boolean, usa newUser.setActivo(false);
                     newUser.setRoleId(1);
                     newUser.setActivo(0);
@@ -141,7 +141,7 @@ public class AuthServlet extends HttpServlet {
                         userDao.createAdminNotification("user_approval", "Nuevo registro pendiente", "El usuario " + newUser.getName() + " espera aprobación.");
 
                         request.setAttribute("success", "¡Registro exitoso! Tu cuenta ha sido creada y está pendiente de aprobación por un Administrador.");
-                        view = request.getRequestDispatcher("/login.jsp");
+                        view = request.getRequestDispatcher("/signup.jsp");
                         view.forward(request, response);
                     } else {
                         request.setAttribute("error", "No se pudo crear la cuenta. ¿Quizás el correo o DNI ya existen?");
