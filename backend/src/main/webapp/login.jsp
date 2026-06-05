@@ -1,3 +1,8 @@
+<%--
+    ════════════════════════════════════════════════════════════════════
+     login.jsp — Vista de Inicio de Sesión Oficial (Quinta Ola)
+    ════════════════════════════════════════════════════════════════════
+--%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!doctype html>
 <html lang="es">
@@ -6,130 +11,242 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Iniciar Sesión | Quinta Ola</title>
-    <link href="${pageContext.request.contextPath}/css/style.css?v=3" rel="stylesheet" />
+
+    <!-- Tu Sistema de Diseño Oficial -->
+    <link href="${pageContext.request.contextPath}/css/style.css" rel="stylesheet" />
+
+    <!-- Iconos vectoriales Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Contenedor adaptado al reset de tu body */
+        .login-screen-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--gray-50);
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Estructura de tarjeta usando tus bordes, radios y sombras */
+        .login-card {
+            display: flex;
+            width: 100%;
+            max-width: 960px;
+            min-height: 580px;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--gray-100);
+            overflow: hidden;
+        }
+
+        /* PANEL IZQUIERDO: Corrección de contraste y mezcla de imagen */
+        .login-branding {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(180deg, var(--purple) 0%, var(--purple-dark) 100%) !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 3rem;
+            box-sizing: border-box;
+        }
+
+        /* Fusión de la imagen para eliminar su fondo blanco nativo */
+        .login-branding .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.18;
+            mix-blend-mode: multiply;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .login-branding-text {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ENCAPSULAMIENTO DE ICONOS: Solución definitiva para Lucide SVG */
+        .input-icon-wrapper {
+            position: relative;
+            display: block;
+            width: 100%;
+        }
+
+        /* Selector dual para soportar el cambio dinámico de i a svg */
+        .input-icon-wrapper i,
+        .input-icon-wrapper svg {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+            transition: color var(--transition);
+            z-index: 10;
+        }
+
+        /* Forzamos la sangría en tu .input-page nativo para que el texto no pise el icono */
+        .input-icon-wrapper .input-page {
+            padding-left: 2.75rem !important;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Iluminación del icono utilizando tu variable de marca focus */
+        .input-icon-wrapper:focus-within i,
+        .input-icon-wrapper:focus-within svg {
+            color: var(--purple);
+        }
+
+        /* Botón de acción usando tu paleta rosa oficial */
+        .btn-pink-submit {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: var(--pink);
+            color: var(--white);
+            padding: 0.65rem 1.4rem;
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 700;
+            transition: all var(--transition);
+            border: none;
+            box-shadow: 0 4px 12px rgba(233, 30, 140, 0.2);
+        }
+
+        .btn-pink-submit:hover {
+            background: var(--pink-dark);
+            box-shadow: 0 4px 14px rgba(233, 30, 140, 0.4);
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center bg-gray-50 font-sans p-4">
+<body class="page-body">
 
-    <div class="flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden relative">
+<div class="login-screen-wrapper">
+    <div class="login-card">
 
-        <div class="hidden md:flex md:w-1/2 relative">
-            <img
-                src="${pageContext.request.contextPath}/img/chicas.png"
-                alt="Equipo trabajando"
-                class="absolute inset-0 w-full h-full object-cover"
-            />
-            <div class="absolute inset-0 bg-purple-900/80 mix-blend-multiply"></div>
+        <!-- PANEL IZQUIERDO: Identidad Visual Corp (Muestra el fondo morado oficial) -->
+        <div class="login-branding md:flex hidden">
+            <img src="${pageContext.request.contextPath}/img/chicas.png" alt="Diseño Quinta Ola" class="bg-image" />
 
-            <div class="relative z-10 p-12 flex flex-col justify-center h-full w-full bg-gradient-to-t from-purple-900/90 to-transparent">
-                <h2 class="text-4xl font-bold mb-4 tracking-tight text-white drop-shadow-md mt-auto">
+            <div class="login-branding-text">
+                <h2 style="font-size: 2rem; font-weight: 800; color: var(--white); margin-bottom: 0.75rem; letter-spacing: -0.5px;">
                     Bienvenido de nuevo
                 </h2>
-                <p class="text-base text-purple-100 leading-relaxed max-w-sm drop-shadow">
+                <p style="font-size: 0.95rem; color: var(--purple-bg); font-weight: 500; line-height: 1.6;">
                     Tecnología con propósito. Gestiona recursos, conecta personas y genera un impacto real en tu organización.
                 </p>
             </div>
         </div>
 
-        <div class="w-full md:w-1/2 p-8 md:p-14 flex flex-col justify-center relative">
+        <!-- PANEL DERECHO: Formulario utilizando tus utilidades nativas -->
+        <div class="flex flex-col p-8 md:p-8 justify-center bg-white" class="flex-grow" style="flex: 1;">
+            <div class="w-full" style="max-width: 360px; margin: 0 auto;">
 
-            <a href="${pageContext.request.contextPath}/index.jsp" class="absolute top-6 right-6 text-sm text-gray-400 hover:text-purple-600 flex items-center gap-1 transition-colors">
-                <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al inicio
-            </a>
-
-            <div class="max-w-md w-full mx-auto">
-
-                <div class="text-center mb-10">
-                    <img src="${pageContext.request.contextPath}/img/QuintaOlaLogo.png" alt="Logo Quinta Ola" class="h-16 w-auto mb-6 mx-auto object-contain block">
-
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Iniciar Sesión</h1>
-                    <p class="text-gray-500 text-sm">
-                        Accede a tu cuenta para gestionar el inventario
-                    </p>
+                <!-- Botón Volver usando tus clases utilitarias de texto -->
+                <div class="mb-6">
+                    <a href="${pageContext.request.contextPath}/index.jsp" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-purple-600 transition-all">
+                        <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Volver al inicio
+                    </a>
                 </div>
 
-                <form action="${pageContext.request.contextPath}/AuthServlet" method="POST" class="space-y-5">
+                <!-- Bloque de Identidad Central -->
+                <div class="text-center mb-6">
+                    <img src="${pageContext.request.contextPath}/img/QuintaOlaLogo.png" alt="Logo" style="height: 48px; width: auto; margin: 0 auto 1rem;">
+                    <h1 class="text-xl font-bold text-gray-800">Iniciar Sesión</h1>
+                    <p class="text-gray-400 text-sm mt-1">Accede a tu cuenta para gestionar el inventario</p>
+                </div>
 
+                <!-- Formulario estructurado con tus utilidades de espacio -->
+                <form action="${pageContext.request.contextPath}/AuthServlet" method="POST" class="space-y-4">
                     <input type="hidden" name="action" value="login" />
 
+                    <!-- Entrada: Email -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1 text-left">Correo electrónico</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="mail" class="h-5 w-5 text-gray-400"></i>
-                            </div>
-                            <input type="email" name="email" required id="email-input"
-                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all sm:text-sm bg-gray-50 focus:bg-white"
-                                placeholder="ejemplo@email.com">
+                        <label class="form-label uppercase tracking-wider text-xs font-bold mb-1 block text-gray-600">
+                            Correo electrónico
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i data-lucide="mail"></i>
+                            <input type="email" name="email" required class="input-page"
+                                   placeholder="admin.demo@quintaola.com" value="admin.demo@quintaola.com">
                         </div>
                     </div>
 
+                    <!-- Entrada: Password -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1 text-left">Contraseña</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="lock" class="h-5 w-5 text-gray-400"></i>
-                            </div>
-                            <input type="password" name="password" required id="password-input"
-                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all sm:text-sm bg-gray-50 focus:bg-white"
-                                placeholder="••••••••">
+                        <label class="form-label uppercase tracking-wider text-xs font-bold mb-1 block text-gray-600">
+                            Contraseña
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i data-lucide="lock"></i>
+                            <input type="password" name="password" required class="input-page"
+                                   placeholder="••••••••">
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between mt-4">
-                        <div class="flex items-center">
-                            <input id="remember-me" name="remember-me" type="checkbox"
-                                class="h-4 w-4 text-pink-500 focus:ring-pink-500 border-gray-300 rounded cursor-pointer">
-                            <label for="remember-me" class="ml-2 block text-sm text-gray-600 cursor-pointer">
-                                Recordarme
-                            </label>
-                        </div>
-
-                        <div class="text-sm">
-                            <a href="#" class="font-medium text-purple-600 hover:text-purple-500 transition-colors">
-                                ¿Olvidaste tu contraseña?
-                            </a>
-                        </div>
+                    <!-- Fila de opciones: Recordar / Olvido -->
+                    <div class="flex items-center justify-between pt-2">
+                        <label class="inline-flex items-center gap-2" style="cursor: pointer;">
+                            <input type="checkbox" name="remember-me" class="rounded-lg" style="accent-color: var(--pink); width: 16px; height: 16px;">
+                            <span class="text-xs font-semibold text-gray-500">Recordarme</span>
+                        </label>
+                        <a href="#" class="text-xs font-bold text-purple-600 hover:text-pink-600 transition-all">
+                            ¿Olvidaste tu contraseña?
+                        </a>
                     </div>
 
-                    <button type="submit"
-                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-colors mt-6">
-                        Ingresar al sistema
-                    </button>
-
+                    <!-- Botón de Envío Ejecutable -->
+                    <div class="pt-2">
+                        <button type="submit" class="btn-pink-submit">
+                            Ingresar al sistema <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
                 </form>
 
-                <%-- Error devuelto desde el Servlet si falla el login --%>
+                <%-- Despliegue de errores usando tus clases de badges nativas --%>
                 <% if (request.getAttribute("error") != null) { %>
-                    <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mt-4 text-left">
-                        <i data-lucide="alert-circle" class="w-4 h-4 inline-block mr-1"></i>
-                        <%= request.getAttribute("error") %>
-                    </div>
-                <% } %>
-                <%-- Mensaje de éxito si viene de registrarse --%>
-                <% if (request.getAttribute("success") != null) { %>
-                    <div class="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 mt-4 text-left">
-                        <i data-lucide="check-circle" class="w-4 h-4 inline-block mr-1"></i>
-                        <%= request.getAttribute("success") %>
-                    </div>
+                <div class="bg-red-50 border-red-200 text-red-700 text-xs rounded-lg p-3 mt-4 flex items-center gap-2 border">
+                    <i data-lucide="alert-circle" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                    <span class="font-semibold"><%= request.getAttribute("error") %></span>
+                </div>
                 <% } %>
 
-                <div class="mt-6 text-center">
-                    <p class="text-sm text-gray-600">
-                        ¿No tienes cuenta?
-                        <a href="${pageContext.request.contextPath}/AuthServlet?action=formSignup" class="font-semibold text-pink-600 hover:text-pink-500 transition-colors">
-                            Regístrate ahora
+                <!-- Footer del Formulario -->
+                <div class="mt-6 text-center border-gray-100 pt-4" style="border-top: 1px solid var(--gray-100);">
+                    <p class="text-xs text-gray-500 font-medium">
+                        ¿No tienes una cuenta activa?
+                        <a href="${pageContext.request.contextPath}/AuthServlet?action=formSignup" class="font-bold text-pink-600 hover:text-purple-600 transition-all">
+                            Regístrate aquí
                         </a>
                     </p>
                 </div>
 
             </div>
         </div>
-    </div>
 
-    <script>
-        lucide.createIcons();
-    </script>
+    </div>
+</div>
+
+<script>
+    // Inicialización limpia de Lucide Icons
+    lucide.createIcons();
+</script>
 </body>
 </html>

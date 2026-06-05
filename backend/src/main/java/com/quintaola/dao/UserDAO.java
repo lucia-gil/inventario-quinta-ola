@@ -190,4 +190,16 @@ public class UserDAO {
             ps.executeUpdate();
         }
     }
+
+    // ─── UPDATE PASSWORD: Cambia la contraseña (Hasheando con BCrypt) ───
+    public boolean updatePassword(int userId, String newPassword) throws SQLException {
+        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            // Encriptamos la nueva contraseña antes de insertarla
+            ps.setString(1, BCrypt.hashpw(newPassword, BCrypt.gensalt()));
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        }
+    }
 }

@@ -4,66 +4,71 @@ import com.quintaola.dao.UserDAO;
 import com.quintaola.model.User;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  ProfileServlet — Controlador de la página "Mi Perfil"
+ * ProfileServlet — Controlador de la página "Mi Perfil"
  * ════════════════════════════════════════════════════════════════════
  *
- *  PROPOSITO:
- *  Este servlet es el "controlador" en el patrón MVC
- *  Su trabajo es:
- *    1. Recibir la petición del navegador cuando el usuario quiere ver su perfil
- *    2. Pedirle al UserDAO los datos del usuario logueado
- *    3. Pasar esos datos al profile.jsp mediante request.setAttribute()
- *    4. Reenviar la ejecución al JSP con RequestDispatcher.forward()
+ * PROPOSITO:
+ * Este servlet es el "controlador" en el patrón MVC
+ * Su trabajo es:
+ * 1. Recibir la petición del navegador cuando el usuario quiere ver su perfil
+ * 2. Pedirle al UserDAO los datos del usuario logueado
+ * 3. Pasar esos datos al profile.jsp mediante request.setAttribute()
+ * 4. Reenviar la ejecución al JSP con RequestDispatcher.forward()
  *
- *  PATRÓN DEL CURSO:
- *  Usa switch-case con parámetro "action".
- *  Esto permite que UN solo servlet maneje varias operaciones.
+ * PATRÓN DEL CURSO:
+ * Usa switch-case con parámetro "action".
+ * Esto permite que UN solo servlet maneje varias operaciones.
  *
- *  URLs que escucha:
- *    GET  /ProfileServlet                          → muestra perfil
- *    POST /ProfileServlet (action=cambiarPassword) → cambia contraseña
+ * URLs que escucha:
+ * GET  /ProfileServlet                          → muestra perfil
+ * POST /ProfileServlet (action=cambiarPassword) → cambia contraseña
+ * POST /ProfileServlet (action=uploadAvatar)    → sube foto perfil
  *
- *  El usuario lo sacamos de la SESIÓN. AuthServlet guardó el userId al hacer login,
- *      y aquí lo leo con session.getAttribute("userId").
+ * El usuario lo sacamos de la SESIÓN. AuthServlet guardó el userId al hacer login,
+ * y aquí lo leo con session.getAttribute("userId").
  * ════════════════════════════════════════════════════════════════════
  */
 @WebServlet(name = "ProfileServlet", value = "/ProfileServlet")
+// ¡MUY IMPORTANTE PARA SUBIR IMÁGENES (Sprint Actual)!
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024 * 1, // 1 MB
+        maxFileSize = 1024 * 1024 * 2,       // 2 MB máximo por foto
+        maxRequestSize = 1024 * 1024 * 5     // 5 MB máximo por petición
+)
 public class ProfileServlet extends HttpServlet {
 
     /* ────────────────────────────────────────────────────────────────
-     *  doGet: se ejecuta cuando el navegador hace GET /ProfileServlet
-     *  Maneja: ver perfil (default) o cualquier futura acción GET
+     * doGet: se ejecuta cuando el navegador hace GET /ProfileServlet
+     * Maneja: ver perfil (default) o cualquier futura acción GET
      * ──────────────────────────────────────────────────────────────── */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         // ─── 1. LEER PARÁMETRO action ───
-        // Si no llega action, asumimos "ver" (mostrar perfil)
         String action = request.getParameter("action") == null
                 ? "ver"
                 : request.getParameter("action");
 
         // ─── 2. INSTANCIAR EL DAO ───
-        // El DAO es el "modelo" que habla con la BD (Clase 7.2 slide 42)
         UserDAO userDao = new UserDAO();
         RequestDispatcher view;
 
         // ─── 3. ENRUTAR SEGÚN LA ACCIÓN ───
         switch (action) {
 
-            // CASE "ver" → mostrar la página de perfil
             case "ver":
                 try {
                     // 3.1. Obtener el ID del usuario logueado desde la SESIÓN
-                    // AuthServlet guardó este atributo al hacer login
                     Integer userId = (Integer) request.getSession().getAttribute("userId");
 
                     // 3.2. Si no hay sesión válida, mandar al login
@@ -74,17 +79,13 @@ public class ProfileServlet extends HttpServlet {
                     }
 
                     // 3.3. Pedirle al DAO los datos completos del usuario
-                    // Esto ejecuta un SELECT en la tabla users
                     User usuario = userDao.getById(userId);
 
                     // 3.4. INYECTAR los datos en el request para la vista
-                    // El JSP los leerá con request.getAttribute("usuario")
-                    // Compañeros esto se enseño en la clase 7.2 slide 49)
                     request.setAttribute("usuario", usuario);
                     request.setAttribute("activeMenu", "profile");
 
                     // 3.5. REDIRIGIR al JSP con forward
-                    // forward NO cambia la URL del navegador (se enseño en la clase 7.2 slide 50)
                     view = request.getRequestDispatcher("profile.jsp");
                     view.forward(request, response);
 
@@ -97,38 +98,134 @@ public class ProfileServlet extends HttpServlet {
                 break;
 
             default:
-                // Cualquier action desconocida → redirigir al perfil
                 response.sendRedirect(request.getContextPath() + "/ProfileServlet");
                 break;
         }
     }
 
     /* ────────────────────────────────────────────────────────────────
-     *  doPost: se ejecuta cuando llega un formulario POST
-     *  Por ahora solo prepara el cambio de contraseña
+     * doPost: se ejecuta cuando llega un formulario POST
      * ──────────────────────────────────────────────────────────────── */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         // Configurar UTF-8 ANTES de leer parámetros (Clase 7.3 pagina 16)
-        // Sin esto, las tildes y ñ llegan como caracteres raros
         request.setCharacterEncoding("UTF-8");
 
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+            return;
+        }
+
+        int userId = (Integer) session.getAttribute("userId");
         String action = request.getParameter("action") == null
                 ? "" : request.getParameter("action");
 
-        switch (action) {
-            case "cambiarPassword":
-                // TODO: Implementar en Sprint 3
-                // Por ahora solo redirige con un mensaje
-                response.sendRedirect(request.getContextPath()
-                        + "/ProfileServlet?success=Funcionalidad+en+desarrollo");
-                break;
+        try {
+            switch (action) {
+                case "cambiarPassword":
+                    procesarPassword(request, response, userId);
+                    break;
 
-            default:
-                response.sendRedirect(request.getContextPath() + "/ProfileServlet");
-                break;
+                case "uploadAvatar":
+                    procesarAvatar(request, response, userId);
+                    break;
+
+                default:
+                    response.sendRedirect(request.getContextPath() + "/ProfileServlet");
+                    break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Ocurrió+un+error+al+procesar+tu+solicitud");
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MÉTODO PARA SUBIR Y GUARDAR LA IMAGEN
+    // ────────────────────────────────────────────────────────────────────────
+    private void procesarAvatar(HttpServletRequest request, HttpServletResponse response, int userId) throws Exception {
+        Part filePart = request.getPart("avatarFile");
+
+        // 1. Validar que enviaron un archivo
+        if (filePart == null || filePart.getSize() == 0) {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=No+seleccionaste+ninguna+imagen");
+            return;
+        }
+
+        // 2. Validar extensión (seguridad básica)
+        String fileName = filePart.getSubmittedFileName();
+        String ext = "";
+        if (fileName != null && fileName.contains(".")) {
+            ext = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+        }
+
+        if (!ext.equals(".jpg") && !ext.equals(".jpeg") && !ext.equals(".png") && !ext.equals(".webp")) {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Formato+inválido.+Usa+JPG,+PNG+o+WEBP");
+            return;
+        }
+
+        // 3. Crear carpeta si no existe en el servidor (uploads/avatars)
+        String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "avatars";
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        // 4. Generar nombre único para la foto
+        String newFileName = "avatar_" + userId + "_" + System.currentTimeMillis() + ext;
+        String filePath = uploadPath + File.separator + newFileName;
+        filePart.write(filePath);
+
+        // 5. Guardar la ruta relativa en la BD usando UserDAO
+        String avatarUrlDb = "/uploads/avatars/" + newFileName;
+        UserDAO userDao = new UserDAO();
+        boolean ok = userDao.updateAvatar(userId, avatarUrlDb);
+
+        if (ok) {
+            // Actualizar la sesión para que cambie en todo el sistema (navbar)
+            request.getSession().setAttribute("avatarUrl", avatarUrlDb);
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?success=Foto+de+perfil+actualizada");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Error+al+guardar+en+la+base+de+datos");
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MÉTODO PARA CAMBIAR CONTRASEÑA
+    // ────────────────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────────────────
+    // MÉTODO PARA CAMBIAR CONTRASEÑA
+    // ────────────────────────────────────────────────────────────────────────
+    private void procesarPassword(HttpServletRequest request, HttpServletResponse response, int userId) throws Exception {
+        String currentPassword = request.getParameter("currentPassword");
+        String newPassword = request.getParameter("newPassword");
+        String confirmPassword = request.getParameter("confirmPassword");
+
+        if (!newPassword.equals(confirmPassword)) {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Las+contraseñas+nuevas+no+coinciden");
+            return;
+        }
+
+        UserDAO userDao = new UserDAO();
+        User user = userDao.getById(userId);
+
+        // ¡AQUÍ ESTÁ EL CAMBIO!
+        // Se debe usar BCrypt para comprobar la contraseña encriptada
+        if (!org.mindrot.jbcrypt.BCrypt.checkpw(currentPassword, user.getPasswordHash())) {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=La+contraseña+actual+es+incorrecta");
+            return;
+        }
+
+        // Guardar nueva contraseña (en tu UserDAO ya le pusimos que la encripte)
+        boolean ok = userDao.updatePassword(userId, newPassword);
+
+        if (ok) {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?success=Contraseña+cambiada+con+éxito");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=No+se+pudo+cambiar+la+contraseña");
         }
     }
 }

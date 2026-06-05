@@ -36,7 +36,7 @@ public class AuthServlet extends HttpServlet {
 
         switch (action) {
             case "formLogin":
-                view = request.getRequestDispatcher("login.jsp");
+                view = request.getRequestDispatcher("/login.jsp");
                 view.forward(request, response);
                 break;
 
@@ -87,7 +87,7 @@ public class AuthServlet extends HttpServlet {
                         // Nota: Si en tu modelo User la propiedad es boolean, usa !user.isActivo()
                     } else if (user.getActivo() == 0) {
                         request.setAttribute("error", "Tu cuenta está pendiente de aprobación por un Administrador.");
-                        view = request.getRequestDispatcher("login.jsp");
+                        view = request.getRequestDispatcher("/login.jsp");
                         view.forward(request, response);
 
                     } else {
@@ -110,7 +110,7 @@ public class AuthServlet extends HttpServlet {
                     }
                 } catch (Exception e) {
                     request.setAttribute("error", "Error del servidor: " + e.getMessage());
-                    view = request.getRequestDispatcher("login.jsp");
+                    view = request.getRequestDispatcher("/login.jsp");
                     view.forward(request, response);
                 }
                 break;
@@ -139,7 +139,7 @@ public class AuthServlet extends HttpServlet {
                         userDao.createAdminNotification("user_approval", "Nuevo registro pendiente", "El usuario " + newUser.getName() + " espera aprobación.");
 
                         request.setAttribute("success", "¡Registro exitoso! Tu cuenta ha sido creada y está pendiente de aprobación por un Administrador.");
-                        view = request.getRequestDispatcher("login.jsp");
+                        view = request.getRequestDispatcher("/login.jsp");
                         view.forward(request, response);
                     } else {
                         request.setAttribute("error", "No se pudo crear la cuenta. ¿Quizás el correo o DNI ya existen?");
