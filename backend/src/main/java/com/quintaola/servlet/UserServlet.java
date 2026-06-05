@@ -1,5 +1,6 @@
 package com.quintaola.servlet;
 
+import com.quintaola.dao.AuditDAO;
 import com.quintaola.dao.RoleDAO;
 import com.quintaola.dao.UserDAO;
 import com.quintaola.model.Role;
@@ -19,9 +20,9 @@ import java.util.List;
    Gestion de usuarios para Admin y SuperAdmin:
    - lista          -> tabla de todos los usuarios
    - formCrear      -> form para crear usuario con rol
-   - crear (POST)   -> procesa creacion
-   - cambiarRol (POST) -> cambia el rol de un usuario
-   - approveUser (POST) -> 🛡️ NUEVO: aprueba un usuario pendiente
+   - crear (POST)   -> procesa creacion + registra en audit_log
+   - cambiarRol (POST) -> cambia rol + registra en audit_log
+   - approveUser (POST) -> aprueba usuario pendiente + audit_log
 
    Acceso: Administrador (4) y SuperAdmin (5)
    ============================================================ */
@@ -32,7 +33,6 @@ public class UserServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Solo Admin (4) y SuperAdmin (5)
         if (!tienePermiso(request)) {
             response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
@@ -47,7 +47,6 @@ public class UserServlet extends HttpServlet {
 
         switch (action) {
 
-            // ─── LISTA de todos los usuarios ───
             case "lista":
                 try {
                     List<User> usuarios = userDao.getAll();
@@ -67,7 +66,6 @@ public class UserServlet extends HttpServlet {
                 }
                 break;
 
-            // ─── FORMULARIO para crear usuario nuevo ───
             case "formCrear":
                 try {
                     List<Role> roles = roleDao.getAll();
@@ -104,6 +102,13 @@ public class UserServlet extends HttpServlet {
                 ? "" : request.getParameter("action");
 
         UserDAO userDao = new UserDAO();
+        AuditDAO auditDao = new AuditDAO();
+
+        // ── Datos del usuario en sesión (actor de la auditoría) ──
+        HttpSession sesion = request.getSession();
+        Integer actorId = (Integer) sesion.getAttribute("userId");
+        String actorRole = (String) sesion.getAttribute("roleName");
+        if (actorRole == null) actorRole = "Usuario";
 
         switch (action) {
 
@@ -112,16 +117,27 @@ public class UserServlet extends HttpServlet {
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
 
-                    // Llamamos al método (que agregaremos al DAO) para activarlo
                     boolean ok = userDao.approve(userId);
 
                     if (ok) {
+                        // 🛡️ AUDITORÍA: registrar la aprobación
+                        try {
+                            User aprobado = userDao.getById(userId);
+                            String detalles = String.format(
+                                    "El %s aprobó la cuenta del usuario '%s' (id=%d, email=%s)",
+                                    actorRole,
+                                    aprobado != null ? aprobado.getName() : "desconocido",
+                                    userId,
+                                    aprobado != null ? aprobado.getEmail() : "—"
+                            );
+                            auditDao.log(actorId, "APROBAR_USUARIO", "USER", userId, detalles);
+                        } catch (Exception ignored) {}
+
                         request.setAttribute("mensajeExito", "¡El usuario ha sido aprobado y ya puede iniciar sesión!");
                     } else {
                         request.setAttribute("error", "No se pudo aprobar al usuario.");
                     }
 
-                    // Recargamos la lista para mostrar la tabla actualizada
                     List<User> usuarios = userDao.getAll();
                     request.setAttribute("usuarios", usuarios);
                     request.setAttribute("activeMenu", "members");
@@ -140,7 +156,7 @@ public class UserServlet extends HttpServlet {
                 }
                 break;
 
-            // ─── CREAR usuario nuevo con rol asignado ───
+            // ─── CREAR usuario nuevo ───
             case "crear":
                 try {
                     String name = request.getParameter("name");
@@ -149,7 +165,6 @@ public class UserServlet extends HttpServlet {
                     String password = request.getParameter("password");
                     int roleId = Integer.parseInt(request.getParameter("roleId"));
 
-                    // Validaciones basicas
                     if (name == null || name.trim().isEmpty()
                             || email == null || email.trim().isEmpty()
                             || dni == null || dni.length() != 8
@@ -160,7 +175,6 @@ public class UserServlet extends HttpServlet {
                         return;
                     }
 
-                    // Hashear la password con bcrypt
                     String hash = BCrypt.hashpw(password, BCrypt.gensalt(10));
 
                     User nuevo = new User();
@@ -172,6 +186,24 @@ public class UserServlet extends HttpServlet {
                     boolean ok = userDao.createWithRole(nuevo, roleId);
 
                     if (ok) {
+                        // 🛡️ AUDITORÍA: registrar la creación
+                        try {
+                            RoleDAO rdao = new RoleDAO();
+                            Role rolAsignado = rdao.getById(roleId);
+                            String nombreRol = rolAsignado != null ? rolAsignado.getName() : ("roleId=" + roleId);
+
+                            String detalles = String.format(
+                                    "El %s creó al usuario '%s' (email=%s, dni=%s) con rol '%s'",
+                                    actorRole,
+                                    nuevo.getName(),
+                                    nuevo.getEmail(),
+                                    nuevo.getDni(),
+                                    nombreRol
+                            );
+                            // entityId = 0 porque no tenemos el id del nuevo usuario en este punto
+                            auditDao.log(actorId, "CREAR_USUARIO", "USER", 0, detalles);
+                        } catch (Exception ignored) {}
+
                         response.sendRedirect(request.getContextPath()
                                 + "/RoleServlet?success=Usuario+creado+correctamente");
                     } else {
@@ -189,15 +221,38 @@ public class UserServlet extends HttpServlet {
                 }
                 break;
 
-            // ─── CAMBIAR ROL de un usuario ───
+            // ─── CAMBIAR ROL ───
             case "cambiarRol":
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
                     int nuevoRolId = Integer.parseInt(request.getParameter("nuevoRolId"));
 
+                    // 1. Capturar el rol anterior ANTES del cambio (para el log)
+                    User afectado = userDao.getById(userId);
+                    String rolAnterior = afectado != null ? afectado.getRoleName() : "?";
+                    String nombreAfectado = afectado != null ? afectado.getName() : "usuario";
+
+                    // 2. Aplicar el cambio
                     boolean ok = userDao.changeRole(userId, nuevoRolId);
 
                     if (ok) {
+                        // 3. 🛡️ AUDITORÍA: registrar el cambio
+                        try {
+                            RoleDAO rdao = new RoleDAO();
+                            Role rolNuevo = rdao.getById(nuevoRolId);
+                            String nombreRolNuevo = rolNuevo != null ? rolNuevo.getName() : ("roleId=" + nuevoRolId);
+
+                            String detalles = String.format(
+                                    "El %s cambió el rol de '%s' (id=%d) de '%s' a '%s'",
+                                    actorRole,
+                                    nombreAfectado,
+                                    userId,
+                                    rolAnterior,
+                                    nombreRolNuevo
+                            );
+                            auditDao.log(actorId, "CAMBIO_ROL", "USER", userId, detalles);
+                        } catch (Exception ignored) {}
+
                         response.sendRedirect(request.getContextPath()
                                 + "/RoleServlet?success=Rol+actualizado+correctamente");
                     } else {

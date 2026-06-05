@@ -11,7 +11,7 @@
     String ctx = request.getContextPath();
 
     // Flags de rol
-    boolean esSuperAdmin = "SuperAdmin".equals(roleName);
+    boolean esSuperAdmin  = "SuperAdmin".equals(roleName);
     boolean esAdmin       = "Administrador".equals(roleName);
     boolean esManager     = "Manager".equals(roleName);
     boolean esMember      = "Member".equals(roleName);
@@ -26,7 +26,6 @@
     boolean isActive_deposit      = "deposit".equals(activeMenu);
     boolean isActive_members      = "members".equals(activeMenu);
     boolean isActive_roles        = "roles".equals(activeMenu);
-    boolean isActive_permissions  = "permissions".equals(activeMenu);
     boolean isActive_audit        = "audit".equals(activeMenu);
 %>
 
@@ -138,12 +137,6 @@
            class="<%= isActive_roles ? "sidebar-link-active" : "sidebar-link" %>">
             <i data-lucide="key-round" class="sidebar-icon"></i>
             <span>Roles</span>
-        </a>
-
-        <a href="<%= ctx %>/PermissionServlet"
-           class="<%= isActive_permissions ? "sidebar-link-active" : "sidebar-link" %>">
-            <i data-lucide="shield" class="sidebar-icon"></i>
-            <span>Permisos</span>
         </a>
 
         <a href="<%= ctx %>/AuditServlet"

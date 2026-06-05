@@ -47,20 +47,18 @@ public class RoleDAO {
 
     // ─── GET BY ID ───
     public Role getById(int id) throws SQLException {
-        String sql = """
-            SELECT r.*, COUNT(u.id) AS user_count
-            FROM roles r
-            LEFT JOIN users u ON u.role_id = r.id AND u.activo = 1
-            WHERE r.id = ?
-            GROUP BY r.id
-            """;
-
+        String sql = "SELECT * FROM roles WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                if (rs.next()) {
+                    Role r = new Role();
+                    r.setId(rs.getInt("id"));
+                    r.setName(rs.getString("name"));
+                    r.setDescription(rs.getString("description"));
+                    return r;
+                }
             }
         }
         return null;
