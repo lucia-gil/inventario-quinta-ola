@@ -1,41 +1,41 @@
 <%--
     ════════════════════════════════════════════════════════════════════
-     login.jsp — Vista de Inicio de Sesión Oficial (Quinta Ola)
+     login.jsp — Vista de Inicio de Sesión (estilo Quinta Ola oficial)
     ════════════════════════════════════════════════════════════════════
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    String ctx = request.getContextPath();
+%>
 <!doctype html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Iniciar Sesión | Quinta Ola</title>
 
-    <!-- Tu Sistema de Diseño Oficial -->
-    <link href="${pageContext.request.contextPath}/css/style.css" rel="stylesheet" />
-
-    <!-- Iconos vectoriales Lucide -->
+    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* Contenedor adaptado al reset de tu body */
-        .login-screen-wrapper {
+        /* ═════ Estilos específicos del login ═════ */
+
+        body.login-body {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            background-color: var(--gray-50);
-            padding: 1rem;
-            box-sizing: border-box;
+            height: 100vh;              /* ← altura fija, no min-height */
+            overflow: hidden;           /* ← sin scroll global */
+            background: linear-gradient(135deg, #FCE7F3 0%, #EDE9FE 50%, #FFF8E1 100%);
+            padding: 1.5rem 1rem;
         }
 
-        /* Estructura de tarjeta usando tus bordes, radios y sombras */
         .login-card {
             display: flex;
             width: 100%;
-            max-width: 960px;
-            min-height: 580px;
+            max-width: 1000px;
+            height: 92vh;               /* ← altura controlada, no min-height */
+            max-height: 700px;          /* ← tope superior */
             background: var(--white);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-lg);
@@ -43,210 +43,500 @@
             overflow: hidden;
         }
 
-        /* PANEL IZQUIERDO: Corrección de contraste y mezcla de imagen */
+        /* ── Panel izquierdo: branding ── */
         .login-branding {
             flex: 1;
             position: relative;
-            background: linear-gradient(180deg, var(--purple) 0%, var(--purple-dark) 100%) !important;
+            background: linear-gradient(180deg, var(--purple) 0%, var(--purple-dark) 100%);
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            padding: 3rem;
-            box-sizing: border-box;
+            padding: 2.5rem;
+            overflow: hidden;
         }
 
-        /* Fusión de la imagen para eliminar su fondo blanco nativo */
-        .login-branding .bg-image {
+        .login-branding-bg {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.18;
-            mix-blend-mode: multiply;
+            opacity: 0.35;
+            mix-blend-mode: luminosity;
             pointer-events: none;
+        }
+
+        .login-branding::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: var(--yellow);
+            opacity: 0.15;
             z-index: 1;
         }
 
-        .login-branding-text {
+        .login-branding::after {
+            content: '';
+            position: absolute;
+            bottom: 150px;
+            left: -80px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: var(--pink);
+            opacity: 0.15;
+            z-index: 1;
+        }
+
+        .login-branding-content {
             position: relative;
             z-index: 2;
         }
 
-        /* ENCAPSULAMIENTO DE ICONOS: Solución definitiva para Lucide SVG */
-        .input-icon-wrapper {
-            position: relative;
-            display: block;
-            width: 100%;
+        .login-branding-content h2 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 0.85rem;
+            letter-spacing: -0.5px;
+            line-height: 1.15;
         }
 
-        /* Selector dual para soportar el cambio dinámico de i a svg */
-        .input-icon-wrapper i,
-        .input-icon-wrapper svg {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
+        .login-branding-content h2 .accent {
+            color: var(--yellow);
+        }
+
+        .login-branding-content p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.92);
+            font-weight: 500;
+            line-height: 1.6;
+            max-width: 340px;
+        }
+
+        .login-branding-tagline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 193, 7, 0.18);
+            color: var(--yellow);
+            padding: 0.35rem 0.85rem;
+            border-radius: var(--radius-full);
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            margin-bottom: 1.25rem;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .login-branding-tagline i {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* ── Panel derecho: formulario ── */
+        .login-form-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2rem 2.5rem;
+            background: var(--white);
+            overflow-y: auto;           /* ← scroll interno SOLO si fuera necesario */
+        }
+
+        .login-form-inner {
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .login-back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
             color: var(--gray-400);
-            width: 18px;
-            height: 18px;
-            pointer-events: none;
             transition: color var(--transition);
-            z-index: 10;
+            margin-bottom: 1rem;
         }
 
-        /* Forzamos la sangría en tu .input-page nativo para que el texto no pise el icono */
-        .input-icon-wrapper .input-page {
-            padding-left: 2.75rem !important;
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        /* Iluminación del icono utilizando tu variable de marca focus */
-        .input-icon-wrapper:focus-within i,
-        .input-icon-wrapper:focus-within svg {
+        .login-back-link:hover {
             color: var(--purple);
         }
 
-        /* Botón de acción usando tu paleta rosa oficial */
-        .btn-pink-submit {
+        .login-back-link i {
+            width: 14px;
+            height: 14px;
+        }
+
+        .login-form-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-form-header img {
+            height: 48px;
+            width: auto;
+            margin: 0 auto 0.85rem;
+        }
+
+        .login-form-header h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--purple);
+            margin-bottom: 0.3rem;
+        }
+
+        .login-form-header p {
+            font-size: 0.82rem;
+            color: var(--gray-500);
+            font-weight: 500;
+        }
+
+        .login-form-group {
+            margin-bottom: 0.95rem;
+        }
+
+        .login-form-group label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--gray-600);
+            margin-bottom: 0.45rem;
+        }
+
+        /* ═══════ ICONO DENTRO DEL INPUT (corregido) ═══════ */
+        .login-input-wrap {
+            position: relative;
+            display: block;
+        }
+
+        .login-input-wrap > i,
+        .login-input-wrap > svg {
+            position: absolute !important;
+            left: 0.95rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            width: 18px !important;
+            height: 18px !important;
+            pointer-events: none;
+            transition: color var(--transition);
+            z-index: 5;
+        }
+
+        .login-input-wrap .login-input {
+            display: block;
+            width: 100%;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            padding: 0.7rem 1rem 0.7rem 2.85rem !important;
+            font-size: 0.88rem;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            transition: all var(--transition);
+            outline: none;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .login-input-wrap .login-input:focus {
+            border-color: var(--purple);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+        }
+
+        .login-input-wrap:focus-within > i,
+        .login-input-wrap:focus-within > svg {
+            color: var(--purple);
+        }
+
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            margin-top: 0.85rem;
+        }
+
+        .login-remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .login-remember input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--pink);
+            cursor: pointer;
+        }
+
+        .login-remember span {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gray-600);
+        }
+
+        .login-forgot {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--purple);
+            transition: color var(--transition);
+        }
+
+        .login-forgot:hover {
+            color: var(--pink);
+        }
+
+        .login-submit-btn {
             width: 100%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            background: var(--pink);
+            background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%);
             color: var(--white);
-            padding: 0.65rem 1.4rem;
+            padding: 0.78rem 1.5rem;
             border-radius: var(--radius-full);
-            font-size: 0.875rem;
+            font-size: 0.88rem;
             font-weight: 700;
-            transition: all var(--transition);
             border: none;
-            box-shadow: 0 4px 12px rgba(233, 30, 140, 0.2);
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 4px 16px rgba(233, 30, 140, 0.25);
         }
 
-        .btn-pink-submit:hover {
-            background: var(--pink-dark);
-            box-shadow: 0 4px 14px rgba(233, 30, 140, 0.4);
-            transform: translateY(-1px);
+        .login-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 30, 140, 0.4);
+        }
+
+        .login-submit-btn i {
+            width: 16px;
+            height: 16px;
+            transition: transform var(--transition);
+        }
+
+        .login-submit-btn:hover i {
+            transform: translateX(3px);
+        }
+
+        .login-error {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--red-bg);
+            border: 1px solid #FECACA;
+            color: var(--red-dark);
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 0.9rem;
+            margin-top: 0.85rem;
+        }
+
+        .login-error i {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .login-footer {
+            margin-top: 1rem;
+            padding-top: 0.95rem;
+            border-top: 1px solid var(--gray-100);
+            text-align: center;
+        }
+
+        .login-footer p {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            font-weight: 500;
+        }
+
+        .login-footer a {
+            font-weight: 700;
+            color: var(--pink);
+            transition: color var(--transition);
+        }
+
+        .login-footer a:hover {
+            color: var(--purple);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            body.login-body {
+                overflow: auto;
+                height: auto;
+                min-height: 100vh;
+            }
+            .login-branding {
+                display: none;
+            }
+            .login-card {
+                height: auto;
+                max-height: none;
+                max-width: 480px;
+            }
+            .login-form-panel {
+                padding: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body.login-body {
+                padding: 0;
+            }
+            .login-card {
+                border-radius: 0;
+                min-height: 100vh;
+                box-shadow: none;
+            }
+            .login-form-panel {
+                padding: 1.75rem 1.5rem;
+            }
         }
     </style>
 </head>
 
-<body class="page-body">
+<body class="login-body">
 
-<div class="login-screen-wrapper">
-    <div class="login-card">
+<div class="login-card">
 
-        <!-- PANEL IZQUIERDO: Identidad Visual Corp (Muestra el fondo morado oficial) -->
-        <div class="login-branding md:flex hidden">
-            <img src="${pageContext.request.contextPath}/img/chicas.png" alt="Diseño Quinta Ola" class="bg-image" />
+    <%-- ═══════ PANEL IZQUIERDO: Branding ═══════ --%>
+    <div class="login-branding">
 
-            <div class="login-branding-text">
-                <h2 style="font-size: 2rem; font-weight: 800; color: var(--white); margin-bottom: 0.75rem; letter-spacing: -0.5px;">
-                    Bienvenido de nuevo
-                </h2>
-                <p style="font-size: 0.95rem; color: var(--purple-bg); font-weight: 500; line-height: 1.6;">
-                    Tecnología con propósito. Gestiona recursos, conecta personas y genera un impacto real en tu organización.
-                </p>
-            </div>
-        </div>
+        <img src="<%= ctx %>/img/chicas.png"
+             alt="Equipo Quinta Ola"
+             class="login-branding-bg"
+             onerror="this.style.display='none'"/>
 
-        <!-- PANEL DERECHO: Formulario utilizando tus utilidades nativas -->
-        <div class="flex flex-col p-8 md:p-8 justify-center bg-white" class="flex-grow" style="flex: 1;">
-            <div class="w-full" style="max-width: 360px; margin: 0 auto;">
+        <div class="login-branding-content">
 
-                <!-- Botón Volver usando tus clases utilitarias de texto -->
-                <div class="mb-6">
-                    <a href="${pageContext.request.contextPath}/index.jsp" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-purple-600 transition-all">
-                        <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Volver al inicio
-                    </a>
-                </div>
+            <span class="login-branding-tagline">
+                <i data-lucide="sparkles"></i>
+                Quinta Ola — Sistema de Inventario
+            </span>
 
-                <!-- Bloque de Identidad Central -->
-                <div class="text-center mb-6">
-                    <img src="${pageContext.request.contextPath}/img/QuintaOlaLogo.png" alt="Logo" style="height: 48px; width: auto; margin: 0 auto 1rem;">
-                    <h1 class="text-xl font-bold text-gray-800">Iniciar Sesión</h1>
-                    <p class="text-gray-400 text-sm mt-1">Accede a tu cuenta para gestionar el inventario</p>
-                </div>
+            <h2>
+                Bienvenida de <span class="accent">vuelta</span>
+            </h2>
 
-                <!-- Formulario estructurado con tus utilidades de espacio -->
-                <form action="${pageContext.request.contextPath}/AuthServlet" method="POST" class="space-y-4">
-                    <input type="hidden" name="action" value="login" />
+            <p>
+                Tecnología con propósito. Gestiona recursos, conecta personas
+                y genera un impacto real en tu organización.
+            </p>
 
-                    <!-- Entrada: Email -->
-                    <div>
-                        <label class="form-label uppercase tracking-wider text-xs font-bold mb-1 block text-gray-600">
-                            Correo electrónico
-                        </label>
-                        <div class="input-icon-wrapper">
-                            <i data-lucide="mail"></i>
-                            <input type="email" name="email" required class="input-page"
-                                   placeholder="admin.demo@quintaola.com" value="admin.demo@quintaola.com">
-                        </div>
-                    </div>
-
-                    <!-- Entrada: Password -->
-                    <div>
-                        <label class="form-label uppercase tracking-wider text-xs font-bold mb-1 block text-gray-600">
-                            Contraseña
-                        </label>
-                        <div class="input-icon-wrapper">
-                            <i data-lucide="lock"></i>
-                            <input type="password" name="password" required class="input-page"
-                                   placeholder="••••••••">
-                        </div>
-                    </div>
-
-                    <!-- Fila de opciones: Recordar / Olvido -->
-                    <div class="flex items-center justify-between pt-2">
-                        <label class="inline-flex items-center gap-2" style="cursor: pointer;">
-                            <input type="checkbox" name="remember-me" class="rounded-lg" style="accent-color: var(--pink); width: 16px; height: 16px;">
-                            <span class="text-xs font-semibold text-gray-500">Recordarme</span>
-                        </label>
-                        <a href="#" class="text-xs font-bold text-purple-600 hover:text-pink-600 transition-all">
-                            ¿Olvidaste tu contraseña?
-                        </a>
-                    </div>
-
-                    <!-- Botón de Envío Ejecutable -->
-                    <div class="pt-2">
-                        <button type="submit" class="btn-pink-submit">
-                            Ingresar al sistema <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
-                        </button>
-                    </div>
-                </form>
-
-                <%-- Despliegue de errores usando tus clases de badges nativas --%>
-                <% if (request.getAttribute("error") != null) { %>
-                <div class="bg-red-50 border-red-200 text-red-700 text-xs rounded-lg p-3 mt-4 flex items-center gap-2 border">
-                    <i data-lucide="alert-circle" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
-                    <span class="font-semibold"><%= request.getAttribute("error") %></span>
-                </div>
-                <% } %>
-
-                <!-- Footer del Formulario -->
-                <div class="mt-6 text-center border-gray-100 pt-4" style="border-top: 1px solid var(--gray-100);">
-                    <p class="text-xs text-gray-500 font-medium">
-                        ¿No tienes una cuenta activa?
-                        <a href="${pageContext.request.contextPath}/AuthServlet?action=formSignup" class="font-bold text-pink-600 hover:text-purple-600 transition-all">
-                            Regístrate aquí
-                        </a>
-                    </p>
-                </div>
-
-            </div>
         </div>
 
     </div>
+
+    <%-- ═══════ PANEL DERECHO: Formulario ═══════ --%>
+    <div class="login-form-panel">
+
+        <div class="login-form-inner">
+
+            <a href="<%= ctx %>/index.jsp" class="login-back-link">
+                <i data-lucide="arrow-left"></i>
+                Volver al inicio
+            </a>
+
+            <div class="login-form-header">
+                <img src="<%= ctx %>/img/QuintaOlaLogo.png" alt="Logo Quinta Ola"/>
+                <h1>Iniciar Sesión</h1>
+                <p>Accede a tu cuenta para gestionar el inventario</p>
+            </div>
+
+            <form action="<%= ctx %>/AuthServlet" method="POST">
+
+                <input type="hidden" name="action" value="login"/>
+
+                <%-- Email --%>
+                <div class="login-form-group">
+                    <label>Correo electrónico</label>
+                    <div class="login-input-wrap">
+                        <i data-lucide="mail"></i>
+                        <input type="email"
+                               name="email"
+                               class="login-input"
+                               placeholder="ejemplo@quintaola.com"
+                               value="admin.demo@quintaola.com"
+                               required/>
+                    </div>
+                </div>
+
+                <%-- Contraseña --%>
+                <div class="login-form-group">
+                    <label>Contraseña</label>
+                    <div class="login-input-wrap">
+                        <i data-lucide="lock"></i>
+                        <input type="password"
+                               name="password"
+                               class="login-input"
+                               placeholder="••••••••"
+                               required/>
+                    </div>
+                </div>
+
+                <%-- Opciones --%>
+                <div class="login-options">
+                    <label class="login-remember">
+                        <input type="checkbox" name="remember"/>
+                        <span>Recordarme</span>
+                    </label>
+                    <a href="#" class="login-forgot">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <%-- Botón submit --%>
+                <button type="submit" class="login-submit-btn">
+                    Ingresar al sistema
+                    <i data-lucide="arrow-right"></i>
+                </button>
+
+            </form>
+
+            <%-- Error --%>
+            <% if (request.getAttribute("error") != null) { %>
+            <div class="login-error">
+                <i data-lucide="alert-circle"></i>
+                <span><%= request.getAttribute("error") %></span>
+            </div>
+            <% } %>
+
+            <%-- Footer --%>
+            <div class="login-footer">
+                <p>
+                    ¿No tienes una cuenta activa?
+                    <a href="<%= ctx %>/AuthServlet?action=formSignup">Regístrate aquí</a>
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
 
 <script>
-    // Inicialización limpia de Lucide Icons
-    lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
 </script>
+
 </body>
 </html>

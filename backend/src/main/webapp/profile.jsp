@@ -1,8 +1,6 @@
 <%--
     ════════════════════════════════════════════════════════════════════
-     profile.jsp — Vista del perfil del usuario
-    ════════════════════════════════════════════════════════════════════
-     PROPÓSITO: Mostrar información y permitir cambio de clave/avatar.
+     profile.jsp — Vista del perfil del usuario (rediseño Quinta Ola)
     ════════════════════════════════════════════════════════════════════
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -13,10 +11,10 @@
     String error = (String) request.getAttribute("error");
     String success = request.getParameter("success");
 
-    // Lógica para iniciales (Fallback si no hay avatar)
+    // Iniciales para fallback del avatar
     String iniciales = "U";
     if (usuario != null && usuario.getName() != null) {
-        String[] partes = usuario.getName().split(" ");
+        String[] partes = usuario.getName().trim().split("\\s+");
         if (partes.length >= 2) {
             iniciales = (partes[0].charAt(0) + "" + partes[1].charAt(0)).toUpperCase();
         } else if (partes.length == 1 && partes[0].length() >= 2) {
@@ -24,83 +22,479 @@
         }
     }
 
-    // Color de iniciales
-    String avatarColor = "bg-purple-50 text-purple-700 border-purple-100";
-    if (usuario != null && usuario.getName() != null) {
-        int idx = usuario.getName().charAt(0) % 4;
-        switch (idx) {
-            case 0: avatarColor = "bg-blue-50 text-blue-700 border-blue-100";       break;
-            case 1: avatarColor = "bg-pink-50 text-pink-600 border-pink-100";       break;
-            case 2: avatarColor = "bg-green-50 text-green-700 border-green-100";    break;
-            case 3: avatarColor = "bg-amber-50 text-amber-600 border-yellow-100";   break;
-        }
-    }
-
-    // Lógica del Badge
+    // Rol amigable + clase de badge según rol
     String roleName = usuario != null ? usuario.getRoleName() : "";
-    String roleBadgeClass = "status-badge status-pending"; // Default
-    if ("SuperAdmin".equals(roleName)) {
-        roleBadgeClass = "status-badge status-delivered"; // Azul
-    } else if ("Administrador".equals(roleName)) {
-        roleBadgeClass = "status-badge bg-purple-50 text-purple-700"; // Morado
-    } else if ("Manager".equals(roleName)) {
-        roleBadgeClass = "status-badge status-pending"; // Naranja
-    } else if ("Member".equals(roleName)) {
-        roleBadgeClass = "status-badge status-approved"; // Verde
-    } else {
-        roleBadgeClass = "status-badge bg-gray-100 text-gray-600"; // Gris
+    String roleDisplay = roleName;
+    String roleBadgeClass = "role-badge-default";
+    switch (roleName) {
+        case "Viewer":
+            roleDisplay = "Solicitante";
+            roleBadgeClass = "role-badge-pink";
+            break;
+        case "Member":
+            roleDisplay = "Encargado de Depósito";
+            roleBadgeClass = "role-badge-green";
+            break;
+        case "Manager":
+            roleDisplay = "Aprobador(a)";
+            roleBadgeClass = "role-badge-yellow";
+            break;
+        case "Administrador":
+            roleDisplay = "Administrador";
+            roleBadgeClass = "role-badge-purple";
+            break;
+        case "SuperAdmin":
+            roleDisplay = "Super Admin";
+            roleBadgeClass = "role-badge-blue";
+            break;
     }
 
-    // Obtener la URL del avatar
     String avatarUrl = usuario != null ? usuario.getAvatarUrl() : null;
 
-    // Lógica para la fecha
+    // Fecha de creación formateada
     String fechaCreacion = "Reciente";
     if (usuario != null && usuario.getCreatedAt() != null) {
         try {
             String dbDate = usuario.getCreatedAt();
-            if(dbDate.contains(".")) {
-                dbDate = dbDate.substring(0, dbDate.indexOf("."));
-            }
+            if (dbDate.contains(".")) dbDate = dbDate.substring(0, dbDate.indexOf("."));
             java.text.SimpleDateFormat formatoBD = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             java.util.Date fechaParseada = formatoBD.parse(dbDate);
-
-            java.text.SimpleDateFormat formatoBonito = new java.text.SimpleDateFormat("dd 'de' MMMM, yyyy");
+            java.text.SimpleDateFormat formatoBonito = new java.text.SimpleDateFormat("dd 'de' MMMM, yyyy", new java.util.Locale("es", "ES"));
             fechaCreacion = formatoBonito.format(fechaParseada);
         } catch (Exception e) {
             fechaCreacion = usuario.getCreatedAt().split(" ")[0];
         }
     }
+
+    request.setAttribute("activeMenu", "profile");
 %>
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Mi Perfil | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=5" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        .avatar-box {
-            width: 140px;
-            height: 140px;
-            min-width: 140px;
-            min-height: 140px;
+        /* ═════ Estilos específicos del perfil ═════ */
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Card avatar grande ── */
+        .profile-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-100);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .profile-card-banner {
+            height: 100px;
+            background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+            position: relative;
+        }
+
+        .profile-card-banner::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--yellow);
+            opacity: 0.25;
+        }
+
+        .profile-card-body {
+            padding: 0 1.75rem 1.75rem;
+            text-align: center;
+            margin-top: -65px;
+            position: relative;
+        }
+
+        /* ── Avatar circular con cámara ── */
+        .profile-avatar-wrap {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            margin: 0 auto 1rem;
+            cursor: pointer;
+        }
+
+        .profile-avatar {
+            width: 130px;
+            height: 130px;
             border-radius: 50%;
             overflow: hidden;
-            border: 4px solid white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            position: relative;
-            margin: 0 auto 1.25rem auto;
-            flex-shrink: 0;
-            background-color: #f9fafb;
+            border: 5px solid var(--white);
+            box-shadow: 0 6px 20px rgba(91, 31, 168, 0.15);
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform var(--transition);
         }
-        .avatar-box img {
+
+        .profile-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center;
         }
+
+        .profile-avatar-initials {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--purple-light) 0%, var(--pink) 100%);
+            color: var(--white);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 1px;
+        }
+
+        /* Botón cámara siempre visible */
+        .profile-avatar-camera {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 38px;
+            height: 38px;
+            background: var(--pink);
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--white);
+            box-shadow: 0 4px 10px rgba(233, 30, 140, 0.35);
+            transition: all var(--transition);
+            z-index: 2;
+        }
+
+        .profile-avatar-camera i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .profile-avatar-wrap:hover .profile-avatar-camera {
+            background: var(--purple);
+            transform: scale(1.1);
+        }
+
+        .profile-avatar-wrap:hover .profile-avatar {
+            transform: scale(1.02);
+        }
+
+        .profile-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--gray-800);
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-email {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            margin-bottom: 1rem;
+            word-break: break-word;
+        }
+
+        /* ── Badges de rol ── */
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 1rem;
+            border-radius: var(--radius-full);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .role-badge i { width: 14px; height: 14px; }
+
+        .role-badge-pink    { background: var(--pink-bg);   color: var(--pink); }
+        .role-badge-green   { background: var(--green-bg);  color: var(--green-dark); }
+        .role-badge-yellow  { background: var(--yellow-bg); color: var(--orange-dark); }
+        .role-badge-purple  { background: var(--purple-bg); color: var(--purple); }
+        .role-badge-blue    { background: var(--blue-bg);   color: var(--blue-dark); }
+        .role-badge-default { background: var(--gray-100);  color: var(--gray-600); }
+
+        /* ── Card seguridad ── */
+        .security-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-100);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-100);
+            background: var(--gray-50);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .card-header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--purple);
+        }
+
+        .card-header-title i {
+            width: 18px;
+            height: 18px;
+            color: var(--pink);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 640px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        .field-group {
+            margin-bottom: 1.1rem;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--gray-500);
+            margin-bottom: 0.4rem;
+        }
+
+        .field-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            word-break: break-word;
+        }
+
+        .field-value.mono {
+            font-family: 'Courier New', monospace;
+            color: var(--purple);
+        }
+
+        .field-input {
+            width: 100%;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 0.85rem;
+            font-size: 0.88rem;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            transition: all var(--transition);
+            outline: none;
+            font-family: inherit;
+        }
+
+        .field-input:focus {
+            border-color: var(--purple);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+        }
+
+        /* ── Info personal — grid 2 cols ── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Card cuenta activa ── */
+        .verified-card {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.1rem 1.25rem;
+            background: linear-gradient(135deg, var(--green-bg) 0%, var(--blue-bg) 100%);
+            border: 1px solid #BBF7D0;
+            border-radius: var(--radius-md);
+            margin-top: 0.5rem;
+        }
+
+        .verified-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            background: var(--green);
+            color: var(--white);
+            flex-shrink: 0;
+        }
+
+        .verified-icon i { width: 20px; height: 20px; }
+
+        .verified-text-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--green-dark);
+            margin-bottom: 0.2rem;
+        }
+
+        .verified-text-sub {
+            font-size: 0.82rem;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+
+        .verified-text-sub strong { color: var(--gray-800); }
+
+        /* ── ID badge en header ── */
+        .id-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--pink);
+            background: var(--pink-bg);
+            padding: 0.3rem 0.7rem;
+            border-radius: var(--radius-sm);
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Privilegios ── */
+        .privilege-intro {
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .privilege-intro strong {
+            background: var(--purple-bg);
+            color: var(--purple);
+            padding: 0.15rem 0.55rem;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+        }
+
+        .privilege-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .privilege-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.88rem;
+            color: var(--gray-700);
+            line-height: 1.5;
+        }
+
+        .privilege-check {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--pink-bg);
+            color: var(--pink);
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .privilege-check i { width: 13px; height: 13px; }
+
+        /* ── Botón guardar ── */
+        .btn-save {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%);
+            color: var(--white);
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-full);
+            font-size: 0.88rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 4px 12px rgba(233, 30, 140, 0.2);
+            margin-top: 0.5rem;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(233, 30, 140, 0.35);
+        }
+
+        .btn-save i { width: 16px; height: 16px; }
+
+        /* ── Mensajes de alerta ── */
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            border: 1px solid;
+        }
+        .alert-error {
+            background: var(--red-bg);
+            color: var(--red-dark);
+            border-color: #FECACA;
+        }
+        .alert-success {
+            background: var(--green-bg);
+            color: var(--green-dark);
+            border-color: #BBF7D0;
+        }
+        .alert i { width: 18px; height: 18px; flex-shrink: 0; }
     </style>
 </head>
 
@@ -114,97 +508,109 @@
 
         <jsp:include page="includes/topbar.jsp"/>
 
-        <%-- Aquí es donde ajustamos el ancho máximo (max-w-5xl) y forzamos el centrado (mx-auto) --%>
-        <main class="w-full max-w-5xl mx-auto px-4 md:px-8 py-10">
+        <main class="page-main">
 
-            <div class="page-header mb-8">
+            <%-- Header --%>
+            <div class="page-header">
                 <div>
                     <h1 class="page-title">Mi Perfil</h1>
                     <p class="page-subtitle">Información personal y configuración de tu cuenta</p>
                 </div>
             </div>
 
+            <%-- Alertas --%>
             <% if (error != null) { %>
-            <div class="bg-red-50 border-red-200 text-red-700 text-sm rounded-lg p-4 mb-6 flex items-center gap-2 border">
-                <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
-                <%= error %>
+            <div class="alert alert-error">
+                <i data-lucide="alert-circle"></i>
+                <span><%= error %></span>
             </div>
             <% } %>
             <% if (success != null) { %>
-            <div class="bg-green-50 border-green-200 text-green-700 text-sm rounded-lg p-4 mb-6 flex items-center gap-2 border">
-                <i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0"></i>
-                <%= success %>
+            <div class="alert alert-success">
+                <i data-lucide="check-circle"></i>
+                <span><%= success %></span>
             </div>
             <% } %>
 
             <% if (usuario == null) { %>
-            <div class="panel py-16 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
-                <i data-lucide="user-x" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-                <p class="text-gray-500 font-medium text-lg">No se pudo cargar tu perfil.</p>
+            <div class="profile-card" style="padding: 4rem; text-align: center;">
+                <i data-lucide="user-x" style="width: 56px; height: 56px; color: var(--gray-300); margin: 0 auto 1rem;"></i>
+                <p style="color: var(--gray-500); font-weight: 600;">No se pudo cargar tu perfil.</p>
             </div>
             <% } else { %>
 
-            <%-- Ajustamos la cuadrícula a 3 columnas para que tenga mejores proporciones --%>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="profile-grid">
 
-                <%-- ─── COLUMNA IZQUIERDA (Avatar y Seguridad - Ocupa 1/3) ─── --%>
-                <div class="lg:col-span-1 space-y-8">
+                <%-- ═══════ COLUMNA IZQUIERDA ═══════ --%>
+                <div>
 
-                    <%-- Avatar --%>
-                    <div class="panel p-8 text-center relative overflow-hidden shadow-sm border border-gray-100 rounded-2xl bg-white">
-                        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-600 to-pink-500"></div>
+                    <%-- Card avatar --%>
+                    <div class="profile-card">
+                        <div class="profile-card-banner"></div>
 
-                        <div class="avatar-box cursor-pointer group" title="Haz clic para cambiar tu foto" onclick="document.getElementById('avatar-upload').click();">
-                            <% if (avatarUrl != null && !avatarUrl.trim().isEmpty()) { %>
-                            <img src="<%= ctx %><%= avatarUrl %>" alt="Mi Avatar" />
-                            <% } else { %>
-                            <div class="w-full h-full flex items-center justify-center text-5xl font-bold <%= avatarColor %>">
-                                <span><%= iniciales %></span>
+                        <div class="profile-card-body">
+
+                            <div class="profile-avatar-wrap" onclick="document.getElementById('avatar-upload').click();" title="Cambiar foto de perfil">
+                                <div class="profile-avatar">
+                                    <% if (avatarUrl != null && !avatarUrl.trim().isEmpty()) { %>
+                                    <img src="<%= ctx %><%= avatarUrl %>" alt="Avatar de <%= usuario.getName() %>"/>
+                                    <% } else { %>
+                                    <div class="profile-avatar-initials"><%= iniciales %></div>
+                                    <% } %>
+                                </div>
+                                <div class="profile-avatar-camera">
+                                    <i data-lucide="camera"></i>
+                                </div>
                             </div>
-                            <% } %>
 
-                            <div class="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm">
-                                <i data-lucide="camera" class="w-8 h-8 text-white mb-2"></i>
-                                <span class="text-white text-xs font-semibold tracking-wider uppercase">Actualizar</span>
-                            </div>
-                        </div>
+                            <form id="avatar-form" action="<%= ctx %>/ProfileServlet" method="POST" enctype="multipart/form-data" style="display: none;">
+                                <input type="hidden" name="action" value="uploadAvatar"/>
+                                <input type="file" id="avatar-upload" name="avatarFile"
+                                       accept="image/png, image/jpeg, image/webp"
+                                       onchange="document.getElementById('avatar-form').submit();"/>
+                            </form>
 
-                        <form id="avatar-form" action="<%= ctx %>/ProfileServlet" method="POST" enctype="multipart/form-data" class="hidden">
-                            <input type="hidden" name="action" value="uploadAvatar" />
-                            <input type="file" id="avatar-upload" name="avatarFile" accept="image/png, image/jpeg, image/webp" onchange="document.getElementById('avatar-form').submit();" />
-                        </form>
+                            <h2 class="profile-name"><%= usuario.getName() %></h2>
+                            <p class="profile-email"><%= usuario.getEmail() %></p>
 
-                        <h2 class="text-xl font-bold text-purple-700 tracking-tight leading-tight"><%= usuario.getName() %></h2>
-                        <p class="text-sm text-gray-500 font-medium mt-1 mb-4 break-words"><%= usuario.getEmail() %></p>
-                        <div class="inline-block mb-1">
-                            <span class="<%= roleBadgeClass %> px-3 py-1 text-sm"><%= roleName %></span>
+                            <span class="role-badge <%= roleBadgeClass %>">
+                                <i data-lucide="shield-check"></i>
+                                <%= roleDisplay %>
+                            </span>
+
                         </div>
                     </div>
 
-                    <%-- Seguridad --%>
-                    <div class="panel rounded-2xl shadow-sm border border-gray-100 bg-white">
-                        <div class="border-b border-gray-50 p-5">
-                            <h3 class="font-bold text-pink-600 flex items-center gap-2 text-base">
-                                <i data-lucide="shield-check" class="w-5 h-5 text-pink-500"></i> Seguridad
-                            </h3>
+                    <%-- Card seguridad --%>
+                    <div class="security-card">
+                        <div class="card-header">
+                            <div class="card-header-title">
+                                <i data-lucide="shield"></i>
+                                <span>Seguridad</span>
+                            </div>
                         </div>
-                        <div class="p-5">
-                            <form action="<%= ctx %>/ProfileServlet" method="POST" class="space-y-4">
+                        <div class="card-body">
+                            <form action="<%= ctx %>/ProfileServlet" method="POST">
                                 <input type="hidden" name="action" value="cambiarPassword"/>
-                                <div>
-                                    <label class="form-label text-xs mb-1 block text-gray-600">Clave actual</label>
-                                    <input type="password" name="currentPassword" required class="input-page text-sm py-2 w-full"/>
+
+                                <div class="field-group">
+                                    <label class="field-label">Clave actual</label>
+                                    <input type="password" name="currentPassword" required class="field-input"/>
                                 </div>
-                                <div>
-                                    <label class="form-label text-xs mb-1 block text-gray-600">Nueva clave</label>
-                                    <input type="password" name="newPassword" minlength="6" required class="input-page text-sm py-2 w-full"/>
+
+                                <div class="field-group">
+                                    <label class="field-label">Nueva clave</label>
+                                    <input type="password" name="newPassword" minlength="6" required class="field-input"/>
                                 </div>
-                                <div>
-                                    <label class="form-label text-xs mb-1 block text-gray-600">Confirmar clave</label>
-                                    <input type="password" name="confirmPassword" minlength="6" required class="input-page text-sm py-2 w-full"/>
+
+                                <div class="field-group">
+                                    <label class="field-label">Confirmar clave</label>
+                                    <input type="password" name="confirmPassword" minlength="6" required class="field-input"/>
                                 </div>
-                                <button type="submit" class="btn-page-primary w-full text-sm py-2 mt-2 transition-transform hover:scale-[1.02]">
-                                    <i data-lucide="key" class="w-4 h-4"></i> Guardar Cambios
+
+                                <button type="submit" class="btn-save">
+                                    <i data-lucide="key"></i>
+                                    Guardar Cambios
                                 </button>
                             </form>
                         </div>
@@ -212,81 +618,134 @@
 
                 </div>
 
-                <%-- ─── COLUMNA DERECHA (Información - Ocupa 2/3) ─── --%>
-                <div class="lg:col-span-2 space-y-8">
+                <%-- ═══════ COLUMNA DERECHA ═══════ --%>
+                <div>
 
-                    <%-- Información Personal --%>
-                    <div class="panel rounded-2xl shadow-sm border border-gray-100 bg-white">
-                        <div class="border-b border-gray-50 p-6 flex justify-between items-center">
-                            <h3 class="font-bold text-purple-700 flex items-center gap-2 text-lg">
-                                <i data-lucide="contact-2" class="w-5 h-5 text-purple-600"></i> Información Personal
-                            </h3>
-                            <span class="text-xs bg-pink-50 text-pink-600 border border-pink-100 px-3 py-1.5 rounded-md font-bold uppercase tracking-wider">ID #<%= usuario.getId() %></span>
+                    <%-- Información personal --%>
+                    <div class="profile-card">
+                        <div class="card-header">
+                            <div class="card-header-title">
+                                <i data-lucide="user"></i>
+                                <span>Información Personal</span>
+                            </div>
+                            <span class="id-badge">
+                                <i data-lucide="hash" style="width: 12px; height: 12px;"></i>
+                                ID <%= usuario.getId() %>
+                            </span>
                         </div>
 
-                        <div class="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-                            <div>
-                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Nombre Completo</p>
-                                <p class="text-base font-medium text-gray-800"><%= usuario.getName() %></p>
-                            </div>
+                        <div class="card-body">
+                            <div class="info-grid">
 
-                            <div>
-                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Documento (DNI)</p>
-                                <p class="text-base font-medium text-gray-800 font-mono"><%= usuario.getDni() %></p>
-                            </div>
-
-                            <div>
-                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Correo Electrónico</p>
-                                <p class="text-base font-medium text-gray-800"><%= usuario.getEmail() %></p>
-                            </div>
-
-                            <div>
-                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Rol Principal</p>
-                                <p class="text-base font-medium text-gray-800"><%= usuario.getRoleName() %></p>
-                            </div>
-
-                            <%-- Rectángulo Cuenta Activa --%>
-                            <div class="sm:col-span-2 p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-start gap-4 mt-2">
-                                <div class="bg-emerald-100 p-2 rounded-lg text-emerald-600 shrink-0">
-                                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                                <div>
+                                    <p class="field-label">Nombre Completo</p>
+                                    <p class="field-value"><%= usuario.getName() %></p>
                                 </div>
-                                <div class="flex flex-col justify-center">
-                                    <p class="text-sm font-bold text-purple-700 mb-0.5">Cuenta Activa y Verificada</p>
-                                    <p class="text-sm text-gray-500">Miembro en el sistema desde el <span class="font-semibold text-gray-700"><%= fechaCreacion %></span>.</p>
+
+                                <div>
+                                    <p class="field-label">Documento (DNI)</p>
+                                    <p class="field-value mono"><%= usuario.getDni() %></p>
                                 </div>
+
+                                <div>
+                                    <p class="field-label">Correo Electrónico</p>
+                                    <p class="field-value"><%= usuario.getEmail() %></p>
+                                </div>
+
+                                <div>
+                                    <p class="field-label">Rol Principal</p>
+                                    <p class="field-value"><%= roleDisplay %></p>
+                                </div>
+
+                                <div class="verified-card">
+                                    <div class="verified-icon">
+                                        <i data-lucide="check"></i>
+                                    </div>
+                                    <div>
+                                        <p class="verified-text-title">Cuenta Activa y Verificada</p>
+                                        <p class="verified-text-sub">
+                                            Miembro en el sistema desde el
+                                            <strong><%= fechaCreacion %></strong>.
+                                        </p>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
 
                     <%-- Privilegios --%>
-                    <div class="panel rounded-2xl shadow-sm border border-gray-100 bg-white">
-                        <div class="border-b border-gray-50 p-6">
-                            <h3 class="font-bold text-gray-800 flex items-center gap-2 text-lg">
-                                <i data-lucide="zap" class="w-5 h-5 text-amber-600"></i> Privilegios de tu Rol
-                            </h3>
+                    <div class="profile-card" style="margin-top: 1.5rem;">
+                        <div class="card-header">
+                            <div class="card-header-title">
+                                <i data-lucide="zap" style="color: var(--orange-dark);"></i>
+                                <span style="color: var(--gray-800);">Privilegios de tu Rol</span>
+                            </div>
                         </div>
-                        <div class="p-6 md:p-8">
-                            <p class="text-sm md:text-base text-gray-600 mb-5 leading-relaxed">Como <strong class="text-purple-700 bg-purple-50 px-2 py-0.5 rounded"><%= roleName %></strong>, tienes los siguientes accesos habilitados:</p>
 
-                            <ul class="space-y-3">
+                        <div class="card-body">
+                            <p class="privilege-intro">
+                                Como <strong><%= roleDisplay %></strong>, tienes los siguientes accesos habilitados:
+                            </p>
+
+                            <ul class="privilege-list">
                                 <% if ("SuperAdmin".equals(roleName)) { %>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Control total y auditoría del sistema (Bitácora)</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Gestión de permisos y roles del sistema</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Administración avanzada de usuarios</li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Control total y auditoría del sistema (bitácora completa)
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Gestión de permisos y roles del sistema
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Administración avanzada de usuarios
+                                </li>
                                 <% } else if ("Administrador".equals(roleName)) { %>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Gestión completa de usuarios y materiales</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Exportar reportes del inventario</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Modificación y eliminación de items</li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Gestión completa de usuarios y materiales
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Exportar reportes del inventario
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Modificación y eliminación de items
+                                </li>
                                 <% } else if ("Manager".equals(roleName)) { %>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Aprobación o rechazo de solicitudes (Transacciones)</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Revisión de pedidos en espera</li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Aprobación o rechazo de solicitudes (transacciones)
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Revisión de pedidos en espera
+                                </li>
                                 <% } else if ("Member".equals(roleName)) { %>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Entregar materiales (Despacho de inventario)</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Actualización de stock tras las entregas</li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Entregar materiales (despacho de inventario)
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Actualización de stock tras las entregas
+                                </li>
                                 <% } else { %>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Visualizar el catálogo de productos</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Crear nuevos pedidos de materiales</li>
-                                <li class="flex items-start gap-3 text-sm md:text-base text-gray-700"><i data-lucide="check" class="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5"></i> Revisar historial de pedidos propios</li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Visualizar el catálogo de productos
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Crear nuevos pedidos de materiales
+                                </li>
+                                <li class="privilege-item">
+                                    <span class="privilege-check"><i data-lucide="check"></i></span>
+                                    Revisar historial de pedidos propios
+                                </li>
                                 <% } %>
                             </ul>
                         </div>
@@ -297,14 +756,18 @@
             </div>
 
             <% } %>
+
         </main>
 
         <jsp:include page="includes/footer.jsp"/>
 
     </div>
 </div>
+
 <script>
-    lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
 </script>
 </body>
 </html>
