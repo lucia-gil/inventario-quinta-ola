@@ -7,10 +7,45 @@
 
     <display-name>Inventario Quinta Ola</display-name>
 
-    <!-- Cuando entren a / del proyecto, redirigir al login -->
+    <!-- ════════════════════════════════════════════════════════
+         Punto de entrada
+         ════════════════════════════════════════════════════════ -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
+
+    <!-- ════════════════════════════════════════════════════════
+         Configuración de sesión
+         ────────────────────────────────────────────────────────
+         - timeout: 30 minutos sin actividad → sesión expira
+         - HttpOnly: la cookie no es accesible vía JavaScript
+                    (mitiga ataques XSS que intentan robar la cookie)
+         - Secure: descomentar SOLO cuando tengamos HTTPS en producción.
+                  En localhost sin SSL hay que dejarlo comentado.
+         - SameSite=Lax: cookies no se envían en cross-site POST
+                    (mitiga CSRF a nivel de navegador)
+         ════════════════════════════════════════════════════════ -->
+    <session-config>
+        <session-timeout>30</session-timeout>
+        <cookie-config>
+            <http-only>true</http-only>
+            <!-- <secure>true</secure> -->   <!-- Activar en producción con HTTPS -->
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
+    <!-- ════════════════════════════════════════════════════════
+         Páginas de error personalizadas
+         ════════════════════════════════════════════════════════ -->
+    <error-page>
+        <error-code>400</error-code>
+        <location>/500.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>401</error-code>
+        <location>/login.jsp</location>
+    </error-page>
 
     <error-page>
         <error-code>403</error-code>
@@ -23,6 +58,11 @@
     </error-page>
 
     <error-page>
+        <error-code>405</error-code>
+        <location>/500.jsp</location>
+    </error-page>
+
+    <error-page>
         <error-code>500</error-code>
         <location>/500.jsp</location>
     </error-page>
@@ -31,4 +71,39 @@
         <exception-type>java.lang.Throwable</exception-type>
         <location>/500.jsp</location>
     </error-page>
+
+    <error-page>
+        <exception-type>java.lang.NullPointerException</exception-type>
+        <location>/500.jsp</location>
+    </error-page>
+
+    <error-page>
+        <exception-type>java.sql.SQLException</exception-type>
+        <location>/500.jsp</location>
+    </error-page>
+
+    <!-- ════════════════════════════════════════════════════════
+         Restricciones de seguridad
+         ────────────────────────────────────────────────────────
+         Bloquea acceso directo a recursos sensibles que NUNCA
+         deben servirse por HTTP. Esto es defensa adicional al
+         SessionFilter: aunque alguien escriba la URL exacta,
+         Tomcat rechaza la solicitud.
+         ════════════════════════════════════════════════════════ -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Bloquear acceso directo a WEB-INF</web-resource-name>
+            <url-pattern>/WEB-INF/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint/>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Bloquear acceso directo a uploads</web-resource-name>
+            <url-pattern>/uploads/private/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint/>
+    </security-constraint>
+
 </web-app>

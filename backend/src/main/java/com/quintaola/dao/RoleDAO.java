@@ -12,7 +12,7 @@ import java.util.List;
    RoleDAO.java
    ============================================================
    Acceso a la tabla roles. Como los roles son fijos, solo
-   necesitamos LEER, no crear/editar/eliminar.
+   necesitamos leer, pero no crear/editar/eliminar.
 
    Metodos:
    - getAll()             -> los 5 roles con conteo de usuarios activos
@@ -109,7 +109,7 @@ public class RoleDAO {
         return list;
     }
 
-    // ─── MAP ROW ───
+    // map row
     private Role mapRow(ResultSet rs) throws SQLException {
         Role role = new Role();
         role.setId(rs.getInt("id"));
