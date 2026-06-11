@@ -110,7 +110,15 @@
             align-items: center;
             margin-bottom: 1.5rem;
         }
-        .filter-search { position: relative; flex-grow: 1; min-width: 250px; }
+        .filter-search { 
+            position: relative; 
+            flex-grow: 1; 
+            min-width: 250px; 
+            flex-direction: row;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
         .filter-search > i {
             position: absolute;
             left: 0.95rem; top: 50%;

@@ -45,7 +45,7 @@
           </p>
         </div>
         <%-- Cambiado para que vuelva a la lista de usuarios --%>
-        <a href="<%= ctx %>/UserServlet?action=lista" class="btn-ghost">
+        <a href="<%= ctx %>/RoleServlet" class="btn-ghost">
           ← Volver
         </a>
       </div>
@@ -127,7 +127,7 @@
 
           <div class="flex justify-end gap-3 pt-2">
             <%-- Cambiado para que cancele a la lista de usuarios --%>
-            <a href="<%= ctx %>/UserServlet?action=lista" class="btn-ghost">
+            <a href="<%= ctx %>/RoleServlet" class="btn-ghost">
               Cancelar
             </a>
             <button type="submit" class="btn-page-primary">

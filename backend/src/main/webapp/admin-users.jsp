@@ -150,9 +150,7 @@
 
         .actions-stack {
             display: flex;
-            flex-direction: column;
             gap: 0.4rem;
-            align-items: stretch;
         }
 
         .btn-action {
