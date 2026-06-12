@@ -24,8 +24,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
             background: linear-gradient(135deg, #FCE7F3 0%, #EDE9FE 50%, #FFF8E1 100%);
             padding: 1.5rem 1rem;
         }
@@ -34,8 +33,8 @@
             display: flex;
             width: 100%;
             max-width: 1100px;
-            height: 94vh;
-            max-height: 760px;
+            min-height: 600px;
+            max-height: 94vh;
             background: var(--white);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-lg);
@@ -145,16 +144,25 @@
             flex: 1.15;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: 1.75rem 2.5rem;
+            padding: 0;
             background: var(--white);
-            overflow-y: auto;
+            position: relative;
+            overflow: hidden;
         }
 
-        .signup-form-inner {
-            width: 100%;
-            max-width: 460px;
-            margin: 0 auto;
+        /* "Volver al inicio" FIJO arriba */
+        .signup-back-bar {
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            padding: 1rem 2.5rem 0.5rem;
+            z-index: 10;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .signup-back-bar.scrolled {
+            border-bottom-color: var(--gray-100);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
 
         .signup-back-link {
@@ -167,7 +175,6 @@
             letter-spacing: 1.5px;
             color: var(--gray-400);
             transition: color var(--transition);
-            margin-bottom: 0.85rem;
         }
 
         .signup-back-link:hover {
@@ -177,6 +184,18 @@
         .signup-back-link i {
             width: 14px;
             height: 14px;
+        }
+
+        .signup-form-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem 2.5rem 1.75rem;
+        }
+
+        .signup-form-inner {
+            width: 100%;
+            max-width: 460px;
+            margin: 0 auto;
         }
 
         .signup-form-header {
@@ -283,6 +302,85 @@
             margin-top: 0.6rem;
         }
 
+        /* ═══════ Medidor de fortaleza COMPACTO ═══════ */
+        .signup-pass-strength {
+            margin-top: 0.6rem;
+            margin-bottom: 0.5rem;
+            padding: 0.65rem 0.8rem;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-sm);
+        }
+
+        .strength-top {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin-bottom: 0.55rem;
+        }
+        .strength-top-text {
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--gray-500);
+            flex-shrink: 0;
+        }
+        .strength-bar-track {
+            flex: 1;
+            height: 5px;
+            background: var(--gray-200);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+        .strength-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--red);
+            border-radius: var(--radius-full);
+            transition: width 0.3s, background 0.3s;
+        }
+        .strength-bar-fill.level-1 { width: 25%;  background: var(--red); }
+        .strength-bar-fill.level-2 { width: 50%;  background: var(--orange-dark); }
+        .strength-bar-fill.level-3 { width: 75%;  background: var(--yellow); }
+        .strength-bar-fill.level-4 { width: 100%; background: var(--green); }
+
+        .strength-status {
+            color: var(--red-dark);
+            font-weight: 700;
+            font-size: 0.65rem;
+            flex-shrink: 0;
+            min-width: 58px;
+            text-align: right;
+        }
+        .strength-status.level-2 { color: var(--orange-dark); }
+        .strength-status.level-3 { color: var(--orange-dark); }
+        .strength-status.level-4 { color: var(--green-dark); }
+
+        .strength-checklist {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.25rem 0.7rem;
+        }
+
+        .strength-check-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.68rem;
+            color: var(--gray-500);
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .strength-check-item i {
+            width: 13px;
+            height: 13px;
+            flex-shrink: 0;
+        }
+        .strength-check-item.met {
+            color: var(--green-dark);
+        }
+
         .signup-pass-error.visible {
             display: flex;
         }
@@ -309,7 +407,7 @@
             cursor: pointer;
             transition: all var(--transition);
             box-shadow: 0 4px 16px rgba(233, 30, 140, 0.25);
-            margin-top: 0.85rem;
+            margin-top: 0.7rem;
         }
 
         .signup-submit-btn:hover {
@@ -454,9 +552,8 @@
                 max-height: none;
                 max-width: 520px;
             }
-            .signup-form-panel {
-                padding: 2rem;
-            }
+            .signup-back-bar { padding: 1rem 2rem 0.5rem; }
+            .signup-form-scroll { padding: 0.5rem 2rem 1.75rem; }
         }
 
         @media (max-width: 600px) {
@@ -474,9 +571,8 @@
                 min-height: 100vh;
                 box-shadow: none;
             }
-            .signup-form-panel {
-                padding: 1.75rem 1.5rem;
-            }
+            .signup-back-bar { padding: 1rem 1.5rem 0.5rem; }
+            .signup-form-scroll { padding: 0.5rem 1.5rem 1.75rem; }
         }
     </style>
 </head>
@@ -516,164 +612,201 @@
     <%-- ═══════ PANEL DERECHO: Formulario ═══════ --%>
     <div class="signup-form-panel">
 
-        <div class="signup-form-inner">
-
+        <%-- Barra superior FIJA con "Volver al inicio" --%>
+        <div id="back-bar" class="signup-back-bar">
             <a href="<%= ctx %>/index.jsp" class="signup-back-link">
                 <i data-lucide="arrow-left"></i>
                 Volver al inicio
             </a>
+        </div>
 
-            <div class="signup-form-header">
-                <img src="<%= ctx %>/img/QuintaOlaLogo.png" alt="Logo Quinta Ola"/>
-                <h1>Crea tu cuenta</h1>
-                <p>Ingresa tus datos para registrarte en el sistema</p>
-            </div>
+        <%-- Contenido scrollable --%>
+        <div id="scroll-area" class="signup-form-scroll">
 
-            <% if (request.getAttribute("success") != null) { %>
+            <div class="signup-form-inner">
 
-            <%-- ═══════ MENSAJE DE ÉXITO ═══════ --%>
-            <div class="signup-success">
-                <div class="signup-success-icon">
-                    <i data-lucide="check"></i>
+                <div class="signup-form-header">
+                    <img src="<%= ctx %>/img/QuintaOlaLogo.png" alt="Logo Quinta Ola"/>
+                    <h1>Crea tu cuenta</h1>
+                    <p>Ingresa tus datos para registrarte en el sistema</p>
                 </div>
-                <div class="signup-success-title">¡Cuenta creada con éxito!</div>
-                <div class="signup-success-desc">
-                    <%= request.getAttribute("success") %>
-                    <br/><br/>
-                    Recibirás acceso al sistema una vez que <strong>un Administrador apruebe tu cuenta</strong>.
+
+                <% if (request.getAttribute("success") != null) { %>
+
+                <%-- ═══════ MENSAJE DE ÉXITO ═══════ --%>
+                <div class="signup-success">
+                    <div class="signup-success-icon">
+                        <i data-lucide="check"></i>
+                    </div>
+                    <div class="signup-success-title">¡Cuenta creada con éxito!</div>
+                    <div class="signup-success-desc">
+                        <%= request.getAttribute("success") %>
+                        <br/><br/>
+                        Recibirás acceso al sistema una vez que <strong>un Administrador apruebe tu cuenta</strong>.
+                    </div>
+                    <a href="<%= ctx %>/index.jsp" class="signup-success-btn">
+                        <i data-lucide="home"></i>
+                        Volver al inicio
+                    </a>
                 </div>
-                <a href="<%= ctx %>/index.jsp" class="signup-success-btn">
-                    <i data-lucide="home"></i>
-                    Volver al inicio
-                </a>
-            </div>
 
-            <% } else { %>
+                <% } else { %>
 
-            <%-- ═══════ FORMULARIO DE REGISTRO ═══════ --%>
-            <form action="<%= ctx %>/AuthServlet" method="POST" onsubmit="return validarPassword();">
+                <%-- ═══════ FORMULARIO DE REGISTRO ═══════ --%>
+                <form action="<%= ctx %>/AuthServlet" method="POST" onsubmit="return validarPassword();">
 
-                <input type="hidden" name="action" value="register"/>
+                    <input type="hidden" name="action" value="register"/>
 
-                <%-- Nombres + Apellidos --%>
-                <div class="signup-form-row">
+                    <%-- Nombres + Apellidos --%>
+                    <div class="signup-form-row">
+                        <div class="signup-form-group">
+                            <label>Nombres</label>
+                            <div class="signup-input-wrap">
+                                <i data-lucide="user"></i>
+                                <input type="text"
+                                       name="nombres"
+                                       id="reg-nombres"
+                                       class="signup-input"
+                                       placeholder="Tus nombres"
+                                       required/>
+                            </div>
+                        </div>
+
+                        <div class="signup-form-group">
+                            <label>Apellidos</label>
+                            <div class="signup-input-wrap">
+                                <i data-lucide="users"></i>
+                                <input type="text"
+                                       name="apellidos"
+                                       id="reg-apellidos"
+                                       class="signup-input"
+                                       placeholder="Tus apellidos"
+                                       required/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <%-- DNI --%>
                     <div class="signup-form-group">
-                        <label>Nombres</label>
+                        <label>DNI</label>
                         <div class="signup-input-wrap">
-                            <i data-lucide="user"></i>
+                            <i data-lucide="id-card"></i>
                             <input type="text"
-                                   name="nombres"
-                                   id="reg-nombres"
+                                   name="dni"
+                                   id="reg-dni"
                                    class="signup-input"
-                                   placeholder="Tus nombres"
+                                   placeholder="Documento de 8 dígitos"
+                                   required
+                                   maxlength="8"
+                                   pattern="[0-9]{8}"/>
+                        </div>
+                    </div>
+
+                    <%-- Correo --%>
+                    <div class="signup-form-group">
+                        <label>Correo electrónico</label>
+                        <div class="signup-input-wrap">
+                            <i data-lucide="mail"></i>
+                            <input type="email"
+                                   name="email"
+                                   id="reg-email"
+                                   class="signup-input"
+                                   placeholder="ejemplo@quintaola.com"
                                    required/>
                         </div>
                     </div>
 
-                    <div class="signup-form-group">
-                        <label>Apellidos</label>
-                        <div class="signup-input-wrap">
-                            <i data-lucide="users"></i>
-                            <input type="text"
-                                   name="apellidos"
-                                   id="reg-apellidos"
-                                   class="signup-input"
-                                   placeholder="Tus apellidos"
-                                   required/>
+                    <%-- Password + Confirmar --%>
+                    <div class="signup-form-row">
+                        <div class="signup-form-group">
+                            <label>Contraseña</label>
+                            <div class="signup-input-wrap">
+                                <i data-lucide="lock"></i>
+                                <input type="password"
+                                       name="password"
+                                       id="reg-pass"
+                                       class="signup-input"
+                                       placeholder="••••••••"
+                                       required
+                                       minlength="8"
+                                       oninput="actualizarFortaleza()"/>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <%-- DNI --%>
-                <div class="signup-form-group">
-                    <label>DNI</label>
-                    <div class="signup-input-wrap">
-                        <i data-lucide="id-card"></i>
-                        <input type="text"
-                               name="dni"
-                               id="reg-dni"
-                               class="signup-input"
-                               placeholder="Documento de 8 dígitos"
-                               required
-                               maxlength="8"
-                               pattern="[0-9]{8}"/>
-                    </div>
-                </div>
-
-                <%-- Correo --%>
-                <div class="signup-form-group">
-                    <label>Correo electrónico</label>
-                    <div class="signup-input-wrap">
-                        <i data-lucide="mail"></i>
-                        <input type="email"
-                               name="email"
-                               id="reg-email"
-                               class="signup-input"
-                               placeholder="ejemplo@quintaola.com"
-                               required/>
-                    </div>
-                </div>
-
-                <%-- Password + Confirmar --%>
-                <div class="signup-form-row">
-                    <div class="signup-form-group">
-                        <label>Contraseña</label>
-                        <div class="signup-input-wrap">
-                            <i data-lucide="lock"></i>
-                            <input type="password"
-                                   name="password"
-                                   id="reg-pass"
-                                   class="signup-input"
-                                   placeholder="••••••••"
-                                   required
-                                   minlength="8"/>
+                        <div class="signup-form-group">
+                            <label>Confirmar</label>
+                            <div class="signup-input-wrap">
+                                <i data-lucide="check-circle"></i>
+                                <input type="password"
+                                       id="reg-confirm"
+                                       class="signup-input"
+                                       placeholder="••••••••"
+                                       required
+                                       minlength="8"/>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="signup-form-group">
-                        <label>Confirmar</label>
-                        <div class="signup-input-wrap">
-                            <i data-lucide="check-circle"></i>
-                            <input type="password"
-                                   id="reg-confirm"
-                                   class="signup-input"
-                                   placeholder="••••••••"
-                                   required
-                                   minlength="8"/>
+                    <%-- Medidor de fortaleza compacto --%>
+                    <div class="signup-pass-strength">
+                        <div class="strength-top">
+                            <span class="strength-top-text">Seguridad</span>
+                            <div class="strength-bar-track">
+                                <div id="strength-bar" class="strength-bar-fill"></div>
+                            </div>
+                            <span id="strength-status" class="strength-status">Vacía</span>
+                        </div>
+                        <div class="strength-checklist">
+                            <span class="strength-check-item" id="chk-length">
+                                <i data-lucide="circle"></i> 8+ caracteres
+                            </span>
+                            <span class="strength-check-item" id="chk-upper">
+                                <i data-lucide="circle"></i> 1 mayúscula
+                            </span>
+                            <span class="strength-check-item" id="chk-lower">
+                                <i data-lucide="circle"></i> 1 minúscula
+                            </span>
+                            <span class="strength-check-item" id="chk-number">
+                                <i data-lucide="circle"></i> 1 número
+                            </span>
+                            <span class="strength-check-item" id="chk-symbol" style="grid-column: span 2;">
+                                <i data-lucide="circle"></i> 1 símbolo (!@#$%&*...)
+                            </span>
                         </div>
                     </div>
-                </div>
 
-                <%-- Error contraseñas --%>
-                <div id="pass-error" class="signup-pass-error">
+                    <%-- Error contraseñas --%>
+                    <div id="pass-error" class="signup-pass-error">
+                        <i data-lucide="alert-circle"></i>
+                        <span>Las contraseñas no coinciden</span>
+                    </div>
+
+                    <%-- Botón submit --%>
+                    <button type="submit" class="signup-submit-btn">
+                        Registrar mi cuenta
+                        <i data-lucide="arrow-right" class="arrow"></i>
+                    </button>
+
+                </form>
+
+                <%-- Error servidor --%>
+                <% if (request.getAttribute("error") != null) { %>
+                <div class="signup-error">
                     <i data-lucide="alert-circle"></i>
-                    <span>Las contraseñas no coinciden</span>
+                    <span><%= request.getAttribute("error") %></span>
+                </div>
+                <% } %>
+
+                <% } %>
+
+                <%-- Footer --%>
+                <div class="signup-footer">
+                    <p>
+                        ¿Ya tienes una cuenta?
+                        <a href="<%= ctx %>/AuthServlet?action=formLogin">Inicia sesión aquí</a>
+                    </p>
                 </div>
 
-                <%-- Botón submit --%>
-                <button type="submit" class="signup-submit-btn">
-                    Registrar mi cuenta
-                    <i data-lucide="arrow-right" class="arrow"></i>
-                </button>
-
-            </form>
-
-            <%-- Error servidor --%>
-            <% if (request.getAttribute("error") != null) { %>
-            <div class="signup-error">
-                <i data-lucide="alert-circle"></i>
-                <span><%= request.getAttribute("error") %></span>
-            </div>
-            <% } %>
-
-            <% } %>
-
-            <%-- Footer --%>
-            <div class="signup-footer">
-                <p>
-                    ¿Ya tienes una cuenta?
-                    <a href="<%= ctx %>/AuthServlet?action=formLogin">Inicia sesión aquí</a>
-                </p>
             </div>
 
         </div>
@@ -685,17 +818,100 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Sombra sutil en la barra de "Volver al inicio" cuando hay scroll
+        const scrollArea = document.getElementById('scroll-area');
+        const backBar    = document.getElementById('back-bar');
+        if (scrollArea && backBar) {
+            scrollArea.addEventListener('scroll', () => {
+                if (scrollArea.scrollTop > 5) backBar.classList.add('scrolled');
+                else                          backBar.classList.remove('scrolled');
+            });
+        }
     });
+
+    function actualizarFortaleza() {
+        const pass   = document.getElementById('reg-pass').value;
+        const bar    = document.getElementById('strength-bar');
+        const status = document.getElementById('strength-status');
+
+        const checks = {
+            'chk-length': pass.length >= 8,
+            'chk-upper':  /[A-Z]/.test(pass),
+            'chk-lower':  /[a-z]/.test(pass),
+            'chk-number': /[0-9]/.test(pass),
+            'chk-symbol': /[!@#$%^&*()_+\-=\[\]{};:'"<>,./?\\|`~]/.test(pass)
+        };
+
+        let cumplidos = 0;
+        Object.keys(checks).forEach(id => {
+            const el = document.getElementById(id);
+            const iconEl = el.querySelector('svg, i');
+
+            if (checks[id]) {
+                el.classList.add('met');
+                // Reemplazar el icono por un check fresco
+                const newIcon = document.createElement('i');
+                newIcon.setAttribute('data-lucide', 'check-circle');
+                iconEl.replaceWith(newIcon);
+                cumplidos++;
+            } else {
+                el.classList.remove('met');
+                const newIcon = document.createElement('i');
+                newIcon.setAttribute('data-lucide', 'circle');
+                iconEl.replaceWith(newIcon);
+            }
+        });
+
+        bar.className = 'strength-bar-fill';
+        status.className = 'strength-status';
+
+        if (cumplidos === 5) {
+            bar.classList.add('level-4');
+            status.classList.add('level-4');
+            status.textContent = 'Excelente';
+        } else if (cumplidos >= 4) {
+            bar.classList.add('level-3');
+            status.classList.add('level-3');
+            status.textContent = 'Buena';
+        } else if (cumplidos >= 2) {
+            bar.classList.add('level-2');
+            status.classList.add('level-2');
+            status.textContent = 'Mejorable';
+        } else if (cumplidos >= 1) {
+            bar.classList.add('level-1');
+            status.textContent = 'Débil';
+        } else {
+            status.textContent = 'Vacía';
+        }
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
 
     function validarPassword() {
         const pass    = document.getElementById('reg-pass').value;
         const confirm = document.getElementById('reg-confirm').value;
         const errBox  = document.getElementById('pass-error');
 
-        if (pass !== confirm) {
+        const cumple = pass.length >= 8
+            && /[A-Z]/.test(pass)
+            && /[a-z]/.test(pass)
+            && /[0-9]/.test(pass)
+            && /[!@#$%^&*()_+\-=\[\]{};:'"<>,./?\\|`~]/.test(pass);
+
+        if (!cumple) {
+            errBox.querySelector('span').textContent =
+                'La contraseña no cumple los requisitos de seguridad.';
             errBox.classList.add('visible');
             return false;
         }
+
+        if (pass !== confirm) {
+            errBox.querySelector('span').textContent = 'Las contraseñas no coinciden';
+            errBox.classList.add('visible');
+            return false;
+        }
+
         errBox.classList.remove('visible');
         return true;
     }

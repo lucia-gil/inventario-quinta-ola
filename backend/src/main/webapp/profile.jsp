@@ -600,12 +600,15 @@
 
                                 <div class="field-group">
                                     <label class="field-label">Nueva clave</label>
-                                    <input type="password" name="newPassword" minlength="6" required class="field-input"/>
+                                    <input type="password" name="newPassword" minlength="8" required class="field-input"/>
+                                    <p style="font-size: 0.72rem; color: var(--gray-500); margin-top: 0.4rem; line-height: 1.4;">
+                                        Mínimo 8 caracteres, con al menos 1 mayúscula, 1 minúscula, 1 número y 1 símbolo.
+                                    </p>
                                 </div>
 
                                 <div class="field-group">
                                     <label class="field-label">Confirmar clave</label>
-                                    <input type="password" name="confirmPassword" minlength="6" required class="field-input"/>
+                                    <input type="password" name="confirmPassword" minlength="8" required class="field-input"/>
                                 </div>
 
                                 <button type="submit" class="btn-save">

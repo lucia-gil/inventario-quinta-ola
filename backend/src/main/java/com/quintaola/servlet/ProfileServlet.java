@@ -201,24 +201,38 @@ public class ProfileServlet extends HttpServlet {
     // ────────────────────────────────────────────────────────────────────────
     private void procesarPassword(HttpServletRequest request, HttpServletResponse response, int userId) throws Exception {
         String currentPassword = request.getParameter("currentPassword");
-        String newPassword = request.getParameter("newPassword");
+        String newPassword     = request.getParameter("newPassword");
         String confirmPassword = request.getParameter("confirmPassword");
 
+        // ─── 1. Validar política de contraseñas para la nueva ───
+        String passError = com.quintaola.util.PasswordValidator.getErrorMessage(newPassword);
+        if (passError != null) {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=" + passError.replace(" ", "+"));
+            return;
+        }
+
+        // ─── 2. Validar que las nuevas coincidan ───
         if (!newPassword.equals(confirmPassword)) {
             response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Las+contraseñas+nuevas+no+coinciden");
+            return;
+        }
+
+        // ─── 3. Validar que la nueva sea distinta a la actual ───
+        if (newPassword.equals(currentPassword)) {
+            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=La+nueva+contraseña+debe+ser+distinta+a+la+actual");
             return;
         }
 
         UserDAO userDao = new UserDAO();
         User user = userDao.getById(userId);
 
-        // Se debe usar BCrypt para comprobar la contraseña encriptada
+        // ─── 4. Verificar contraseña actual con BCrypt ───
         if (!org.mindrot.jbcrypt.BCrypt.checkpw(currentPassword, user.getPasswordHash())) {
             response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=La+contraseña+actual+es+incorrecta");
             return;
         }
 
-        // Guardar nueva contraseña (en tu UserDAO ya le pusimos que la encripte)
+        // ─── 5. Guardar nueva contraseña ───
         boolean ok = userDao.updatePassword(userId, newPassword);
 
         if (ok) {

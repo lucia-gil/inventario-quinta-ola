@@ -280,12 +280,28 @@ public class UserServlet extends HttpServlet {
                         return;
                     }
 
-                    if (name == null || name.trim().isEmpty()
-                            || email == null || email.trim().isEmpty()
-                            || dni == null || dni.length() != 8
-                            || password == null || password.length() < 6) {
+                    // ─── Validar política de contraseñas ───
+                    String passError = com.quintaola.util.PasswordValidator.getErrorMessage(password);
+                    if (passError != null) {
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=" + passError.replace(" ", "+"));
+                        return;
+                    }
 
-                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Datos+invalidos");
+                    // ─── Validar nombre (solo letras, espacios, guiones, apóstrofes) ───
+                    if (name == null || !name.trim().matches("[\\p{L}\\s'\\-]{2,100}")) {
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Nombre+invalido.+Solo+letras+y+espacios");
+                        return;
+                    }
+
+                    // ─── Validar DNI (8 dígitos) ───
+                    if (dni == null || !dni.matches("\\d{8}")) {
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=DNI+debe+tener+8+digitos");
+                        return;
+                    }
+
+                    // ─── Validar email ───
+                    if (email == null || !email.trim().toLowerCase().matches("^[\\w.+\\-]+@[\\w\\-]+(\\.[\\w\\-]+)+$")) {
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Email+invalido");
                         return;
                     }
 
