@@ -134,15 +134,19 @@ public class AuthServlet extends HttpServlet {
                         return;
                     }
 
-                    // ─── 2. Sanear nombres y apellidos (solo letras, espacios y acentos) ───
-                    if (nombres == null || !nombres.trim().matches("[\\p{L}\\s'\\-]{2,50}")) {
-                        request.setAttribute("error", "Los nombres solo pueden contener letras, espacios, guiones y apóstrofes (2-50 caracteres).");
+                    // ─── 2. Sanear nombres y apellidos (deben tener letras reales) ───
+                    if (nombres == null
+                            || !nombres.trim().matches("[\\p{L}\\s'\\-]{2,50}")
+                            || !nombres.matches(".*\\p{L}.*")) {
+                        request.setAttribute("error", "Los nombres deben contener al menos una letra. Solo se permiten letras, espacios, guiones y apóstrofes (2-50 caracteres).");
                         view = request.getRequestDispatcher("/signup.jsp");
                         view.forward(request, response);
                         return;
                     }
-                    if (apellidos == null || !apellidos.trim().matches("[\\p{L}\\s'\\-]{2,50}")) {
-                        request.setAttribute("error", "Los apellidos solo pueden contener letras, espacios, guiones y apóstrofes (2-50 caracteres).");
+                    if (apellidos == null
+                            || !apellidos.trim().matches("[\\p{L}\\s'\\-]{2,50}")
+                            || !apellidos.matches(".*\\p{L}.*")) {
+                        request.setAttribute("error", "Los apellidos deben contener al menos una letra. Solo se permiten letras, espacios, guiones y apóstrofes (2-50 caracteres).");
                         view = request.getRequestDispatcher("/signup.jsp");
                         view.forward(request, response);
                         return;

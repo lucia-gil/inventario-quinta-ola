@@ -96,20 +96,25 @@
 
     .input-wrap {
       position: relative;
+      display: block;
     }
-    .input-wrap > i {
-      position: absolute;
-      left: 0.95rem;
+    .input-wrap > i,
+    .input-wrap > svg {
+      position: absolute !important;
+      left: 0.9rem;
       top: 50%;
       transform: translateY(-50%);
       color: var(--gray-400);
-      width: 16px;
-      height: 16px;
+      width: 18px !important;
+      height: 18px !important;
       pointer-events: none;
-      z-index: 2;
+      z-index: 5;
       transition: color 0.2s;
     }
-    .input-wrap:focus-within > i { color: var(--purple); }
+    .input-wrap:focus-within > i,
+    .input-wrap:focus-within > svg {
+      color: var(--purple);
+    }
 
     .form-input, .form-select {
       width: 100%;
@@ -291,8 +296,8 @@
                        required
                        minlength="2"
                        maxlength="100"
-                       pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'\-]{2,100}"
-                       title="Solo letras, espacios, guiones y apóstrofes"
+                       pattern="(?=.*[A-Za-zÁÉÍÓÚáéíóúÑñÜü])[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'\-]{2,100}"
+                       title="Debe contener al menos una letra. Solo letras, espacios, guiones y apóstrofes."
                        oninput="validarNombre()"/>
               </div>
               <div id="err-name" class="field-error">
@@ -415,11 +420,24 @@
   function validarNombre() {
     const name = document.getElementById('f-name').value;
     const err  = document.getElementById('err-name');
-    const re   = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'\-]*$/;
+    const reCaracteres = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'\-]*$/;
+    const reTieneLetra = /[A-Za-zÁÉÍÓÚáéíóúÑñÜü]/;
 
-    if (name.length > 0 && !re.test(name)) {
-      err.classList.add('visible');
-      return false;
+    if (name.length > 0) {
+      // Caracteres permitidos
+      if (!reCaracteres.test(name)) {
+        err.querySelector('span').textContent =
+                'Solo se permiten letras, espacios, guiones y apóstrofes.';
+        err.classList.add('visible');
+        return false;
+      }
+      // Debe tener al menos una letra
+      if (!reTieneLetra.test(name)) {
+        err.querySelector('span').textContent =
+                'El nombre debe contener al menos una letra.';
+        err.classList.add('visible');
+        return false;
+      }
     }
     err.classList.remove('visible');
     return true;
@@ -431,10 +449,11 @@
     const pass = document.getElementById('f-pass').value;
     const role = document.getElementById('f-role').value;
 
-    // Validar nombre
+    // Validar nombre: caracteres permitidos + al menos 1 letra real
     const reNombre = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'\-]{2,100}$/;
-    if (!reNombre.test(name)) {
-      alert('El nombre solo puede contener letras, espacios, guiones y apóstrofes (2-100 caracteres).');
+    const reTieneLetra = /[A-Za-zÁÉÍÓÚáéíóúÑñÜü]/;
+    if (!reNombre.test(name) || !reTieneLetra.test(name)) {
+      alert('El nombre solo puede contener letras (al menos una), espacios, guiones y apóstrofes (2-100 caracteres).');
       document.getElementById('f-name').focus();
       return false;
     }

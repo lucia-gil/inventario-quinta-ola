@@ -287,9 +287,11 @@ public class UserServlet extends HttpServlet {
                         return;
                     }
 
-                    // ─── Validar nombre (solo letras, espacios, guiones, apóstrofes) ───
-                    if (name == null || !name.trim().matches("[\\p{L}\\s'\\-]{2,100}")) {
-                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Nombre+invalido.+Solo+letras+y+espacios");
+                    // ─── Validar nombre (debe tener letras reales, no solo símbolos permitidos) ───
+                    if (name == null
+                            || !name.trim().matches("[\\p{L}\\s'\\-]{2,100}")
+                            || !name.matches(".*\\p{L}.*")) {
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Nombre+invalido.+Debe+contener+al+menos+una+letra");
                         return;
                     }
 
