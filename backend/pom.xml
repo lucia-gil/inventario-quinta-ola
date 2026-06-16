@@ -54,6 +54,25 @@
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
+
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- Jakarta Mail: envío de correos vía SMTP                -->
+        <!-- ════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>2.0.3</version>
+        </dependency>
+
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- Apache POI: generación de archivos .xlsx (Excel)       -->
+        <!-- ════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
+        </dependency>
+
     </dependencies>
 
     <build>
