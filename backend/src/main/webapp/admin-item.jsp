@@ -401,8 +401,8 @@
                             </label>
                             <div class="input-wrap">
                                 <i data-lucide="image"></i>
-                                <input type="url" name="imagen" class="form-input"
-                                       placeholder="https://ejemplo.com/imagen.jpg"
+                                <input type="text" name="imagen" class="form-input"
+                                       placeholder="https://ejemplo.com/imagen.jpg o /uploads/foto.jpg"
                                        value="<%= isEditMode && item.getImageUrl() != null ? item.getImageUrl() : "" %>"/>
                             </div>
                             <p class="form-help">Opcional. Si no agregas una, se usará una imagen genérica.</p>

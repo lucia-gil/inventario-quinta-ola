@@ -125,8 +125,27 @@ public class AdminItemServlet extends HttpServlet {
             int minQuantity = request.getParameter("minimo") != null && !request.getParameter("minimo").isEmpty()
                     ? Integer.parseInt(request.getParameter("minimo")) : 0;
 
-            if (imageUrl == null || imageUrl.trim().isEmpty()) {
-                imageUrl = "/img/placeholder.png";
+            // ─── Lógica de imagen: NO sobreescribir con placeholder al editar ───
+            if (imageUrl != null) {
+                imageUrl = imageUrl.trim();
+            }
+
+            if ("actualizar".equals(action)) {
+                // Si el usuario dejó el campo vacío al editar, conservamos la URL anterior
+                if (imageUrl == null || imageUrl.isEmpty()) {
+                    int idTmp = Integer.parseInt(request.getParameter("id"));
+                    Item itemTmp = itemDao.getById(idTmp);
+                    if (itemTmp != null && itemTmp.getImageUrl() != null && !itemTmp.getImageUrl().trim().isEmpty()) {
+                        imageUrl = itemTmp.getImageUrl();
+                    } else {
+                        imageUrl = "/img/placeholder.png";
+                    }
+                }
+            } else {
+                // Al crear, si no hay URL usamos el placeholder
+                if (imageUrl == null || imageUrl.isEmpty()) {
+                    imageUrl = "/img/placeholder.png";
+                }
             }
 
             // Si el usuario escribió un tag nuevo, ese gana

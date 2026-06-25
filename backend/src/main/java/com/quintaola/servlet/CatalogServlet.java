@@ -26,11 +26,45 @@ public class CatalogServlet extends HttpServlet {
         ItemDAO itemDao = new ItemDAO();
 
         try {
-            // Obtenemos los materiales desde el DAO
-            List<Item> listaItems = itemDao.getAll();
-            request.setAttribute("items", listaItems);
+            // 1. Obtenemos todos los materiales desde el DAO
+            List<Item> listaCompleta = itemDao.getAll();
 
-            // Redirección interna hacia la vista pública
+            // ════════════ LÓGICA DE PAGINACIÓN ════════════
+            int pageSize = 12; // Cantidad de productos a mostrar por página
+            int paginaActual = 1; // Página por defecto
+
+            // Capturamos el parámetro "page" de la URL (ej. CatalogServlet?page=2)
+            String pageParam = request.getParameter("page");
+            if (pageParam != null && !pageParam.isEmpty()) {
+                try {
+                    paginaActual = Integer.parseInt(pageParam);
+                } catch (NumberFormatException e) {
+                    paginaActual = 1; // Si el usuario pone letras en la URL, lo devolvemos a la 1
+                }
+            }
+
+            int totalItems = listaCompleta.size();
+            // Calculamos el total de páginas necesarias
+            int totalPaginas = (int) Math.ceil((double) totalItems / pageSize);
+
+            // Validaciones de seguridad para la página
+            if (paginaActual < 1) paginaActual = 1;
+            if (paginaActual > totalPaginas && totalPaginas > 0) paginaActual = totalPaginas;
+
+            // Calculamos desde dónde y hasta dónde cortar la lista
+            int startIndex = (paginaActual - 1) * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, totalItems);
+
+            // Cortamos la lista usando subList
+            List<Item> itemsPaginados = listaCompleta.subList(startIndex, endIndex);
+            // ══════════════════════════════════════════════
+
+            // 2. Enviamos la sub-lista y las variables de paginación al JSP
+            request.setAttribute("items", itemsPaginados);
+            request.setAttribute("paginaActual", paginaActual);
+            request.setAttribute("totalPaginas", totalPaginas);
+
+            // 3. Redirección interna hacia la vista pública
             RequestDispatcher view = request.getRequestDispatcher("catalog.jsp");
             view.forward(request, response);
 
