@@ -148,7 +148,8 @@
         .input-wrap {
             position: relative;
         }
-        .input-wrap > i {
+        .input-wrap > i,
+        .input-wrap > svg { /* <-- Se agregó el selector para el SVG de Lucide */
             position: absolute;
             left: 0.95rem;
             top: 50%;
@@ -162,7 +163,10 @@
         .input-wrap .form-input {
             padding-left: 2.65rem;
         }
-        .input-wrap:focus-within > i { color: var(--purple); }
+        .input-wrap:focus-within > i,
+        .input-wrap:focus-within > svg { /* <-- Se agregó el selector para el SVG de Lucide */
+            color: var(--purple);
+        }
 
         /* Tag chips selector */
         .tag-chips {
