@@ -25,13 +25,16 @@ import java.io.IOException;
  *     pero NO puede ver admin-users.jsp ni GET /UserServlet directos.
  *
  * Política de Administrador:
- *   Operativo: gestiona usuarios, items, analytics, aprueba solicitudes.
+ *   Operativo: gestiona usuarios, items, analytics, aprueba solicitudes,
+ *   descarga reportes.
  *
  * Política de Manager:
  *   Solicita y aprueba solicitudes (no las suyas).
+ *   Ve analytics y descarga reportes (es la coordinadora del cliente).
  *
  * Política de Member:
  *   Despacha y gestiona items. NO solicita.
+ *   Descarga solo el reporte de inventario actual.
  *
  * Política de Viewer:
  *   Solo solicita y ve su historial.
@@ -210,21 +213,48 @@ public class SessionFilter implements Filter {
         }
 
         // ════════════════════════════════════════════
-        // ANALÍTICAS: solo Admin. SuperAdmin NO.
+        // REPORTES (CSV/XLSX):
+        //   - Inventario: Member, Manager, Admin
+        //   - Salidas y Consumo: solo Manager y Admin
+        //   El propio ReportServlet hace validación fina por action.
+        //   SuperAdmin y Viewer NO acceden a ningún reporte.
         // ════════════════════════════════════════════
-        if (path.startsWith("/AnalyticsServlet")) {
-            return R_ADMIN.equals(roleName);
+        if (path.startsWith("/ReportServlet")) {
+            if (R_SUPERADMIN.equals(roleName)) return false;
+            if (R_VIEWER.equals(roleName))     return false;
+            return true; // Member, Manager, Admin (servlet valida por action)
         }
 
         // ════════════════════════════════════════════
+        // ANALÍTICAS: Manager y Admin.
+        // El Manager es la coordinadora del cliente que necesita
+        // los reportes mensuales que reemplazan el Excel manual.
+        // SuperAdmin NO entra (audita, no consume analíticas).
+        // ════════════════════════════════════════════
+        if (path.startsWith("/AnalyticsServlet")) {
+            return R_MANAGER.equals(roleName) || R_ADMIN.equals(roleName);
+        }
+// ════════════════════════════════════════════
         // TRANSACCIONES (solicitudes):
-        //   Viewer, Manager, Admin. NO Member, NO SuperAdmin.
+        //   - Viewer, Manager, Admin: acceso completo.
+        //   - SuperAdmin: NO accede.
+        //   - Member: SOLO puede ver detalle (action=detalle).
+        //     No crea, no aprueba, no rechaza.
         // ════════════════════════════════════════════
         if (path.startsWith("/TransactionServlet")
                 || path.startsWith("/RequestDetailServlet")) {
-            if (R_MEMBER.equals(roleName))     return false;
+
             if (R_SUPERADMIN.equals(roleName)) return false;
-            return true;
+
+            if (R_MEMBER.equals(roleName)) {
+                // Member solo puede consultar detalle vía GET
+                if ("GET".equalsIgnoreCase(method) && "detalle".equals(actionParam)) {
+                    return true;
+                }
+                return false;
+            }
+
+            return true; // Viewer, Manager, Admin
         }
 
         // ════════════════════════════════════════════

@@ -25,11 +25,12 @@ public class AnalyticsServlet extends HttpServlet {
             return;
         }
 
-        // 2. CONTROL DE ACCESO: Solo Manager (3), Admin (4) y SuperAdmin (5)
+        // 2. CONTROL DE ACCESO: Solo Manager (3) y Admin (4).
+        //    SuperAdmin (5) NO consume analíticas (es controlador, no operador).
+        //    Viewer (1) y Member (2) tampoco entran aquí.
         Integer roleId = (Integer) session.getAttribute("roleId");
-        if (roleId == null || roleId < 3) {
-            // Si un Solicitante (1) o Depósito (2) intenta entrar, lo pateamos al dashboard
-            response.sendRedirect(request.getContextPath() + "/DashboardServlet");
+        if (roleId == null || (roleId != 3 && roleId != 4)) {
+            response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
         }
 

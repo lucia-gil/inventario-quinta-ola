@@ -243,4 +243,34 @@ public class UserDAO {
             return ps.executeUpdate() > 0;
         }
     }
+
+    /**
+     * ─── getApprovers: lista aprobadores activos ───
+     *
+     * Devuelve todos los usuarios activos con rol Manager (3) o Administrador (4).
+     * Se usa para notificarles por email cuando se crea una nueva solicitud.
+     *
+     * NOTA: No incluye SuperAdmin (5) porque por política, el SA solo audita,
+     * no aprueba transacciones.
+     */
+    public List<User> getApprovers() throws SQLException {
+        List<User> approvers = new ArrayList<>();
+        String sql = """
+            SELECT u.*, r.name AS role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.role_id IN (3, 4)
+              AND u.activo = 1
+            ORDER BY u.name ASC
+            """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                approvers.add(mapRow(rs));
+            }
+        }
+        return approvers;
+    }
+
 }

@@ -40,9 +40,9 @@ import java.io.IOException;
 @WebServlet(name = "ProfileServlet", value = "/ProfileServlet")
 // ¡MUY IMPORTANTE PARA SUBIR IMÁGENES (Sprint Actual)!
 @MultipartConfig(
-        fileSizeThreshold = 1024 * 1024 * 1, // 1 MB
-        maxFileSize = 1024 * 1024 * 2,       // 2 MB máximo por foto
-        maxRequestSize = 1024 * 1024 * 5     // 5 MB máximo por petición
+        fileSizeThreshold = 1024 * 1024,      // 1 MB en memoria, después a disco
+        maxFileSize       = 1024 * 1024 * 5,  // 5 MB máximo por foto
+        maxRequestSize    = 1024 * 1024 * 10  // 10 MB máximo por petición
 )
 public class ProfileServlet extends HttpServlet {
 
@@ -146,16 +146,50 @@ public class ProfileServlet extends HttpServlet {
     // ────────────────────────────────────────────────────────────────────────
     // MÉTODO PARA SUBIR Y GUARDAR LA IMAGEN
     // ────────────────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────────────────
+    // MÉTODO PARA SUBIR Y GUARDAR LA IMAGEN
+    // ────────────────────────────────────────────────────────────────────────
     private void procesarAvatar(HttpServletRequest request, HttpServletResponse response, int userId) throws Exception {
-        Part filePart = request.getPart("avatarFile");
 
-        // 1. Validar que enviaron un archivo
-        if (filePart == null || filePart.getSize() == 0) {
-            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=No+seleccionaste+ninguna+imagen");
+        // Constante del límite (debe coincidir con maxFileSize del @MultipartConfig)
+        final long MAX_BYTES = 5L * 1024 * 1024; // 5 MB
+        final String MAX_MB_TEXT = "5 MB";
+
+        Part filePart;
+
+        // 1. Intentar leer el archivo. Si excede el límite del @MultipartConfig,
+        //    Tomcat lanza IllegalStateException — la capturamos para dar mensaje claro.
+        try {
+            filePart = request.getPart("avatarFile");
+        } catch (IllegalStateException ex) {
+            // Disparado por: archivo más grande que maxFileSize
+            response.sendRedirect(request.getContextPath()
+                    + "/ProfileServlet?error=La+imagen+excede+el+tamaño+máximo+permitido+(" + MAX_MB_TEXT + ").+Por+favor+elige+una+imagen+más+pequeña.");
+            return;
+        } catch (Exception ex) {
+            // Cualquier otro problema con el upload
+            response.sendRedirect(request.getContextPath()
+                    + "/ProfileServlet?error=No+se+pudo+procesar+la+imagen.+Inténtalo+de+nuevo.");
             return;
         }
 
-        // 2. Validar extensión (seguridad básica)
+        // 2. Validar que enviaron un archivo
+        if (filePart == null || filePart.getSize() == 0) {
+            response.sendRedirect(request.getContextPath()
+                    + "/ProfileServlet?error=No+seleccionaste+ninguna+imagen");
+            return;
+        }
+
+        // 3. Validar tamaño (doble barrera por si acaso)
+        if (filePart.getSize() > MAX_BYTES) {
+            double sizeMb = filePart.getSize() / (1024.0 * 1024.0);
+            String sizeFmt = String.format("%.1f", sizeMb).replace(",", ".");
+            response.sendRedirect(request.getContextPath()
+                    + "/ProfileServlet?error=Tu+imagen+pesa+" + sizeFmt + "+MB+y+el+máximo+permitido+es+" + MAX_MB_TEXT + ".+Usa+una+imagen+más+pequeña.");
+            return;
+        }
+
+        // 4. Validar extensión (seguridad básica)
         String fileName = filePart.getSubmittedFileName();
         String ext = "";
         if (fileName != null && fileName.contains(".")) {
@@ -163,33 +197,35 @@ public class ProfileServlet extends HttpServlet {
         }
 
         if (!ext.equals(".jpg") && !ext.equals(".jpeg") && !ext.equals(".png") && !ext.equals(".webp")) {
-            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Formato+inválido.+Usa+JPG,+PNG+o+WEBP");
+            response.sendRedirect(request.getContextPath()
+                    + "/ProfileServlet?error=Formato+no+permitido.+Solo+JPG,+PNG+o+WEBP.");
             return;
         }
 
-        // 3. Crear carpeta si no existe en el servidor (uploads/avatars)
+        // 5. Crear carpeta si no existe (uploads/avatars)
         String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "avatars";
         File uploadDir = new File(uploadPath);
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
 
-        // 4. Generar nombre único para la foto
+        // 6. Generar nombre único y guardar
         String newFileName = "avatar_" + userId + "_" + System.currentTimeMillis() + ext;
         String filePath = uploadPath + File.separator + newFileName;
         filePart.write(filePath);
 
-        // 5. Guardar la ruta relativa en la BD usando UserDAO
+        // 7. Guardar la ruta relativa en la BD usando UserDAO
         String avatarUrlDb = "/uploads/avatars/" + newFileName;
         UserDAO userDao = new UserDAO();
         boolean ok = userDao.updateAvatar(userId, avatarUrlDb);
 
         if (ok) {
-            // Actualizar la sesión para que cambie en todo el sistema (navbar)
             request.getSession().setAttribute("avatarUrl", avatarUrlDb);
-            response.sendRedirect(request.getContextPath() + "/ProfileServlet?success=Foto+de+perfil+actualizada");
+            response.sendRedirect(request.getContextPath()
+                    + "/ProfileServlet?success=Foto+de+perfil+actualizada+correctamente");
         } else {
-            response.sendRedirect(request.getContextPath() + "/ProfileServlet?error=Error+al+guardar+en+la+base+de+datos");
+            response.sendRedirect(request.getContextPath()
+                    + "/ProfileServlet?error=No+se+pudo+guardar+la+imagen+en+la+base+de+datos");
         }
     }
 

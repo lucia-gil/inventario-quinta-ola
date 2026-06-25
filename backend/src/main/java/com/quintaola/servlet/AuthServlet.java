@@ -36,12 +36,28 @@ public class AuthServlet extends HttpServlet {
 
         switch (action) {
             case "formLogin":
-                view = request.getRequestDispatcher("/login.jsp");
-                view.forward(request, response);
-                break;
-
             case "formSignup":
-                view = request.getRequestDispatcher("signup.jsp");
+                // ─── Si YA hay sesión activa, no mostrar el form de auth ───
+                //     Redirigimos al destino que corresponde según el rol:
+                //     SuperAdmin → /RoleServlet, todos los demás → /HomeServlet.
+                //     Esto evita que un usuario logueado vuelva a ver el login
+                //     pegando la URL en el navegador (mejora de UX reportada por testers).
+                HttpSession activeSession = request.getSession(false);
+                if (activeSession != null && activeSession.getAttribute("userId") != null) {
+                    String roleName = (String) activeSession.getAttribute("roleName");
+                    String redirectTo = "SuperAdmin".equals(roleName)
+                            ? "/RoleServlet"
+                            : "/HomeServlet";
+                    response.sendRedirect(request.getContextPath() + redirectTo);
+                    return;
+                }
+
+                // Si no hay sesión, mostramos el form correspondiente
+                if ("formLogin".equals(action)) {
+                    view = request.getRequestDispatcher("/login.jsp");
+                } else {
+                    view = request.getRequestDispatcher("/signup.jsp");
+                }
                 view.forward(request, response);
                 break;
 
@@ -182,11 +198,24 @@ public class AuthServlet extends HttpServlet {
                     if (ok) {
                         userDao.createAdminNotification("user_approval", "Nuevo registro pendiente",
                                 "El usuario " + newUser.getName() + " espera aprobación.");
+
+                        // ─── Email de bienvenida al nuevo usuario ───
+                        try {
+                            com.quintaola.util.EmailService.enviarBienvenida(
+                                    newUser.getEmail(),
+                                    newUser.getName()
+                            );
+                        } catch (Exception emailEx) {
+                            // No bloqueamos el registro si falla el email
+                            System.err.println("[AuthServlet] No se pudo enviar email de bienvenida: " + emailEx.getMessage());
+                        }
+
                         request.setAttribute("success",
                                 "¡Registro exitoso! Tu cuenta ha sido creada y está pendiente de aprobación por un Administrador.");
                         view = request.getRequestDispatcher("/signup.jsp");
                         view.forward(request, response);
                     } else {
+
                         request.setAttribute("error", "No se pudo crear la cuenta. ¿Quizás el correo o DNI ya existen?");
                         view = request.getRequestDispatcher("/signup.jsp");
                         view.forward(request, response);

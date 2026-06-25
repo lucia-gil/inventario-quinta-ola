@@ -185,7 +185,7 @@ public class TransactionServlet extends HttpServlet {
         Integer roleIdGuard = (Integer) session.getAttribute("roleId");
         int roleGuard = roleIdGuard != null ? roleIdGuard : 0;
 
-        // 🚫 SuperAdmin no opera transacciones
+        // SuperAdmin no opera transacciones
         if (roleGuard == 5) {
             response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
@@ -220,7 +220,36 @@ public class TransactionServlet extends HttpServlet {
                         t.setEstimatedDelivery(null);
                     }
                     t.setNotes(notasFinales);
-                    txDao.create(t);
+                    boolean creado = txDao.create(t);
+                    int nuevaId = creado ? t.getId() : 0;
+
+                    // ─── Notificar a TODOS los aprobadores activos ───
+                    try {
+                        com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
+                        com.quintaola.model.User solicitante = userDao.getById(userId);
+                        String nombreSolicitante = solicitante != null ? solicitante.getName() : "Usuario desconocido";
+                        int requestIdParaEmail = nuevaId > 0 ? nuevaId : 0;
+
+                        for (com.quintaola.model.User aprobador : userDao.getApprovers()) {
+                            // No se notifica a sí mismo si el solicitante también es aprobador
+                            if (aprobador.getId() == userId) continue;
+                            if (aprobador.getEmail() == null || aprobador.getEmail().isEmpty()) continue;
+
+                            try {
+                                com.quintaola.util.EmailService.enviarNuevaSolicitud(
+                                        aprobador.getEmail(),
+                                        aprobador.getName(),
+                                        nombreSolicitante,
+                                        requestIdParaEmail
+                                );
+                            } catch (Exception emailEx) {
+                                System.err.println("[TransactionServlet] Email a aprobador falló: " + emailEx.getMessage());
+                            }
+                        }
+                    } catch (Exception notifyEx) {
+                        System.err.println("[TransactionServlet] No se pudo notificar a aprobadores: " + notifyEx.getMessage());
+                    }
+
                     response.sendRedirect(request.getContextPath() + "/HistoryServlet?action=lista");
 
                 } catch (java.sql.SQLException sqlEx) {
@@ -245,7 +274,7 @@ public class TransactionServlet extends HttpServlet {
                     String notas = request.getParameter("notas") != null
                             ? request.getParameter("notas") : "";
 
-                    // 🛡️ Solo Manager (3) y Administrador (4) pueden aprobar
+                    // Solo Manager (3) y Administrador (4) pueden aprobar
                     if (roleGuard != 3 && roleGuard != 4) {
                         response.sendRedirect(request.getContextPath()
                                 + "/TransactionServlet?action=lista&error=No+tienes+permiso+para+aprobar");
@@ -261,6 +290,22 @@ public class TransactionServlet extends HttpServlet {
                     }
 
                     txDao.approve(id, userId, notas);
+
+                    // ─── Notificar al solicitante por email ───
+                    try {
+                        com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
+                        com.quintaola.model.User solicitante = userDao.getById(txExistente.getRequesterId());
+                        if (solicitante != null && solicitante.getEmail() != null) {
+                            com.quintaola.util.EmailService.enviarSolicitudAprobada(
+                                    solicitante.getEmail(),
+                                    solicitante.getName(),
+                                    id
+                            );
+                        }
+                    } catch (Exception emailEx) {
+                        System.err.println("[TransactionServlet] No se pudo enviar email de aprobación: " + emailEx.getMessage());
+                    }
+
                     response.sendRedirect(request.getContextPath()
                             + "/TransactionServlet?action=lista&success=Solicitud+aprobada+y+stock+descontado");
 
@@ -302,8 +347,26 @@ public class TransactionServlet extends HttpServlet {
                     }
 
                     txDao.reject(id, userId, notas);
+
+                    // ─── Notificar al solicitante con el motivo ───
+                    try {
+                        com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
+                        com.quintaola.model.User solicitante = userDao.getById(txExistente.getRequesterId());
+                        if (solicitante != null && solicitante.getEmail() != null) {
+                            com.quintaola.util.EmailService.enviarSolicitudRechazada(
+                                    solicitante.getEmail(),
+                                    solicitante.getName(),
+                                    id,
+                                    notas
+                            );
+                        }
+                    } catch (Exception emailEx) {
+                        System.err.println("[TransactionServlet] No se pudo enviar email de rechazo: " + emailEx.getMessage());
+                    }
+
                     response.sendRedirect(request.getContextPath()
                             + "/TransactionServlet?action=lista&success=Solicitud+rechazada+correctamente");
+
                 } catch (Exception e) {
                     e.printStackTrace();
                     response.sendRedirect(request.getContextPath()

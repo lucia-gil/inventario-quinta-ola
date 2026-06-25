@@ -567,8 +567,14 @@
                                 <input type="hidden" name="action" value="uploadAvatar"/>
                                 <input type="file" id="avatar-upload" name="avatarFile"
                                        accept="image/png, image/jpeg, image/webp"
-                                       onchange="document.getElementById('avatar-form').submit();"/>
+                                       onchange="validarYSubirAvatar(this);"/>
                             </form>
+
+                            <%-- Texto pequeño con el límite, debajo del avatar --%>
+                            <p style="font-size: 0.7rem; color: var(--gray-500); margin-top: 0.4rem; line-height: 1.4;">
+                                <i data-lucide="info" style="width: 11px; height: 11px; display: inline-block; vertical-align: middle;"></i>
+                                JPG, PNG o WEBP &middot; Máximo 5 MB
+                            </p>
 
                             <h2 class="profile-name"><%= usuario.getName() %></h2>
                             <p class="profile-email"><%= usuario.getEmail() %></p>
@@ -771,6 +777,170 @@
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
+
+    /**
+     * Valida la foto seleccionada ANTES de enviarla al servidor.
+     * Si pasa las validaciones, dispara el submit del form oculto.
+     */
+    function validarYSubirAvatar(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+        const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+
+        // 1. Validar tipo (segunda barrera, además de "accept")
+        if (TIPOS_PERMITIDOS.indexOf(file.type) === -1) {
+            mostrarAlertaAvatar(
+                'Formato no permitido',
+                'Solo se aceptan imágenes en formato JPG, PNG o WEBP.',
+                'error'
+            );
+            input.value = '';
+            return;
+        }
+
+        // 2. Validar tamaño
+        if (file.size > MAX_BYTES) {
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+            mostrarAlertaAvatar(
+                'Imagen demasiado grande',
+                'Tu imagen pesa ' + sizeMb + ' MB. El máximo permitido es 5 MB. ' +
+                'Por favor comprime la imagen o elige una más pequeña.',
+                'error'
+            );
+            input.value = '';
+            return;
+        }
+
+        // 3. Todo OK — enviar form
+        document.getElementById('avatar-form').submit();
+    }
+
+    /**
+     * Muestra una alerta visual bonita arriba del perfil.
+     * Tipo: 'error' (rojo) o 'success' (verde).
+     *
+     * Usa createElement (no innerHTML/template literals) para evitar
+     * conflicto con la sintaxis EL de JSP
+     */
+    function mostrarAlertaAvatar(titulo, mensaje, tipo) {
+        // Eliminar alerta previa si existe
+        const previa = document.getElementById('avatar-alert-dynamic');
+        if (previa) previa.remove();
+
+        const esError = (tipo === 'error');
+
+        // Wrapper
+        const wrapper = document.createElement('div');
+        wrapper.id = 'avatar-alert-dynamic';
+        wrapper.style.display       = 'flex';
+        wrapper.style.alignItems    = 'flex-start';
+        wrapper.style.gap           = '0.7rem';
+        wrapper.style.padding       = '1rem 1.2rem';
+        wrapper.style.marginBottom  = '1.25rem';
+        wrapper.style.borderRadius  = '8px';
+        wrapper.style.fontSize      = '0.92rem';
+        wrapper.style.fontWeight    = '600';
+        wrapper.style.fontFamily    = "'Montserrat', sans-serif";
+        wrapper.style.animation     = 'slideDown 0.3s ease';
+        wrapper.style.boxShadow     = '0 4px 12px rgba(0,0,0,0.05)';
+
+        if (esError) {
+            wrapper.style.background = '#FEE2E2';
+            wrapper.style.color      = '#B91C1C';
+            wrapper.style.border     = '1px solid #FECACA';
+        } else {
+            wrapper.style.background = '#DCFCE7';
+            wrapper.style.color      = '#15803D';
+            wrapper.style.border     = '1px solid #BBF7D0';
+        }
+
+        // Ícono Lucide (usamos document.createElement para crear el <i>)
+        const iconWrap = document.createElement('div');
+        iconWrap.style.flexShrink = '0';
+        iconWrap.style.marginTop  = '2px';
+
+        const iconI = document.createElement('i');
+        iconI.setAttribute('data-lucide', esError ? 'alert-triangle' : 'check-circle');
+        iconI.style.width  = '22px';
+        iconI.style.height = '22px';
+        iconWrap.appendChild(iconI);
+
+        // Contenido del texto
+        const contentDiv = document.createElement('div');
+        contentDiv.style.flex = '1';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.style.fontWeight    = '800';
+        titleDiv.style.marginBottom  = '0.25rem';
+        titleDiv.style.fontSize      = '0.95rem';
+        titleDiv.textContent         = titulo;
+
+        const msgDiv = document.createElement('div');
+        msgDiv.style.fontWeight  = '500';
+        msgDiv.style.lineHeight  = '1.55';
+        msgDiv.textContent       = mensaje;
+
+        contentDiv.appendChild(titleDiv);
+        contentDiv.appendChild(msgDiv);
+
+        // Botón cerrar (con ícono Lucide x)
+        const closeBtn = document.createElement('button');
+        closeBtn.type            = 'button';
+        closeBtn.style.background = 'none';
+        closeBtn.style.border    = 'none';
+        closeBtn.style.cursor    = 'pointer';
+        closeBtn.style.color     = wrapper.style.color;
+        closeBtn.style.padding   = '0';
+        closeBtn.style.opacity   = '0.6';
+        closeBtn.style.display   = 'flex';
+        closeBtn.style.alignItems= 'center';
+
+        const closeI = document.createElement('i');
+        closeI.setAttribute('data-lucide', 'x');
+        closeI.style.width  = '18px';
+        closeI.style.height = '18px';
+        closeBtn.appendChild(closeI);
+
+        closeBtn.onclick = function () { wrapper.remove(); };
+
+        wrapper.appendChild(iconWrap);
+        wrapper.appendChild(contentDiv);
+        wrapper.appendChild(closeBtn);
+
+        // Insertar arriba del page-header
+        const pageHeader = document.querySelector('.page-header');
+        if (pageHeader && pageHeader.parentNode) {
+            pageHeader.parentNode.insertBefore(wrapper, pageHeader.nextSibling);
+
+            // Re-renderizar íconos Lucide (importante: después de insertar)
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Scroll arriba para que se vea
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Auto-ocultar después de 6 segundos
+            setTimeout(function () {
+                const el = document.getElementById('avatar-alert-dynamic');
+                if (el) {
+                    el.style.transition = 'opacity 0.4s, transform 0.4s';
+                    el.style.opacity    = '0';
+                    el.style.transform  = 'translateY(-10px)';
+                    setTimeout(function () { el.remove(); }, 400);
+                }
+            }, 6000);
+        }
+    }
+
 </script>
+
+<style>
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
 </body>
 </html>

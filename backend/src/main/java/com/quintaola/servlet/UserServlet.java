@@ -120,11 +120,14 @@ public class UserServlet extends HttpServlet {
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
 
+                    // Obtener datos del usuario ANTES de aprobarlo (los necesitamos para el email)
+                    User aprobado = userDao.getById(userId);
+
                     boolean ok = userDao.approve(userId);
 
                     if (ok) {
+                        // Auditoría
                         try {
-                            User aprobado = userDao.getById(userId);
                             String detalles = String.format(
                                     "El %s aprobó la cuenta del usuario '%s' (id=%d, email=%s)",
                                     actorRole,
@@ -134,6 +137,18 @@ public class UserServlet extends HttpServlet {
                             );
                             auditDao.log(actorId, "APROBAR_USUARIO", "USER", userId, detalles);
                         } catch (Exception ignored) {}
+
+                        // ─── Email de aprobación al usuario ───
+                        if (aprobado != null && aprobado.getEmail() != null) {
+                            try {
+                                com.quintaola.util.EmailService.enviarAprobacion(
+                                        aprobado.getEmail(),
+                                        aprobado.getName()
+                                );
+                            } catch (Exception emailEx) {
+                                System.err.println("[UserServlet] No se pudo enviar email de aprobación: " + emailEx.getMessage());
+                            }
+                        }
 
                         response.sendRedirect(ctx + redirectBase + "?success=Usuario+aprobado.+Ya+puede+iniciar+sesion");
                     } else {
@@ -154,6 +169,7 @@ public class UserServlet extends HttpServlet {
                     boolean ok = userDao.disable(userId);
 
                     if (ok && aRechazar != null) {
+                        // Auditoría
                         try {
                             String detalles = String.format(
                                     "El %s rechazó la cuenta del usuario '%s' (id=%d, email=%s)",
@@ -164,6 +180,18 @@ public class UserServlet extends HttpServlet {
                             );
                             auditDao.log(actorId, "RECHAZAR_USUARIO", "USER", userId, detalles);
                         } catch (Exception ignored) {}
+
+                        // ─── Email de rechazo al usuario ───
+                        if (aRechazar.getEmail() != null) {
+                            try {
+                                com.quintaola.util.EmailService.enviarRechazo(
+                                        aRechazar.getEmail(),
+                                        aRechazar.getName()
+                                );
+                            } catch (Exception emailEx) {
+                                System.err.println("[UserServlet] No se pudo enviar email de rechazo: " + emailEx.getMessage());
+                            }
+                        }
 
                         response.sendRedirect(ctx + redirectBase + "?success=Solicitud+de+registro+rechazada");
                     } else {
