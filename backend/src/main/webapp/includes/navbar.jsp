@@ -119,11 +119,6 @@
             <span>Miembros</span>
         </a>
 
-        <a href="<%= ctx %>/HistoryServlet"
-           class="<%= isActive_history ? "sidebar-link-active" : "sidebar-link" %>">
-            <i data-lucide="file-text" class="sidebar-icon"></i>
-            <span>Historial Global</span>
-        </a>
         <% } %>
 
         <% } %>

@@ -85,16 +85,19 @@
             position: relative;
             flex-grow: 1;
             min-width: 250px;
+            display: flex;
+            align-items: center;
         }
 
+        .filter-search svg,
         .filter-search i {
             position: absolute;
-            left: 0.95rem;
+            left: 1rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--gray-400);
-            width: 16px;
-            height: 16px;
+            width: 18px !important;
+            height: 18px !important;
             pointer-events: none;
             z-index: 2;
         }
@@ -103,32 +106,53 @@
             width: 100%;
             border: 1.5px solid var(--gray-200);
             border-radius: var(--radius-full);
-            padding: 0.6rem 1rem 0.6rem 2.65rem;
+            padding: 0.65rem 1rem 0.65rem 2.85rem;
             font-size: 0.875rem;
             outline: none;
             transition: all var(--transition);
             background: var(--gray-50);
             font-family: inherit;
+            color: var(--gray-800);
+            height: 42px;
+            box-sizing: border-box;
+        }
+
+        .filter-search input::placeholder {
+            color: var(--gray-400);
+            font-weight: 500;
         }
 
         .filter-search input:focus {
             border-color: var(--purple);
             background: var(--white);
-            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+            box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08);
         }
 
         .filter-select {
             border: 1.5px solid var(--gray-200);
-            border-radius: var(--radius-sm);
-            padding: 0.6rem 0.9rem;
-            font-size: 0.85rem;
+            border-radius: var(--radius-full);
+            padding: 0.65rem 1.25rem;
+            font-size: 0.875rem;
             background: var(--gray-50);
             color: var(--gray-700);
             font-family: inherit;
             cursor: pointer;
             outline: none;
             transition: all var(--transition);
-            min-width: 170px;
+            min-width: 180px;
+            height: 42px;
+            box-sizing: border-box;
+        }
+
+        .filter-select:hover {
+            border-color: var(--purple);
+            background: var(--white);
+        }
+
+        .filter-select:focus {
+            border-color: var(--purple);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08);
         }
 
         .filter-select:focus {
