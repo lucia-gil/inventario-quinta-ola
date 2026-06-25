@@ -253,7 +253,10 @@ public class TransactionDAO {
                     ps.executeUpdate();
 
                     try (ResultSet keys = ps.getGeneratedKeys()) {
-                        if (keys.next()) txId = keys.getInt(1);
+                        if (keys.next()) {
+                            txId = keys.getInt(1);
+                            t.setId(txId);   // ← ESTA ES LA LÍNEA NUEVA
+                        }
                     }
                 }
 

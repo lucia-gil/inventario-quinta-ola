@@ -281,7 +281,7 @@ public class TransactionServlet extends HttpServlet {
                         return;
                     }
 
-                    // 🛡️ Segregación de funciones: no puedes aprobar tus propias solicitudes
+                    // 🛡Segregación de funciones: no puedes aprobar tus propias solicitudes
                     Transaction txExistente = txDao.getById(id);
                     if (txExistente != null && txExistente.getRequesterId() == userId) {
                         response.sendRedirect(request.getContextPath()
