@@ -9,6 +9,19 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 
+/* ============================================================
+   RequestDetailServlet
+   ============================================================
+   Controlador para ver el detalle individual de una transaccion
+   (solicitud de material).
+
+   La URL viene como: /RequestDetailServlet?id=5
+   Si no llega id o es invalido, redirige al historial.
+
+   Patron: tiene un solo case "ver" en el switch porque por ahora
+   solo muestra. Las acciones de aprobar/rechazar las hace el
+   TransactionServlet, que es quien ya tiene esa logica.
+   ============================================================ */
 @WebServlet(name = "RequestDetailServlet", value = "/RequestDetailServlet")
 public class RequestDetailServlet extends HttpServlet {
 
@@ -16,52 +29,45 @@ public class RequestDetailServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 1. SEGURIDAD: Validar que exista una sesión
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("userId") == null) {
-            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
-            return;
-        }
-
+        // El id de la transaccion viene como parametro de URL
         String idParam = request.getParameter("id");
-        RequestDispatcher view = request.getRequestDispatcher("request-detail.jsp");
 
-        // 2. VALIDACIÓN DEL PARÁMETRO
-        if (idParam == null || idParam.trim().isEmpty()) {
-            request.setAttribute("error", "No se especificó un identificador de solicitud válido.");
-            view.forward(request, response);
+        // Si no llega id, no tiene sentido seguir, mandamos al historial
+        if (idParam == null || idParam.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/HistoryServlet");
             return;
         }
+
+        TransactionDAO txDao = new TransactionDAO();
+        RequestDispatcher view;
 
         try {
+            // Parseamos el id a entero (puede tirar NumberFormatException)
             int txId = Integer.parseInt(idParam);
-            TransactionDAO txDao = new TransactionDAO();
 
-            // 3. CONSULTA A LA BASE DE DATOS
-            // Nota: Asumo que tu TransactionDAO tiene un método getById que devuelve
-            // el objeto Transaction con todos sus datos (itemName, requesterName, etc.)
+            // Pedimos al DAO la transaccion con todos sus joins
             Transaction tx = txDao.getById(txId);
 
-            if (tx != null) {
-                // 4. PASAR DATOS A LA VISTA
-                // El JSP espera el objeto bajo el nombre "tx"
-                request.setAttribute("tx", tx);
-
-                // Activar el menú lateral
-                request.setAttribute("activeMenu", "transactions");
-
-                view.forward(request, response);
+            // Si no existe esa transaccion, mostramos un error en la vista
+            if (tx == null) {
+                request.setAttribute("error", "La solicitud TXN-" + idParam + " no existe.");
             } else {
-                request.setAttribute("error", "La solicitud solicitada no existe o fue eliminada.");
-                view.forward(request, response);
+                // Pasamos el objeto al JSP para que lo pinte
+                request.setAttribute("tx", tx);
             }
 
-        } catch (NumberFormatException e) {
-            request.setAttribute("error", "El identificador de solicitud no es válido.");
+            request.setAttribute("activeMenu", "history");
+
+            // Reenviamos al JSP de detalle
+            view = request.getRequestDispatcher("request-detail.jsp");
             view.forward(request, response);
+
+        } catch (NumberFormatException e) {
+            // Si el id no es numerico, mandamos al historial
+            response.sendRedirect(request.getContextPath() + "/HistoryServlet");
         } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("error", "Ocurrió un error al cargar los detalles de la solicitud.");
+            request.setAttribute("error", "Error al cargar solicitud: " + e.getMessage());
+            view = request.getRequestDispatcher("request-detail.jsp");
             view.forward(request, response);
         }
     }
