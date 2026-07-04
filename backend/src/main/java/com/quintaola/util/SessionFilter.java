@@ -217,12 +217,16 @@ public class SessionFilter implements Filter {
         //   - Inventario: Member, Manager, Admin
         //   - Salidas y Consumo: solo Manager y Admin
         //   El propio ReportServlet hace validación fina por action.
-        //   SuperAdmin y Viewer NO acceden a ningún reporte.
+        //   Viewer NO acceden a ningún reporte, superadmin puede desacargar listados
         // ════════════════════════════════════════════
         if (path.startsWith("/ReportServlet")) {
-            if (R_SUPERADMIN.equals(roleName)) return false;
-            if (R_VIEWER.equals(roleName))     return false;
-            return true; // Member, Manager, Admin (servlet valida por action)
+            if (R_SUPERADMIN.equals(roleName)) {
+                // SA solo puede acceder a sus propias exportaciones de usuarios
+                return "todos_usuarios".equals(actionParam)
+                        || "usuarios_por_rol".equals(actionParam);
+            }
+            if (R_VIEWER.equals(roleName)) return false;
+            return true;
         }
 
         // ════════════════════════════════════════════

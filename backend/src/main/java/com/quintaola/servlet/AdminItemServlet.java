@@ -1,19 +1,22 @@
 package com.quintaola.servlet;
 
+import com.quintaola.dao.AuditDAO;
 import com.quintaola.dao.ItemDAO;
 import com.quintaola.model.Item;
+import com.quintaola.util.DatabaseConnection;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.List;
 
 @WebServlet(name = "AdminItemServlet", value = "/AdminItemServlet")
 public class AdminItemServlet extends HttpServlet {
 
-    // Roles permitidos: Member (2), Administrador (4), SuperAdmin (5)
     private boolean tienePermiso(HttpSession session) {
         if (session == null) return false;
         Integer roleId = (Integer) session.getAttribute("roleId");
@@ -29,7 +32,6 @@ public class AdminItemServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
             return;
         }
-
         if (!tienePermiso(session)) {
             response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
@@ -42,7 +44,6 @@ public class AdminItemServlet extends HttpServlet {
         RequestDispatcher view = request.getRequestDispatcher("admin-item.jsp");
 
         try {
-            // Cargar tags reales para los selects
             List<String> tagsDisponibles = itemDao.getAllTagNames();
             request.setAttribute("tagsDisponibles", tagsDisponibles);
             request.setAttribute("activeMenu", "inventory");
@@ -53,9 +54,8 @@ public class AdminItemServlet extends HttpServlet {
                     break;
 
                 case "formEditar":
-                    int id = Integer.parseInt(request.getParameter("id"));
+                    int id   = Integer.parseInt(request.getParameter("id"));
                     Item item = itemDao.getById(id);
-
                     if (item != null) {
                         request.setAttribute("item", item);
                         view.forward(request, response);
@@ -85,7 +85,6 @@ public class AdminItemServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
             return;
         }
-
         if (!tienePermiso(session)) {
             response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
@@ -94,25 +93,115 @@ public class AdminItemServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         String action = request.getParameter("action");
         ItemDAO itemDao = new ItemDAO();
+        String ctx = request.getContextPath();
 
-        Integer actorId = (Integer) session.getAttribute("userId");
+        Integer actorId  = (Integer) session.getAttribute("userId");
+        String actorRole = (String)  session.getAttribute("roleName");
+        if (actorRole == null) actorRole = "Usuario";
 
         try {
-            // ─── DESACTIVAR (delete suave) ───
+
+            // ─── DESACTIVAR ────────────────────────────────────────────────────
             if ("desactivar".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 boolean ok = itemDao.disable(id);
                 if (ok) {
-                    response.sendRedirect(request.getContextPath()
-                            + "/InventoryServlet?success=Material+desactivado");
+                    // Auditoría
+                    try {
+                        new AuditDAO().log(actorId, "DESACTIVAR_ITEM", "ITEM", id,
+                                String.format("El %s desactivó el ítem id=%d", actorRole, id));
+                    } catch (Exception ignored) {}
+                    response.sendRedirect(ctx + "/InventoryServlet?success=Material+desactivado");
                 } else {
-                    response.sendRedirect(request.getContextPath()
-                            + "/InventoryServlet?error=No+se+pudo+desactivar");
+                    response.sendRedirect(ctx + "/InventoryServlet?error=No+se+pudo+desactivar");
                 }
                 return;
             }
 
-            // Datos comunes del form
+            // ─── ENTRADA DE STOCK ──────────────────────────────────────────────
+            if ("entrada".equals(action)) {
+                String itemIdStr   = request.getParameter("itemId");
+                String cantidadStr = request.getParameter("cantidad");
+                String notas       = request.getParameter("notas");
+                if (notas == null) notas = "";
+
+                int itemId;
+                try { itemId = Integer.parseInt(itemIdStr); }
+                catch (Exception e) {
+                    response.sendRedirect(ctx + "/InventoryServlet?error=Item+invalido");
+                    return;
+                }
+
+                int cantidad;
+                try { cantidad = Integer.parseInt(cantidadStr); }
+                catch (Exception e) {
+                    response.sendRedirect(ctx + "/AdminItemServlet?action=formEditar&id="
+                            + itemIdStr + "&error=Cantidad+invalida");
+                    return;
+                }
+
+                if (cantidad <= 0) {
+                    response.sendRedirect(ctx + "/AdminItemServlet?action=formEditar&id="
+                            + itemId + "&error=La+cantidad+debe+ser+mayor+a+0");
+                    return;
+                }
+
+                String sqlTxn = """
+                    INSERT INTO transactions
+                      (item_id, requester_id, approver_id, type, quantity, status, notes,
+                       processed_at, delivered_at)
+                    VALUES (?, ?, ?, 'IN', ?, 'COMPLETED', ?, NOW(), NOW())
+                    """;
+                String sqlStock = """
+                    UPDATE items
+                    SET cached_quantity = cached_quantity + ?,
+                        status = CASE
+                            WHEN (cached_quantity + ?) <= 0             THEN 'UNAVAILABLE'
+                            WHEN (cached_quantity + ?) <= min_quantity   THEN 'LOW'
+                            ELSE 'OK'
+                        END
+                    WHERE id = ?
+                    """;
+
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    conn.setAutoCommit(false);
+                    try {
+                        try (PreparedStatement ps = conn.prepareStatement(sqlTxn)) {
+                            ps.setInt   (1, itemId);
+                            ps.setInt   (2, actorId);
+                            ps.setInt   (3, actorId);
+                            ps.setInt   (4, cantidad);
+                            ps.setString(5, notas.isEmpty() ? null : notas);
+                            ps.executeUpdate();
+                        }
+                        try (PreparedStatement ps = conn.prepareStatement(sqlStock)) {
+                            ps.setInt(1, cantidad);
+                            ps.setInt(2, cantidad);
+                            ps.setInt(3, cantidad);
+                            ps.setInt(4, itemId);
+                            ps.executeUpdate();
+                        }
+                        conn.commit();
+                    } catch (Exception e) {
+                        conn.rollback();
+                        throw e;
+                    }
+                }
+
+                // Auditoría
+                try {
+                    new AuditDAO().log(actorId, "ENTRADA_STOCK", "ITEM", itemId,
+                            String.format("El %s registró entrada de %d unidad(es) al ítem id=%d. Motivo: %s",
+                                    actorRole, cantidad, itemId,
+                                    notas.isEmpty() ? "sin especificar" : notas));
+                } catch (Exception ignored) {}
+
+                response.sendRedirect(ctx + "/AdminItemServlet?action=formEditar&id="
+                        + itemId + "&success=Entrada+de+" + cantidad + "+unidades+registrada");
+                return;
+            }
+
+            // ─── Datos comunes del form (crear / actualizar) ───────────────────
             String name        = request.getParameter("nombre");
             String tagName     = request.getParameter("tags");
             String tagNuevo    = request.getParameter("tagNuevo");
@@ -125,33 +214,27 @@ public class AdminItemServlet extends HttpServlet {
             int minQuantity = request.getParameter("minimo") != null && !request.getParameter("minimo").isEmpty()
                     ? Integer.parseInt(request.getParameter("minimo")) : 0;
 
-            // ─── Lógica de imagen: NO sobreescribir con placeholder al editar ───
-            if (imageUrl != null) {
-                imageUrl = imageUrl.trim();
-            }
+            if (imageUrl != null) imageUrl = imageUrl.trim();
 
             if ("actualizar".equals(action)) {
-                // Si el usuario dejó el campo vacío al editar, conservamos la URL anterior
                 if (imageUrl == null || imageUrl.isEmpty()) {
                     int idTmp = Integer.parseInt(request.getParameter("id"));
                     Item itemTmp = itemDao.getById(idTmp);
-                    if (itemTmp != null && itemTmp.getImageUrl() != null && !itemTmp.getImageUrl().trim().isEmpty()) {
+                    if (itemTmp != null && itemTmp.getImageUrl() != null
+                            && !itemTmp.getImageUrl().trim().isEmpty()) {
                         imageUrl = itemTmp.getImageUrl();
                     } else {
                         imageUrl = "/img/placeholder.png";
                     }
                 }
             } else {
-                // Al crear, si no hay URL usamos el placeholder
                 if (imageUrl == null || imageUrl.isEmpty()) {
                     imageUrl = "/img/placeholder.png";
                 }
             }
 
-            // Si el usuario escribió un tag nuevo, ese gana
             String tagFinal = (tagNuevo != null && !tagNuevo.trim().isEmpty())
-                    ? tagNuevo.trim()
-                    : tagName;
+                    ? tagNuevo.trim() : tagName;
 
             Item item = new Item();
             item.setName(name);
@@ -160,11 +243,9 @@ public class AdminItemServlet extends HttpServlet {
             item.setImageUrl(imageUrl);
             item.setDescription(description);
 
+            // ─── CREAR ────────────────────────────────────────────────────────
             if ("crear".equals(action)) {
-                // Stock inicial
                 item.setCachedQuantity(stock);
-
-                // Estado inicial calculado según stock vs minimo
                 String estadoInicial;
                 if (stock <= 0) estadoInicial = "UNAVAILABLE";
                 else if (stock <= minQuantity) estadoInicial = "LOW";
@@ -173,22 +254,25 @@ public class AdminItemServlet extends HttpServlet {
 
                 int newId = itemDao.create(item);
                 if (newId > 0) {
-                    // Asignar tag al item recién creado
                     if (tagFinal != null && !tagFinal.trim().isEmpty()) {
                         itemDao.assignTag(newId, tagFinal, actorId);
                     }
-                    response.sendRedirect(request.getContextPath()
-                            + "/InventoryServlet?success=Material+creado+exitosamente");
+                    // Auditoría
+                    try {
+                        new AuditDAO().log(actorId, "CREAR_ITEM", "ITEM", newId,
+                                String.format("El %s creó el ítem '%s' (id=%d, stock=%d, unidad=%s)",
+                                        actorRole, name, newId, stock, unit));
+                    } catch (Exception ignored) {}
+                    response.sendRedirect(ctx + "/InventoryServlet?success=Material+creado+exitosamente");
                 } else {
-                    response.sendRedirect(request.getContextPath()
-                            + "/AdminItemServlet?action=formCrear&error=No+se+pudo+crear");
+                    response.sendRedirect(ctx + "/AdminItemServlet?action=formCrear&error=No+se+pudo+crear");
                 }
 
+                // ─── ACTUALIZAR ───────────────────────────────────────────────────
             } else if ("actualizar".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 item.setId(id);
 
-                // Conservar stock actual de la BD
                 Item itemActual = itemDao.getById(id);
                 if (itemActual != null) {
                     item.setCachedQuantity(itemActual.getCachedQuantity());
@@ -196,25 +280,28 @@ public class AdminItemServlet extends HttpServlet {
 
                 boolean ok = itemDao.update(item);
                 if (ok) {
-                    // Reemplazar tags: borrar y volver a asignar
                     if (tagFinal != null && !tagFinal.trim().isEmpty()) {
                         itemDao.clearTags(id);
                         itemDao.assignTag(id, tagFinal, actorId);
                     }
-                    response.sendRedirect(request.getContextPath()
-                            + "/InventoryServlet?success=Material+actualizado");
+                    // Auditoría
+                    try {
+                        new AuditDAO().log(actorId, "ACTUALIZAR_ITEM", "ITEM", id,
+                                String.format("El %s actualizó el ítem '%s' (id=%d)",
+                                        actorRole, name, id));
+                    } catch (Exception ignored) {}
+                    response.sendRedirect(ctx + "/InventoryServlet?success=Material+actualizado");
                 } else {
-                    response.sendRedirect(request.getContextPath()
-                            + "/InventoryServlet?error=No+se+pudo+actualizar");
+                    response.sendRedirect(ctx + "/InventoryServlet?error=No+se+pudo+actualizar");
                 }
+
             } else {
-                response.sendRedirect(request.getContextPath() + "/InventoryServlet");
+                response.sendRedirect(ctx + "/InventoryServlet");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath()
-                    + "/InventoryServlet?error=Error+al+procesar+el+material");
+            response.sendRedirect(ctx + "/InventoryServlet?error=Error+al+procesar+el+material");
         }
     }
 }

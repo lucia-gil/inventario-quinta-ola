@@ -1,6 +1,8 @@
 package com.quintaola.servlet;
 
 import com.quintaola.dao.ReportDAO;
+import com.quintaola.dao.UserDAO;          // ← NUEVO
+import com.quintaola.model.User;            // ← NUEVO
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -12,6 +14,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;      // ← NUEVO
+import java.util.LinkedHashMap;  // ← NUEVO
 import java.util.List;
 import java.util.Map;
 
@@ -20,19 +24,19 @@ import java.util.Map;
  * ReportServlet — Generación y descarga de reportes
  * ════════════════════════════════════════════════════════════════════
  *
- * URLs:
- *   /ReportServlet?action=salidas&format=csv&from=2026-06-01&to=2026-06-30
- *   /ReportServlet?action=salidas&format=xlsx&from=...&to=...
- *   /ReportServlet?action=consumo&format=csv&from=...&to=...
+ * URLs existentes:
+ *   /ReportServlet?action=salidas&format=csv&from=...&to=...
  *   /ReportServlet?action=consumo&format=xlsx&from=...&to=...
  *   /ReportServlet?action=inventario&format=csv
- *   /ReportServlet?action=inventario&format=xlsx
+ *
+ * URLs nuevas:
+ *   /ReportServlet?action=usuarios_por_rol&rol=X&format=xlsx
+ *   /ReportServlet?action=todos_usuarios&format=xlsx
  *
  * Permisos:
- *   - SuperAdmin (5): NO accede (es controlador, no operador).
- *   - Manager (3), Admin (4): SÍ acceden a todos los reportes.
- *   - Member (2): solo inventario (es operador de depósito).
- *   - Viewer (1): NO accede.
+ *   - usuarios_por_rol / todos_usuarios : solo SuperAdmin (5)
+ *   - salidas / consumo                 : Manager (3), Admin (4)
+ *   - inventario                        : Member (2), Manager (3), Admin (4)
  * ════════════════════════════════════════════════════════════════════
  */
 @WebServlet(name = "ReportServlet", value = "/ReportServlet")
@@ -62,13 +66,17 @@ public class ReportServlet extends HttpServlet {
         switch (action) {
             case "salidas":
             case "consumo":
-                // Reportes operativos: Manager, Admin
                 accesoOK = (role == 3 || role == 4);
                 break;
             case "inventario":
-                // Inventario: Member, Manager, Admin
                 accesoOK = (role == 2 || role == 3 || role == 4);
                 break;
+            // ── NUEVOS: solo SuperAdmin ──────────────────────────────────
+            case "usuarios_por_rol":
+            case "todos_usuarios":
+                accesoOK = (role == 5);
+                break;
+            // ─────────────────────────────────────────────────────────────
             default:
                 accesoOK = false;
         }
@@ -90,7 +98,7 @@ public class ReportServlet extends HttpServlet {
             to = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
         }
 
-        // ─── 4. Obtener datos del DAO ───
+        // ─── 4. Obtener datos ───
         ReportDAO dao = new ReportDAO();
         List<Map<String, Object>> rows;
         String tituloReporte;
@@ -103,16 +111,70 @@ public class ReportServlet extends HttpServlet {
                     tituloReporte = "Reporte de Salidas del " + from + " al " + to;
                     nombreArchivo = "salidas_" + from + "_" + to;
                     break;
+
                 case "consumo":
                     rows = dao.consumoPorMaterial(from, to);
                     tituloReporte = "Consumo por Material del " + from + " al " + to;
                     nombreArchivo = "consumo_" + from + "_" + to;
                     break;
+
                 case "inventario":
                     rows = dao.inventarioActual();
                     tituloReporte = "Inventario Actual";
                     nombreArchivo = "inventario_" + LocalDate.now();
                     break;
+
+                // ── NUEVO: usuarios de un rol específico ─────────────────────
+                case "usuarios_por_rol": {
+                    int rolIdParam = 0;
+                    String rolStr = req.getParameter("rol");
+                    if (rolStr != null && !rolStr.trim().isEmpty()) {
+                        try { rolIdParam = Integer.parseInt(rolStr); }
+                        catch (NumberFormatException ignored) {}
+                    }
+
+                    UserDAO userDAO = new UserDAO();
+                    Map<Integer, String> inactiveStatus = userDAO.getInactiveUsersStatus();
+                    List<User> todos = userDAO.getAll();
+
+                    // Filtrar por rol si viene el param
+                    final int rolFinal = rolIdParam;
+                    rows = new ArrayList<>();
+                    for (User u : todos) {
+                        if (rolFinal > 0 && u.getRoleId() != rolFinal) continue;
+                        rows.add(usuarioAFila(u, inactiveStatus));
+                    }
+
+                    // Ordenar A-Z por nombre
+                    rows.sort((a, b) -> String.valueOf(a.getOrDefault("Nombre", ""))
+                            .compareToIgnoreCase(String.valueOf(b.getOrDefault("Nombre", ""))));
+
+                    String rolLabel = rolFinal > 0 ? "Rol_" + rolFinal : "Todos_los_Roles";
+                    tituloReporte = "Listado de Usuarios – " + rolLabel.replace("_", " ");
+                    nombreArchivo = "usuarios_" + rolLabel.toLowerCase() + "_" + LocalDate.now();
+                    break;
+                }
+
+                // ── NUEVO: todos los usuarios del sistema ────────────────────
+                case "todos_usuarios": {
+                    UserDAO userDAO = new UserDAO();
+                    Map<Integer, String> inactiveStatus = userDAO.getInactiveUsersStatus();
+                    List<User> todos = userDAO.getAll();
+
+                    rows = new ArrayList<>();
+                    for (User u : todos) {
+                        rows.add(usuarioAFila(u, inactiveStatus));
+                    }
+
+                    // Ordenar A-Z por nombre
+                    rows.sort((a, b) -> String.valueOf(a.getOrDefault("Nombre", ""))
+                            .compareToIgnoreCase(String.valueOf(b.getOrDefault("Nombre", ""))));
+
+                    tituloReporte = "Listado General de Usuarios – Quinta Ola";
+                    nombreArchivo = "todos_usuarios_" + LocalDate.now();
+                    break;
+                }
+
                 default:
                     res.sendError(HttpServletResponse.SC_BAD_REQUEST);
                     return;
@@ -132,6 +194,44 @@ public class ReportServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Convierte un User a Map<String, Object> con los campos del reporte.
+     * Columnas: Nombre, Email, DNI, Rol, Estado, Fecha de Creación
+     */
+    private Map<String, Object> usuarioAFila(User u, Map<Integer, String> inactiveStatus) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("Nombre", u.getName() != null ? u.getName() : "—");
+        row.put("Email",  u.getEmail() != null ? u.getEmail() : "—");
+        row.put("DNI",    u.getDni()   != null ? u.getDni()   : "—");
+        row.put("Rol",    u.getRoleName() != null ? u.getRoleName() : "—");
+
+        String estado;
+        if (u.getActivo() == 1) {
+            estado = "Activo";
+        } else {
+            String tipo = inactiveStatus != null ? inactiveStatus.get(u.getId()) : null;
+            estado = "DEACTIVATED".equals(tipo) ? "Desactivado" : "Pendiente";
+        }
+        row.put("Estado", estado);
+
+        // Formatear fecha de creación a dd/MM/yyyy
+        String fechaStr = "—";
+        if (u.getCreatedAt() != null) {
+            try {
+                String s = u.getCreatedAt().toString().trim();
+                if (s.length() > 19) s = s.substring(0, 19);
+                java.text.SimpleDateFormat in  = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                java.text.SimpleDateFormat out = new java.text.SimpleDateFormat("dd/MM/yyyy");
+                fechaStr = out.format(in.parse(s));
+            } catch (Exception ignored) {
+                fechaStr = u.getCreatedAt().toString();
+            }
+        }
+        row.put("Fecha de Creación", fechaStr);
+
+        return row;
+    }
+
     // ════════════════════════════════════════════════════════════════
     // CSV — texto plano con comas
     // ════════════════════════════════════════════════════════════════
@@ -143,25 +243,20 @@ public class ReportServlet extends HttpServlet {
         res.setHeader("Content-Disposition",
                 "attachment; filename=\"" + nombreArchivo + ".csv\"");
 
-        // Construimos TODO el contenido en memoria como String, luego lo
-        // escribimos al OutputStream. Así NO mezclamos OutputStream con Writer.
         StringBuilder csv = new StringBuilder();
 
         if (rows.isEmpty()) {
             csv.append("Sin datos para el período seleccionado.\n");
         } else {
-            // Encabezados (claves del primer Map)
             Map<String, Object> primera = rows.get(0);
             String[] columnas = primera.keySet().toArray(new String[0]);
 
-            // Línea de cabecera
             for (int i = 0; i < columnas.length; i++) {
                 if (i > 0) csv.append(",");
                 csv.append(escaparCSV(columnas[i]));
             }
             csv.append("\n");
 
-            // Filas de datos
             for (Map<String, Object> fila : rows) {
                 for (int i = 0; i < columnas.length; i++) {
                     if (i > 0) csv.append(",");
@@ -172,17 +267,13 @@ public class ReportServlet extends HttpServlet {
             }
         }
 
-        // Escribir BOM + contenido como bytes UTF-8 al OutputStream
         try (OutputStream out = res.getOutputStream()) {
-            // BOM UTF-8 (para que Excel reconozca tildes correctamente)
             out.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
-            // Contenido en UTF-8
             out.write(csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
             out.flush();
         }
     }
 
-    /** Escapa un valor CSV: si contiene comas, comillas o saltos de línea, lo envuelve en comillas. */
     private String escaparCSV(String valor) {
         if (valor == null) return "";
         boolean necesitaComillas = valor.contains(",") || valor.contains("\"")
@@ -206,7 +297,6 @@ public class ReportServlet extends HttpServlet {
 
             Sheet sheet = workbook.createSheet("Reporte");
 
-            // ─── Estilo título principal ───
             CellStyle titleStyle = workbook.createCellStyle();
             Font titleFont = workbook.createFont();
             titleFont.setFontName("Arial");
@@ -219,7 +309,6 @@ public class ReportServlet extends HttpServlet {
             titleStyle.setFillForegroundColor(IndexedColors.INDIGO.getIndex());
             titleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // ─── Estilo header de columnas ───
             CellStyle headerStyle = workbook.createCellStyle();
             Font headerFont = workbook.createFont();
             headerFont.setFontName("Arial");
@@ -235,7 +324,6 @@ public class ReportServlet extends HttpServlet {
             headerStyle.setBorderLeft(BorderStyle.THIN);
             headerStyle.setBorderRight(BorderStyle.THIN);
 
-            // ─── Estilo filas datos ───
             CellStyle dataStyle = workbook.createCellStyle();
             Font dataFont = workbook.createFont();
             dataFont.setFontName("Arial");
@@ -247,32 +335,26 @@ public class ReportServlet extends HttpServlet {
             dataStyle.setBorderTop(BorderStyle.THIN);
             dataStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-            // ─── Estilo fila alternada (gris suave) ───
             CellStyle altDataStyle = workbook.createCellStyle();
             altDataStyle.cloneStyleFrom(dataStyle);
             altDataStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             altDataStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // ─── Caso sin datos ───
             if (rows.isEmpty()) {
                 Row titleRow = sheet.createRow(0);
                 Cell titleCell = titleRow.createCell(0);
                 titleCell.setCellValue(tituloReporte);
                 titleCell.setCellStyle(titleStyle);
                 titleRow.setHeightInPoints(28);
-
                 Row emptyRow = sheet.createRow(2);
                 emptyRow.createCell(0).setCellValue("Sin datos para el período seleccionado.");
-
                 sheet.setColumnWidth(0, 12000);
                 workbook.write(out);
                 return;
             }
 
-            // ─── Obtener columnas ───
             String[] columnas = rows.get(0).keySet().toArray(new String[0]);
 
-            // ─── Fila 0: Título grande con merge ───
             Row titleRow = sheet.createRow(0);
             Cell titleCell = titleRow.createCell(0);
             titleCell.setCellValue(tituloReporte);
@@ -281,10 +363,8 @@ public class ReportServlet extends HttpServlet {
             sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(
                     0, 0, 0, columnas.length - 1));
 
-            // ─── Fila 1: vacía (espacio) ───
             sheet.createRow(1);
 
-            // ─── Fila 2: Headers ───
             Row headerRow = sheet.createRow(2);
             headerRow.setHeightInPoints(22);
             for (int i = 0; i < columnas.length; i++) {
@@ -293,7 +373,6 @@ public class ReportServlet extends HttpServlet {
                 cell.setCellStyle(headerStyle);
             }
 
-            // ─── Filas de datos ───
             int rowIdx = 3;
             for (int r = 0; r < rows.size(); r++) {
                 Row dataRow = sheet.createRow(rowIdx++);
@@ -314,12 +393,9 @@ public class ReportServlet extends HttpServlet {
                 }
             }
 
-            // ─── Auto-ajustar anchos de columna ───
             for (int i = 0; i < columnas.length; i++) {
                 sheet.autoSizeColumn(i);
-                int width = sheet.getColumnWidth(i);
-                // Limitar ancho máximo para que no se desborde
-                if (width > 12000) sheet.setColumnWidth(i, 12000);
+                if (sheet.getColumnWidth(i) > 12000) sheet.setColumnWidth(i, 12000);
             }
 
             workbook.write(out);

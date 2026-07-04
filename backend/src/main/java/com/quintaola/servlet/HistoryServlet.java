@@ -13,27 +13,7 @@ import java.util.List;
 
 /**
  * ════════════════════════════════════════════════════════════════════
- *  HistoryServlet — Controlador de la página "Historial"
- * ════════════════════════════════════════════════════════════════════
- *
- *  PROPÓSITO:
- *  Mostrar el historial de transacciones (solicitudes de material).
- *  Aplica filtros opcionales y muestra resultados según el rol:
- *    - Viewer: solo SUS propias transacciones
- *    - Resto: TODAS las transacciones del sistema uwu
- *
- *  PATRÓN DEL CURSO:
- *  switch-case + action (Clase de prof brenda 7.3 slide 5).
- *  Por ahora solo tiene un case ("lista"). En sprints siguientes
- *  podríamos agregar "exportar" para descargar CSV, etc.
- *
- *  URLs:
- *    GET /HistoryServlet                              → lista todo (con filtros opcionales)
- *    GET /HistoryServlet?q=cemento&status=Pendiente   → con filtros
- *
- *  Un Viewer ve solo lo suyo por seguridad y privacidad. Leo el roleId de la sesión y si es 1
- *      (Viewer), llamo a getByUserId(userId) en vez de getAll().
- *      La decisión la toma el servidor, no el navegador.
+ * HistoryServlet — Controlador de la página "Historial" con Paginación
  * ════════════════════════════════════════════════════════════════════
  */
 @WebServlet(name = "HistoryServlet", value = "/HistoryServlet")
@@ -43,7 +23,6 @@ public class HistoryServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // ─── 1. LEER PARÁMETRO action ───
         String action = request.getParameter("action") == null
                 ? "lista"
                 : request.getParameter("action");
@@ -64,30 +43,25 @@ public class HistoryServlet extends HttpServlet {
                         return;
                     }
 
-                    // 1.2. DECIDIR QUÉ TRAER SEGÚN EL ROL
-                    // Si es Viewer (roleId=1), solo sus transacciones
-                    // Para los demás, TODAS las del sistema
+                    // 1.2. Decidir qué registros traer según el rol
                     List<Transaction> todasLasTx;
                     if (roleId != null && roleId == 1) {
-                        // Viewer: solo las del usuario logueado
                         todasLasTx = txDao.getByUser(userId);
                     } else {
-                        // Resto de roles: todas las del sistema
                         todasLasTx = txDao.getAll();
                     }
 
-                    // 1.3. Leer filtros (pueden ser null o "")
+                    // 1.3. Leer filtros de búsqueda
                     String filtroTexto  = request.getParameter("q");
                     String filtroStatus = request.getParameter("status");
 
                     if (filtroTexto == null) filtroTexto = "";
                     if (filtroStatus == null) filtroStatus = "";
 
-                    // 1.4. Aplicar filtros en Java
+                    // 1.4. Aplicar filtros en memoria
                     List<Transaction> txFiltradas = new ArrayList<>();
                     for (Transaction tx : todasLasTx) {
 
-                        // Filtro 1: texto (busca en nombre del item, solicitante y ID)
                         boolean matchTexto = filtroTexto.isEmpty();
                         if (!matchTexto) {
                             String txt = filtroTexto.toLowerCase();
@@ -97,13 +71,11 @@ public class HistoryServlet extends HttpServlet {
                             matchTexto = itemName.contains(txt) || reqName.contains(txt) || idStr.contains(txt);
                         }
 
-                        // Filtro 2: estado (acepta tanto "Pendiente" como "PENDING")
                         boolean matchStatus = filtroStatus.isEmpty();
                         if (!matchStatus) {
                             String statusActual = tx.getStatus();
-                            // Comparar contra ambos formatos
                             matchStatus = filtroStatus.equalsIgnoreCase(statusActual)
-                                    || filtroStatus.equalsIgnoreCase(traducirStatus(statusActual));
+                                    || filtroStatus.equalsIgnoreCase(conducirStatus(statusActual));
                         }
 
                         if (matchTexto && matchStatus) {
@@ -111,22 +83,48 @@ public class HistoryServlet extends HttpServlet {
                         }
                     }
 
-                    // 1.5. INYECTAR datos en el request
-                    request.setAttribute("transacciones", txFiltradas);
-                    request.setAttribute("totalTransacciones", todasLasTx.size());
+                    // ─── 📦 LÓGICA DE PAGINACIÓN POR OLAS ───
+                    int pageNum = 1;
+                    int pageSize = 15; // Tamaño de registros por página
 
-                    // Preservar filtros para los inputs
+                    if (request.getParameter("page") != null) {
+                        try {
+                            pageNum = Integer.parseInt(request.getParameter("page"));
+                        } catch (NumberFormatException e) {
+                            pageNum = 1;
+                        }
+                    }
+
+                    int totalRecords = txFiltradas.size();
+                    int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+
+                    if (pageNum < 1) pageNum = 1;
+                    if (pageNum > totalPages && totalPages > 0) pageNum = totalPages;
+
+                    int startIndex = (pageNum - 1) * pageSize;
+                    int endIndex = Math.min(startIndex + pageSize, totalRecords);
+
+                    List<Transaction> listaPaginada = txFiltradas.isEmpty()
+                            ? txFiltradas
+                            : txFiltradas.subList(startIndex, endIndex);
+
+                    // 1.5. Inyectar datos en el alcance del Request
+                    request.setAttribute("transacciones", listaPaginada);
+                    request.setAttribute("totalTransacciones", totalRecords);
+                    request.setAttribute("currentPage", pageNum);
+                    request.setAttribute("totalPages", totalPages);
+
+                    // Preservar estados de los filtros
                     request.setAttribute("filtroTexto", filtroTexto);
                     request.setAttribute("filtroStatus", filtroStatus);
-
                     request.setAttribute("activeMenu", "history");
 
-                    // 1.6. FORWARD a la vista
+                    // 1.6. Redirigir a la vista
                     view = request.getRequestDispatcher("history.jsp");
                     view.forward(request, response);
 
                 } catch (Exception e) {
-                    request.setAttribute("error", "Error al cargar historial: " + e.getMessage());
+                    request.setAttribute("error", "Error al cargar el historial: " + e.getMessage());
                     view = request.getRequestDispatcher("history.jsp");
                     view.forward(request, response);
                 }
@@ -138,11 +136,7 @@ public class HistoryServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Helper: traduce el status técnico de la BD ("PENDING") al label
-     * visible para el usuario ("Pendiente"). Usado para el filtro.
-     */
-    private String traducirStatus(String status) {
+    private String conducirStatus(String status) {
         if (status == null) return "";
         return switch (status) {
             case "PENDING"   -> "Pendiente";

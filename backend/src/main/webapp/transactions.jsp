@@ -9,6 +9,32 @@
     Integer totalPages = (Integer) request.getAttribute("totalPages");
     Integer totalRecords = (Integer) request.getAttribute("totalRecords");
 
+    int _page  = currentPage != null ? currentPage : 1;
+    int _total = totalPages != null ? totalPages : 1;
+    int _count = totalRecords != null ? totalRecords : 0;
+
+    int _pageSize = 15;
+
+    int _from = (_count == 0) ? 0 : ((_page - 1) * _pageSize) + 1;
+    int _to   = Math.min(_page * _pageSize, _count);
+
+    // ventana deslizante
+    int _win = 2;
+    int _winS = Math.max(1, _page - _win);
+    int _winE = Math.min(_total, _page + _win);
+
+    // Captura de parámetros para el buscador y persistencia en la paginación
+    String searchParam = request.getParameter("search");
+    String fechaParam = request.getParameter("fechaEntrega");
+
+    String _pUrl = ctx + "/TransactionServlet?action=lista";
+    if (searchParam != null && !searchParam.trim().isEmpty()) {
+        _pUrl += "&search=" + java.net.URLEncoder.encode(searchParam, "UTF-8");
+    }
+    if (fechaParam != null && !fechaParam.trim().isEmpty()) {
+        _pUrl += "&fechaEntrega=" + java.net.URLEncoder.encode(fechaParam, "UTF-8");
+    }
+
     if (currentPage == null) currentPage = 1;
     if (totalPages == null) totalPages = 1;
     if (totalRecords == null) totalRecords = 0;
@@ -138,41 +164,146 @@
             color: var(--gray-500);
         }
 
-        .pagination {
-            display: flex;
-            gap: 0.4rem;
-            align-items: center;
-        }
-
-        .pagination a,
-        .pagination .pagination-current {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.45rem 0.9rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.82rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all var(--transition);
-        }
-
-        .pagination a {
+        /* Estilos del contenedor de filtros */
+        .search-container {
             background: var(--white);
-            border: 1.5px solid var(--gray-200);
-            color: var(--gray-700);
+            padding: 1.25rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-200);
+            margin-bottom: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .pagination a:hover {
-            background: var(--purple-bg);
-            border-color: var(--purple);
-            color: var(--purple);
+        .search-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
         }
-        .pagination a i { width: 13px; height: 13px; }
-
-        .pagination-current {
+        .search-group {
+            flex: 1;
+            min-width: 260px;
+        }
+        .date-group {
+            min-width: 180px;
+        }
+        .filter-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--gray-600);
+            margin-bottom: 0.4rem;
+        }
+        .filter-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            color: var(--gray-800);
+            background-color: var(--white);
+            transition: border-color var(--transition);
+            height: 38px;
+            box-sizing: border-box;
+        }
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--purple-light);
+        }
+        .search-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn-search {
+            height: 38px;
+            padding: 0 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 700;
             background: var(--purple);
             color: var(--white);
-            border: 1.5px solid var(--purple);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: background var(--transition);
+        }
+        .btn-search:hover {
+            background: var(--purple-light);
+        }
+        .btn-clear {
+            height: 38px;
+            padding: 0 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all var(--transition);
+            box-sizing: border-box;
+        }
+        .btn-clear:hover {
+            border-color: var(--purple-light);
+            color: var(--purple);
+            background: var(--purple-bg);
+        }
+
+        .pag-ola-bar {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 1.25rem 0.95rem;
+            flex-wrap: wrap; gap: 0.6rem;
+            border-top: 2.5px solid transparent;
+            border-image: linear-gradient(
+                    90deg, var(--purple-light), var(--pink), var(--purple-light)
+            ) 1;
+            background: linear-gradient(180deg, rgba(109,40,217,0.03) 0%, transparent 100%);
+        }
+        .pag-ola-info {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.8rem; color: var(--gray-500);
+        }
+        .pag-ola-info strong { color: var(--gray-700); }
+        .pag-ola-tag {
+            font-size: 0.67rem; font-weight: 700;
+            background: var(--purple-bg); color: var(--purple);
+            padding: 0.17rem 0.55rem;
+            border-radius: var(--radius-full); letter-spacing: 0.3px;
+        }
+        .pag-ola-controls { display: flex; align-items: center; gap: 0.22rem; }
+        .pag-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 0.2rem; min-width: 32px; height: 32px; padding: 0 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem; font-weight: 600;
+            color: var(--gray-600); background: var(--white);
+            border: 1.5px solid var(--gray-200);
+            text-decoration: none;
+            transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
+            white-space: nowrap; line-height: 1;
+        }
+        .pag-btn:hover {
+            border-color: var(--purple-light); color: var(--purple);
+            background: var(--purple-bg);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(109,40,217,0.14);
+        }
+        .pag-btn--active {
+            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+            color: #fff !important; border-color: transparent !important;
+            box-shadow: 0 3px 10px rgba(109,40,217,0.32);
+            cursor: default; pointer-events: none;
+        }
+        .pag-btn--disabled { opacity: 0.32; cursor: not-allowed; pointer-events: none; }
+        .pag-btn i { width: 12px; height: 12px; }
+        .pag-ellipsis {
+            color: var(--gray-400); font-size: 0.78rem;
+            padding: 0 0.18rem; user-select: none;
         }
 
         .alert {
@@ -189,6 +320,40 @@
         .alert-error   { background: var(--red-bg);   color: var(--red-dark);   border-color: #FECACA; }
         .alert-success { background: var(--green-bg); color: var(--green-dark); border-color: #BBF7D0; }
         .alert i { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* ════ Modal personalizado para Aprobar/Rechazar en la tabla ════ */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.4); display: none; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(2px); opacity: 0; animation: fadeIn 0.2s forwards;
+        }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .modal-content {
+            background: var(--white); padding: 1.5rem; border-radius: var(--radius-md);
+            width: 90%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 1px solid var(--gray-200); transform: translateY(15px); animation: slideUp 0.2s forwards ease-out;
+        }
+        @keyframes slideUp { to { transform: translateY(0); } }
+        .modal-header { font-weight: 700; font-size: 1.15rem; margin-bottom: 0.25rem; color: var(--gray-800); display: flex; align-items: center; gap: 0.4rem; }
+        .modal-desc { font-size: 0.88rem; color: var(--gray-600); margin-bottom: 1rem; }
+        .modal-textarea {
+            width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300);
+            border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; margin-bottom: 1.25rem; box-sizing: border-box; resize: vertical;
+        }
+        .modal-textarea:focus { outline: none; border-color: var(--purple-light); box-shadow: 0 0 0 2px rgba(109,40,217,0.1); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; }
+        .btn-modal-cancel {
+            padding: 0.5rem 1rem; background: var(--gray-100); color: var(--gray-700);
+            border: 1px solid var(--gray-200); border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.15s;
+        }
+        .btn-modal-cancel:hover { background: var(--gray-200); }
+        .btn-modal-confirm {
+            padding: 0.5rem 1rem; color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; transition: all 0.15s;
+        }
+        .btn-modal-confirm.approve { background: var(--green); }
+        .btn-modal-confirm.approve:hover { background: var(--green-dark); }
+        .btn-modal-confirm.reject { background: var(--red); }
+        .btn-modal-confirm.reject:hover { background: var(--red-dark); }
     </style>
 </head>
 <body class="page-body">
@@ -212,7 +377,7 @@
                 </div>
 
                 <% if (puedeSolicitar) { %>
-                <a href="<%= ctx %>/TransactionServlet?action=formCrear" class="btn-page-primary btn-icon">
+                <a href="<%= ctx %>/TransactionServlet?action=formCrear&origen=transactions" class="btn-page-primary btn-icon">
                     <i data-lucide="plus"></i>
                     Nueva Solicitud
                 </a>
@@ -232,6 +397,39 @@
                 <span><%= errParam != null ? errParam : error %></span>
             </div>
             <% } %>
+
+            <%-- Formulario / Caja de búsqueda Única y Filtro de Fecha --%>
+            <div class="search-container">
+                <form action="<%= ctx %>/TransactionServlet" method="GET" class="search-form">
+                    <input type="hidden" name="action" value="lista" />
+
+                    <div class="search-group">
+                        <label class="filter-label" for="search">Búsqueda rápida</label>
+                        <input type="text" id="search" name="search" class="filter-input"
+                               placeholder="ID solicitud, material o solicitante..."
+                               value="<%= searchParam != null ? searchParam : "" %>" />
+                    </div>
+
+                    <div class="date-group">
+                        <label class="filter-label" for="fechaEntrega">Fecha de entrega</label>
+                        <input type="date" id="fechaEntrega" name="fechaEntrega" class="filter-input"
+                               value="<%= fechaParam != null ? fechaParam : "" %>" />
+                    </div>
+
+                    <div class="search-actions">
+                        <button type="submit" class="btn-search">
+                            <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                            Filtrar
+                        </button>
+                        <% if ((searchParam != null && !searchParam.trim().isEmpty()) || (fechaParam != null && !fechaParam.trim().isEmpty())) { %>
+                        <a href="<%= ctx %>/TransactionServlet?action=lista" class="btn-clear">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                            Limpiar
+                        </a>
+                        <% } %>
+                    </div>
+                </form>
+            </div>
 
             <%-- Tabla --%>
             <div class="table-panel">
@@ -279,13 +477,30 @@
                                 <%= tx.getQuantity() %> <%= tx.getItemUnit() != null ? tx.getItemUnit() : "" %>
                             </td>
 
-                            <td class="td-light" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
-                                <%= tx.getEstimatedDelivery() != null ? tx.getEstimatedDelivery() : "—" %>
+                            <td class="td-light">
+                                <%
+                                    Object deliveryObj = tx.getEstimatedDelivery();
+                                    if (deliveryObj != null) {
+                                        String displayDate = deliveryObj.toString();
+                                        try {
+                                            if (deliveryObj instanceof java.time.LocalDate) {
+                                                displayDate = ((java.time.LocalDate) deliveryObj).format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                                            } else if (deliveryObj instanceof java.util.Date) {
+                                                displayDate = new java.text.SimpleDateFormat("dd-MM-yyyy").format((java.util.Date) deliveryObj);
+                                            } else if (displayDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                                                java.time.LocalDate ld = java.time.LocalDate.parse(displayDate);
+                                                displayDate = ld.format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                                            }
+                                        } catch (Exception e) {}
+                                        out.print(displayDate);
+                                    } else {
+                                        out.print("—");
+                                    }
+                                %>
                             </td>
 
                             <td class="td-center">
-                                <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>"
-                                   class="detail-link">
+                                <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>&origen=lista" class="detail-link">
                                     <i data-lucide="eye"></i>
                                     Ver
                                 </a>
@@ -294,26 +509,18 @@
                             <% if (puedeAprobar) { %>
                             <td class="td-center">
                                 <% if (tx.getRequesterId() == currentUserId) { %>
-                                <%-- Es la propia solicitud del aprobador → no puede auto-aprobar --%>
                                 <span class="own-request-tag" title="No puedes aprobar tus propias solicitudes">
                                         <i data-lucide="user"></i>
                                         Tu solicitud
-                                    </span>
+                                </span>
                                 <% } else { %>
                                 <div class="actions-cell">
-                                    <form action="<%= ctx %>/TransactionServlet" method="POST"
-                                          onsubmit="return confirm('¿Aprobar esta solicitud?');"
-                                          style="margin: 0;">
-                                        <input type="hidden" name="action" value="aprobar"/>
-                                        <input type="hidden" name="id" value="<%= tx.getId() %>"/>
-                                        <input type="hidden" name="notas" value="Aprobado"/>
-                                        <button type="submit" class="btn-approve">
-                                            <i data-lucide="check"></i>
-                                            Aprobar
-                                        </button>
-                                    </form>
+                                    <button type="button" onclick="abrirModal('aprobar', <%= tx.getId() %>)" class="btn-approve">
+                                        <i data-lucide="check"></i>
+                                        Aprobar
+                                    </button>
 
-                                    <button onclick="rechazarTx(<%= tx.getId() %>)" class="btn-reject">
+                                    <button type="button" onclick="abrirModal('rechazar', <%= tx.getId() %>)" class="btn-reject">
                                         <i data-lucide="x"></i>
                                         Rechazar
                                     </button>
@@ -329,36 +536,98 @@
                 </div>
 
                 <%-- Footer con paginación --%>
-                <div class="panel-footer">
-                    <p class="panel-count-text">
-                        Mostrando
-                        <strong style="color: var(--gray-800);"><%= transacciones.size() %></strong>
-                        de
-                        <strong style="color: var(--gray-800);"><%= totalRecords %></strong>
-                        pendientes
-                    </p>
+                <div class="pag-ola-bar">
 
-                    <% if (totalPages > 1) { %>
-                    <div class="pagination">
-                        <% if (currentPage > 1) { %>
-                        <a href="<%= ctx %>/TransactionServlet?action=lista&page=<%= currentPage - 1 %>">
+                    <div class="pag-ola-info">
+                        <span>
+                            Mostrando
+                            <strong><%= _from %>–<%= _to %></strong>
+                            de
+                            <strong><%= _count %></strong>
+                            solicitudes
+                        </span>
+
+                        <span class="pag-ola-tag">
+                            ≈ 15 por ola
+                        </span>
+                    </div>
+
+                    <% if (_total > 1) { %>
+
+                    <div class="pag-ola-controls">
+
+                        <% if (_page > 1) { %>
+                        <a href="<%= _pUrl %>&page=<%= _page-1 %>" class="pag-btn">
                             <i data-lucide="chevron-left"></i>
-                            Anterior
                         </a>
+                        <% } else { %>
+                        <span class="pag-btn pag-btn--disabled">
+                            <i data-lucide="chevron-left"></i>
+                        </span>
                         <% } %>
 
-                        <span class="pagination-current">
-                                Pág <%= currentPage %> de <%= totalPages %>
-                            </span>
 
-                        <% if (currentPage < totalPages) { %>
-                        <a href="<%= ctx %>/TransactionServlet?action=lista&page=<%= currentPage + 1 %>">
-                            Siguiente
+                        <% if (_winS > 1) { %>
+
+                        <a href="<%= _pUrl %>&page=1" class="pag-btn">1</a>
+
+                        <% if (_winS > 2) { %>
+                        <span class="pag-ellipsis">…</span>
+                        <% } %>
+
+                        <% } %>
+
+
+                        <% for(int _p = _winS; _p <= _winE; _p++){ %>
+
+                        <% if(_p == _page){ %>
+
+                        <span class="pag-btn pag-btn--active">
+                                    <%= _p %>
+                                </span>
+
+                        <% }else{ %>
+
+                        <a href="<%= _pUrl %>&page=<%= _p %>" class="pag-btn">
+                            <%= _p %>
+                        </a>
+
+                        <% } %>
+
+                        <% } %>
+
+
+                        <% if (_winE < _total) { %>
+
+                        <% if (_winE < _total-1) { %>
+                        <span class="pag-ellipsis">…</span>
+                        <% } %>
+
+                        <a href="<%= _pUrl %>&page=<%= _total %>" class="pag-btn">
+                            <%= _total %>
+                        </a>
+
+                        <% } %>
+
+
+                        <% if (_page < _total) { %>
+
+                        <a href="<%= _pUrl %>&page=<%= _page+1 %>" class="pag-btn">
                             <i data-lucide="chevron-right"></i>
                         </a>
+
+                        <% } else { %>
+
+                        <span class="pag-btn pag-btn--disabled">
+                            <i data-lucide="chevron-right"></i>
+                        </span>
+
                         <% } %>
+
                     </div>
+
                     <% } %>
+
                 </div>
 
                 <% } %>
@@ -367,24 +636,79 @@
 
         </main>
 
-        <%-- Form oculto rechazar --%>
-        <form id="rejectForm" action="<%= ctx %>/TransactionServlet" method="POST" style="display:none;">
-            <input type="hidden" name="action" value="rechazar"/>
-            <input type="hidden" name="id" id="rejectTxId"/>
-            <input type="hidden" name="notas" id="rejectNotas"/>
-        </form>
+        <%-- ════ Modal Estilizado Interactivo (Reemplaza los Prompts) ════ --%>
+        <div id="actionModal" class="modal-overlay">
+            <div class="modal-content">
+                <div id="modalTitle" class="modal-header">
+                    <i id="modalIcon" data-lucide="info"></i>
+                    <span id="modalTitleText">Título</span>
+                </div>
+                <div id="modalDesc" class="modal-desc">Descripción</div>
+
+                <form id="modalForm" action="<%= ctx %>/TransactionServlet" method="POST" style="margin:0;">
+                    <input type="hidden" name="action" id="modalAction" value="">
+                    <input type="hidden" name="id" id="modalTxId" value="">
+
+                    <textarea id="modalNotas" name="notas" class="modal-textarea" rows="3" placeholder="Comentarios..."></textarea>
+
+                    <div class="modal-actions">
+                        <button type="button" onclick="cerrarModal()" class="btn-modal-cancel">Cancelar</button>
+                        <button type="submit" id="btnModalSubmit" class="btn-modal-confirm">Confirmar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <script>
-            function rechazarTx(id) {
-                const motivo = prompt('Motivo del rechazo (obligatorio):');
-                if (motivo && motivo.trim() !== '') {
-                    document.getElementById('rejectTxId').value = id;
-                    document.getElementById('rejectNotas').value = motivo;
-                    document.getElementById('rejectForm').submit();
-                } else if (motivo !== null) {
-                    alert('El motivo es obligatorio.');
+            const modal = document.getElementById('actionModal');
+            const modalTitleText = document.getElementById('modalTitleText');
+            const modalDesc = document.getElementById('modalDesc');
+            const modalAction = document.getElementById('modalAction');
+            const modalTxId = document.getElementById('modalTxId');
+            const modalNotas = document.getElementById('modalNotas');
+            const btnModalSubmit = document.getElementById('btnModalSubmit');
+            const modalForm = document.getElementById('modalForm');
+            const modalIcon = document.getElementById('modalIcon');
+
+            function abrirModal(tipo, id) {
+                modalTxId.value = id;
+                modalAction.value = tipo;
+                modalNotas.value = '';
+
+                if (tipo === 'aprobar') {
+                    modalTitleText.innerText = 'Aprobar Solicitud';
+                    modalDesc.innerText = 'Puedes agregar un comentario de aprobación (opcional):';
+                    modalNotas.required = false;
+                    modalNotas.placeholder = 'Ej: Todo correcto, proceder...';
+                    btnModalSubmit.innerHTML = '<i data-lucide="check"></i> Sí, Aprobar';
+                    btnModalSubmit.className = 'btn-modal-confirm approve';
+                    modalIcon.setAttribute('data-lucide', 'check-circle');
+                    modalIcon.style.color = 'var(--green)';
+                } else {
+                    modalTitleText.innerText = 'Rechazar Solicitud';
+                    modalDesc.innerText = 'Indica el motivo por el cual rechazas esta solicitud (obligatorio):';
+                    modalNotas.required = true;
+                    modalNotas.placeholder = 'Motivo del rechazo...';
+                    btnModalSubmit.innerHTML = '<i data-lucide="x"></i> Sí, Rechazar';
+                    btnModalSubmit.className = 'btn-modal-confirm reject';
+                    modalIcon.setAttribute('data-lucide', 'alert-triangle');
+                    modalIcon.style.color = 'var(--red)';
                 }
+
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                modal.style.display = 'flex';
+                setTimeout(() => modalNotas.focus(), 100);
             }
+
+            function cerrarModal() {
+                modal.style.display = 'none';
+            }
+
+            modalForm.addEventListener('submit', function(e) {
+                if (modalAction.value === 'aprobar' && modalNotas.value.trim() === '') {
+                    modalNotas.value = 'Aprobado desde la tabla general.';
+                }
+            });
 
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof lucide !== 'undefined') lucide.createIcons();

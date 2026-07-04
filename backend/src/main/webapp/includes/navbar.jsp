@@ -1,25 +1,24 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
-    String userName = (String) session.getAttribute("userName");
-    String roleName = (String) session.getAttribute("roleName");
+    String userName   = (String) session.getAttribute("userName");
+    String roleName   = (String) session.getAttribute("roleName");
     String activeMenu = (String) request.getAttribute("activeMenu");
 
-    if (userName == null) userName = "Usuario";
-    if (roleName == null) roleName = "";
+    if (userName   == null) userName   = "Usuario";
+    if (roleName   == null) roleName   = "";
     if (activeMenu == null) activeMenu = "";
 
     String ctx = request.getContextPath();
 
-    // Flags de rol
-    boolean esSuperAdmin  = "SuperAdmin".equals(roleName);
-    boolean esAdmin       = "Administrador".equals(roleName);
-    boolean esManager     = "Manager".equals(roleName);
-    boolean esMember      = "Member".equals(roleName);
-    boolean esViewer      = "Viewer".equals(roleName);
+    boolean esSuperAdmin = "SuperAdmin".equals(roleName);
+    boolean esAdmin      = "Administrador".equals(roleName);
+    boolean esManager    = "Manager".equals(roleName);
+    boolean esMember     = "Member".equals(roleName);
+    boolean esViewer     = "Viewer".equals(roleName);
 
-    // Helpers de menú activo
     boolean isActive_home         = "home".equals(activeMenu);
     boolean isActive_dashboard    = "dashboard".equals(activeMenu);
+    boolean isActive_analytics    = "analytics".equals(activeMenu);   // ← NUEVO
     boolean isActive_transactions = "transactions".equals(activeMenu);
     boolean isActive_history      = "history".equals(activeMenu);
     boolean isActive_inventory    = "inventory".equals(activeMenu);
@@ -42,7 +41,6 @@
         <%-- ═══════ NO SUPERADMIN ═══════ --%>
         <% if (!esSuperAdmin) { %>
 
-        <%-- PRINCIPAL --%>
         <p class="sidebar-section-title">Principal</p>
 
         <a href="<%= ctx %>/HomeServlet"
@@ -51,8 +49,9 @@
             <span>Inicio</span>
         </a>
 
+        <%-- Dashboard: activo SOLO cuando activeMenu="dashboard", no cuando es "analytics" --%>
         <a href="<%= ctx %>/DashboardServlet"
-           class="<%= isActive_dashboard ? "sidebar-link-active" : "sidebar-link" %>">
+           class="<%= isActive_dashboard && !isActive_analytics ? "sidebar-link-active" : "sidebar-link" %>">
             <i data-lucide="layout-dashboard" class="sidebar-icon"></i>
             <span>Dashboard</span>
         </a>
@@ -67,8 +66,9 @@
             <span>Pendientes</span>
         </a>
 
+        <%-- Mis Decisiones: activo también cuando se está en la vista de análisis --%>
         <a href="<%= ctx %>/HistoryServlet"
-           class="<%= isActive_history ? "sidebar-link-active" : "sidebar-link" %>">
+           class="<%= (isActive_history || isActive_analytics) ? "sidebar-link-active" : "sidebar-link" %>">
             <i data-lucide="clipboard-list" class="sidebar-icon"></i>
             <span>Mis Decisiones</span>
         </a>
@@ -85,7 +85,7 @@
         </a>
 
         <a href="<%= ctx %>/HistoryServlet"
-           class="<%= isActive_history ? "sidebar-link-active" : "sidebar-link" %>">
+           class="<%= (isActive_history || isActive_analytics) ? "sidebar-link-active" : "sidebar-link" %>">
             <i data-lucide="file-text" class="sidebar-icon"></i>
             <span>Historial</span>
         </a>
@@ -100,7 +100,6 @@
             <span>Stock</span>
         </a>
 
-        <%-- DESPACHO: SOLO Member --%>
         <% if (esMember) { %>
         <a href="<%= ctx %>/DepositServlet"
            class="<%= isActive_deposit ? "sidebar-link-active" : "sidebar-link" %>">
@@ -109,7 +108,6 @@
         </a>
         <% } %>
 
-        <%-- GESTIÓN (solo Admin) --%>
         <% if (esAdmin) { %>
         <p class="sidebar-section-title">Gestión</p>
 
@@ -118,7 +116,6 @@
             <i data-lucide="users" class="sidebar-icon"></i>
             <span>Miembros</span>
         </a>
-
         <% } %>
 
         <% } %>
@@ -144,15 +141,14 @@
 
     </div>
 
-    <%-- ═══════ FOOTER: solo Perfil y Salir ═══════ --%>
     <div class="sidebar-footer">
         <div class="sidebar-actions">
             <a href="<%= ctx %>/ProfileServlet" class="sidebar-profile">
-                <i data-lucide="user" style="width:14px; height:14px; vertical-align: middle; margin-right: 4px;"></i>
+                <i data-lucide="user" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
                 Mi Perfil
             </a>
             <a href="<%= ctx %>/AuthServlet?action=logout" class="sidebar-logout">
-                <i data-lucide="log-out" style="width:14px; height:14px; vertical-align: middle; margin-right: 4px;"></i>
+                <i data-lucide="log-out" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
                 Cerrar Sesión
             </a>
         </div>

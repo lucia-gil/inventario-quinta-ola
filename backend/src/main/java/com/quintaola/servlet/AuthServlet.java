@@ -108,15 +108,20 @@ public class AuthServlet extends HttpServlet {
 
                     } else {
                         // Login OK: guardar en sesión
-                        HttpSession sess = request.getSession();
-                        sess.setAttribute("userId",    user.getId());
-                        sess.setAttribute("userName",  user.getName());
-                        sess.setAttribute("userEmail", user.getEmail());
-                        sess.setAttribute("roleId",    user.getRoleId());
-                        sess.setAttribute("roleName",  user.getRoleName());
+                        HttpSession oldSession = request.getSession(false);
 
-                        // Guardamos el avatar en la sesión para que el Topbar lo renderice desde el inicio
-                        sess.setAttribute("avatarUrl",  user.getAvatarUrl());
+                        if (oldSession != null) {
+                            oldSession.invalidate();
+                        }
+
+                        HttpSession sess = request.getSession(true);
+
+                        sess.setAttribute("userId", user.getId());
+                        sess.setAttribute("userName", user.getName());
+                        sess.setAttribute("userEmail", user.getEmail());
+                        sess.setAttribute("roleId", user.getRoleId());
+                        sess.setAttribute("roleName", user.getRoleName());
+                        sess.setAttribute("avatarUrl", user.getAvatarUrl());
 
                         // Redirigir según rol — todos van a HomeServlet excepto SuperAdmin
                         // (SuperAdmin no tiene Home porque su perfil es exclusivo de auditoría)
@@ -127,7 +132,12 @@ public class AuthServlet extends HttpServlet {
                         response.sendRedirect(request.getContextPath() + redirect);
                     }
                 } catch (Exception e) {
-                    request.setAttribute("error", "Error del servidor: " + e.getMessage());
+                    // Imprime el error real en la consola de la nube para ti
+                    System.err.println("[SECURITY ALERT] Error en login: " + e.getMessage());
+                    e.printStackTrace();
+
+                    // Al atacante le mostramos un mensaje totalmente genérico
+                    request.setAttribute("error", "Ocurrió un error interno en el servidor. Inténtelo más tarde.");
                     view = request.getRequestDispatcher("/login.jsp");
                     view.forward(request, response);
                 }
@@ -222,10 +232,12 @@ public class AuthServlet extends HttpServlet {
                     }
                 } catch (Exception e) {
                     String msg = e.getMessage();
-                    if (msg != null && msg.contains("Duplicate")) {
+                    if (msg != null && (msg.contains("Duplicate") || msg.contains("ya está registrado"))) {
                         msg = "Ese correo o DNI ya está registrado.";
                     } else {
-                        msg = "Error al crear la cuenta. Por favor intenta de nuevo.";
+                        // System.err para tus logs internos de la nube
+                        System.err.println("[SECURITY ALERT] Error en registro: " + e.getMessage());
+                        msg = "Error interno al procesar la cuenta. Por favor intente de nuevo.";
                     }
                     request.setAttribute("error", msg);
                     view = request.getRequestDispatcher("/signup.jsp");

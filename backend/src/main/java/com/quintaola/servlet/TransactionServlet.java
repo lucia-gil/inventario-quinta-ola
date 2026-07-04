@@ -1,5 +1,6 @@
 package com.quintaola.servlet;
 
+import com.quintaola.dao.AuditDAO;           // ← NUEVO
 import com.quintaola.dao.TransactionDAO;
 import com.quintaola.model.Transaction;
 import jakarta.servlet.RequestDispatcher;
@@ -14,13 +15,6 @@ import java.util.stream.Collectors;
 /**
  * ════════════════════════════════════════════════════════════════════
  * TransactionServlet — Bandeja de Aprobaciones y Solicitudes
- * ════════════════════════════════════════════════════════════════════
- *
- * Reglas de permisos:
- * - Viewer (1), Member (2): solo solicitan
- * - Manager (3), Administrador (4): solicitan + aprueban,
- *   PERO no pueden aprobar/rechazar las suyas propias
- * - SuperAdmin (5): NO solicita ni aprueba (solo audita)
  * ════════════════════════════════════════════════════════════════════
  */
 @WebServlet(name = "TransactionServlet", value = "/TransactionServlet")
@@ -46,7 +40,6 @@ public class TransactionServlet extends HttpServlet {
         Integer roleIdGuard = (Integer) session.getAttribute("roleId");
         int roleGuard = roleIdGuard != null ? roleIdGuard : 0;
 
-        // 🚫 SuperAdmin no puede operar transacciones
         if (roleGuard == 5) {
             response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
@@ -64,51 +57,67 @@ public class TransactionServlet extends HttpServlet {
                     List<Transaction> todasPendientes;
 
                     if (currentRoleId == 1) {
-                        // Viewer: solo sus pendientes
                         todasPendientes = txDao.getByUser(currentUserId).stream()
                                 .filter(t -> "PENDING".equals(t.getStatus()))
                                 .collect(Collectors.toList());
                     } else if (currentRoleId == 3 || currentRoleId == 4) {
-                        // Manager y Administrador: ven todas las pendientes
-                        // EXCEPTO las suyas propias (segregación de funciones)
                         todasPendientes = txDao.getPendingExcludingSelf(currentUserId);
                     } else {
-                        // Member (2): ve todas las pendientes excluyendo las suyas
                         todasPendientes = txDao.getPendingExcludingSelf(currentUserId);
                     }
 
-                    // Paginación
-                    int pageNum = 1;
-                    int pageSize = 8;
+                    String search = request.getParameter("search");
+                    String fechaEntrega = request.getParameter("fechaEntrega");
 
+                    if (search != null && !search.trim().isEmpty()) {
+                        String sLower = search.trim().toLowerCase();
+                        todasPendientes = todasPendientes.stream()
+                                .filter(t -> {
+                                    String idOriginal  = String.valueOf(t.getId());
+                                    String idFormateado = String.format("txn-%04d", t.getId());
+                                    String solicitante  = t.getRequesterName() != null ? t.getRequesterName().toLowerCase() : "";
+                                    String material     = t.getItemName()      != null ? t.getItemName().toLowerCase()      : "";
+                                    return idOriginal.contains(sLower) || idFormateado.contains(sLower)
+                                            || solicitante.contains(sLower) || material.contains(sLower);
+                                })
+                                .collect(Collectors.toList());
+                    }
+
+                    if (fechaEntrega != null && !fechaEntrega.trim().isEmpty()) {
+                        String fTrim = fechaEntrega.trim();
+                        todasPendientes = todasPendientes.stream()
+                                .filter(t -> t.getEstimatedDelivery() != null
+                                        && t.getEstimatedDelivery().toString().contains(fTrim))
+                                .collect(Collectors.toList());
+                    }
+
+                    int pageNum  = 1;
+                    int pageSize = 15;
                     if (request.getParameter("page") != null) {
-                        try {
-                            pageNum = Integer.parseInt(request.getParameter("page"));
-                        } catch (NumberFormatException e) {
-                            pageNum = 1;
-                        }
+                        try { pageNum = Integer.parseInt(request.getParameter("page")); }
+                        catch (NumberFormatException e) { pageNum = 1; }
                     }
 
                     int totalRecords = todasPendientes.size();
-                    int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
-
+                    int totalPages   = (int) Math.ceil((double) totalRecords / pageSize);
                     if (pageNum < 1) pageNum = 1;
                     if (pageNum > totalPages && totalPages > 0) pageNum = totalPages;
 
                     int startIndex = (pageNum - 1) * pageSize;
-                    int endIndex = Math.min(startIndex + pageSize, totalRecords);
+                    int endIndex   = Math.min(startIndex + pageSize, totalRecords);
                     List<Transaction> listaPaginada = todasPendientes.isEmpty()
                             ? todasPendientes
                             : todasPendientes.subList(startIndex, endIndex);
 
-                    request.setAttribute("transacciones", listaPaginada);
-                    request.setAttribute("currentPage", pageNum);
-                    request.setAttribute("totalPages", totalPages);
-                    request.setAttribute("totalRecords", totalRecords);
-                    request.setAttribute("activeMenu", "transactions");
+                    request.setAttribute("transacciones",  listaPaginada);
+                    request.setAttribute("currentPage",    pageNum);
+                    request.setAttribute("totalPages",     totalPages);
+                    request.setAttribute("totalRecords",   totalRecords);
+                    request.setAttribute("activeMenu",     "transactions");
 
                     view = request.getRequestDispatcher("transactions.jsp");
                     view.forward(request, response);
+
                 } catch (Exception e) {
                     request.setAttribute("error", "Error al cargar las solicitudes: " + e.getMessage());
                     view = request.getRequestDispatcher("transactions.jsp");
@@ -120,9 +129,14 @@ public class TransactionServlet extends HttpServlet {
                 try {
                     int id = Integer.parseInt(request.getParameter("id"));
                     Transaction tx = txDao.getById(id);
-
                     if (tx != null) {
                         request.setAttribute("tx", tx);
+                        String origen = request.getParameter("origen");
+                        if ("historial".equals(origen)) {
+                            request.setAttribute("activeMenu", "history");
+                        } else {
+                            request.setAttribute("activeMenu", "transactions");
+                        }
                         view = request.getRequestDispatcher("request-detail.jsp");
                         view.forward(request, response);
                     } else {
@@ -134,7 +148,6 @@ public class TransactionServlet extends HttpServlet {
                 break;
 
             case "formCrear":
-                // 🛡Member (2) y SuperAdmin (5) NO solicitan materiales
                 if (roleGuard == 2) {
                     response.sendRedirect(request.getContextPath()
                             + "/InventoryServlet?error=No+puedes+crear+solicitudes+como+Encargado+de+Deposito");
@@ -143,19 +156,26 @@ public class TransactionServlet extends HttpServlet {
                 try {
                     com.quintaola.dao.ItemDAO itemDao = new com.quintaola.dao.ItemDAO();
                     request.setAttribute("items", itemDao.getAll());
-
                     String itemIdParam = request.getParameter("itemId");
                     if (itemIdParam != null && !itemIdParam.trim().isEmpty()) {
-                        try {
-                            int itemIdPre = Integer.parseInt(itemIdParam);
-                            request.setAttribute("itemPreseleccionado", itemIdPre);
-                        } catch (NumberFormatException ignored) {}
+                        try { request.setAttribute("itemPreseleccionado", Integer.parseInt(itemIdParam)); }
+                        catch (NumberFormatException ignored) {}
                     }
-
+                    request.setAttribute("cantidadPrevia", request.getParameter("cantidad"));
+                    request.setAttribute("notasPrevias",   request.getParameter("notas"));
+                    request.setAttribute("fechaPrevia",    request.getParameter("neededBy"));
+                    request.setAttribute("error",          request.getParameter("error"));
                 } catch (Exception e) {
                     System.out.println("Error cargando items: " + e.getMessage());
                 }
-                request.setAttribute("activeMenu", "inventory");
+                String origen = request.getParameter("origen");
+                if ("inventory".equals(origen)) {
+                    request.setAttribute("activeMenu", "inventory");
+                } else if ("home".equals(origen)) {
+                    request.setAttribute("activeMenu", "home");
+                } else {
+                    request.setAttribute("activeMenu", "transactions");
+                }
                 view = request.getRequestDispatcher("request-form.jsp");
                 view.forward(request, response);
                 break;
@@ -181,11 +201,14 @@ public class TransactionServlet extends HttpServlet {
             return;
         }
 
-        Integer userId = (Integer) session.getAttribute("userId");
+        Integer userId     = (Integer) session.getAttribute("userId");
         Integer roleIdGuard = (Integer) session.getAttribute("roleId");
-        int roleGuard = roleIdGuard != null ? roleIdGuard : 0;
+        int     roleGuard   = roleIdGuard != null ? roleIdGuard : 0;
 
-        // SuperAdmin no opera transacciones
+        // Actor para auditoría
+        String actorRole = (String) session.getAttribute("roleName");
+        if (actorRole == null) actorRole = "Usuario";
+
         if (roleGuard == 5) {
             response.sendRedirect(request.getContextPath() + "/HomeServlet");
             return;
@@ -193,18 +216,28 @@ public class TransactionServlet extends HttpServlet {
 
         switch (action) {
 
+            // ─── CREAR SOLICITUD ──────────────────────────────────────────────
             case "crear":
-                // Member (2) NO puede crear solicitudes (es operador, no consumidor)
                 if (roleGuard == 2) {
                     response.sendRedirect(request.getContextPath()
                             + "/HomeServlet?error=No+tienes+permiso+para+crear+solicitudes");
                     return;
                 }
+
+                String itemIdStr  = request.getParameter("itemId");
+                String cantidadStr = request.getParameter("cantidad");
+                String notasStr   = request.getParameter("notas");
+                String fechaStr   = request.getParameter("neededBy");
+
                 try {
-                    int itemId = Integer.parseInt(request.getParameter("itemId"));
-                    int quantity = Integer.parseInt(request.getParameter("cantidad"));
-                    String notas = request.getParameter("notas");
-                    String fecha = request.getParameter("neededBy");
+                    if (itemIdStr == null || itemIdStr.trim().isEmpty()) {
+                        throw new Exception("Por favor, selecciona un material válido del catálogo.");
+                    }
+                    int itemId   = Integer.parseInt(itemIdStr);
+                    int quantity = Integer.parseInt(cantidadStr);
+                    if (quantity < 1) {
+                        throw new Exception("Cantidad no válida. El pedido debe ser de al menos 1 unidad.");
+                    }
 
                     Transaction t = new Transaction();
                     t.setItemId(itemId);
@@ -212,76 +245,83 @@ public class TransactionServlet extends HttpServlet {
                     t.setRequesterId(userId);
 
                     String notasFinales = "";
-                    if (fecha != null && !fecha.trim().isEmpty()) {
-                        notasFinales = "Fecha de entrega estimada:  " + fecha + " | " + notas;
-                        t.setEstimatedDelivery(fecha);
+                    if (fechaStr != null && !fechaStr.trim().isEmpty()) {
+                        notasFinales = "Fecha de entrega estimada:  " + fechaStr + " | " + notasStr;
+                        t.setEstimatedDelivery(fechaStr);
                     } else {
-                        notasFinales = notas;
+                        notasFinales = notasStr;
                         t.setEstimatedDelivery(null);
                     }
                     t.setNotes(notasFinales);
-                    boolean creado = txDao.create(t);
-                    int nuevaId = creado ? t.getId() : 0;
 
-                    // ─── Notificar a TODOS los aprobadores activos ───
+                    boolean creado  = txDao.create(t);
+                    int     nuevaId = creado ? t.getId() : 0;
+
+                    // ── Auditoría de creación de solicitud ──────────────────────
                     try {
-                        com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
-                        com.quintaola.model.User solicitante = userDao.getById(userId);
-                        String nombreSolicitante = solicitante != null ? solicitante.getName() : "Usuario desconocido";
-                        int requestIdParaEmail = nuevaId > 0 ? nuevaId : 0;
+                        final String _actorRole = actorRole;
+                        new AuditDAO().log(userId, "CREAR_SOLICITUD", "TRANSACTION", nuevaId,
+                                String.format("El %s creó la solicitud id=%d (itemId=%d, cantidad=%d)",
+                                        _actorRole, nuevaId, itemId, quantity));
+                    } catch (Exception ignored) {}
+                    // ───────────────────────────────────────────────────────────
 
-                        for (com.quintaola.model.User aprobador : userDao.getApprovers()) {
-                            // No se notifica a sí mismo si el solicitante también es aprobador
-                            if (aprobador.getId() == userId) continue;
-                            if (aprobador.getEmail() == null || aprobador.getEmail().isEmpty()) continue;
-
-                            try {
-                                com.quintaola.util.EmailService.enviarNuevaSolicitud(
-                                        aprobador.getEmail(),
-                                        aprobador.getName(),
-                                        nombreSolicitante,
-                                        requestIdParaEmail
-                                );
-                            } catch (Exception emailEx) {
-                                System.err.println("[TransactionServlet] Email a aprobador falló: " + emailEx.getMessage());
+                    // Notificar a aprobadores en segundo plano
+                    new Thread(() -> {
+                        try {
+                            com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
+                            com.quintaola.model.User solicitante = userDao.getById(userId);
+                            String nombreSolicitante = solicitante != null ? solicitante.getName() : "Usuario desconocido";
+                            int requestIdParaEmail = nuevaId > 0 ? nuevaId : 0;
+                            for (com.quintaola.model.User aprobador : userDao.getApprovers()) {
+                                if (aprobador.getId() == userId) continue;
+                                if (aprobador.getEmail() == null || aprobador.getEmail().isEmpty()) continue;
+                                try {
+                                    com.quintaola.util.EmailService.enviarNuevaSolicitud(
+                                            aprobador.getEmail(), aprobador.getName(),
+                                            nombreSolicitante, requestIdParaEmail);
+                                } catch (Exception emailEx) {
+                                    System.err.println("[TransactionServlet] Email a aprobador falló: " + emailEx.getMessage());
+                                }
                             }
+                        } catch (Exception notifyEx) {
+                            System.err.println("[TransactionServlet] No se pudo notificar a aprobadores: " + notifyEx.getMessage());
                         }
-                    } catch (Exception notifyEx) {
-                        System.err.println("[TransactionServlet] No se pudo notificar a aprobadores: " + notifyEx.getMessage());
-                    }
+                    }).start();
 
-                    response.sendRedirect(request.getContextPath() + "/HistoryServlet?action=lista");
-
-                } catch (java.sql.SQLException sqlEx) {
-                    String msg = sqlEx.getMessage();
-                    if (msg != null && msg.contains("Stock insuficiente")) {
-                        response.sendRedirect(request.getContextPath()
-                                + "/TransactionServlet?action=formCrear&error=" + msg.replace(" ", "+"));
-                    } else {
-                        response.sendRedirect(request.getContextPath()
-                                + "/TransactionServlet?action=formCrear&error=Error+al+crear+solicitud");
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
                     response.sendRedirect(request.getContextPath()
-                            + "/TransactionServlet?action=formCrear&error=Error+al+crear+solicitud");
+                            + "/HistoryServlet?action=lista&success=Solicitud+registrada+correctamente");
+
+                } catch (Exception e) {
+                    String msg = e.getMessage();
+                    String errorMsg = "Error al crear la solicitud.";
+                    if (msg != null && (msg.contains("Stock") || msg.contains("Cantidad")
+                            || msg.contains("material") || msg.contains("selecciona"))) {
+                        errorMsg = msg;
+                    }
+                    String redirectUrl = request.getContextPath() + "/TransactionServlet?action=formCrear"
+                            + "&error="    + java.net.URLEncoder.encode(errorMsg, "UTF-8")
+                            + "&itemId="   + (itemIdStr   != null ? itemIdStr : "")
+                            + "&cantidad=" + (cantidadStr != null ? cantidadStr : "")
+                            + "&notas="    + (notasStr    != null ? java.net.URLEncoder.encode(notasStr, "UTF-8") : "")
+                            + "&neededBy=" + (fechaStr    != null ? java.net.URLEncoder.encode(fechaStr, "UTF-8") : "");
+                    response.sendRedirect(redirectUrl);
                 }
                 break;
 
+            // ─── APROBAR ──────────────────────────────────────────────────────
             case "aprobar":
                 try {
-                    int id = Integer.parseInt(request.getParameter("id"));
+                    int id    = Integer.parseInt(request.getParameter("id"));
                     String notas = request.getParameter("notas") != null
                             ? request.getParameter("notas") : "";
 
-                    // Solo Manager (3) y Administrador (4) pueden aprobar
                     if (roleGuard != 3 && roleGuard != 4) {
                         response.sendRedirect(request.getContextPath()
                                 + "/TransactionServlet?action=lista&error=No+tienes+permiso+para+aprobar");
                         return;
                     }
 
-                    // 🛡Segregación de funciones: no puedes aprobar tus propias solicitudes
                     Transaction txExistente = txDao.getById(id);
                     if (txExistente != null && txExistente.getRequesterId() == userId) {
                         response.sendRedirect(request.getContextPath()
@@ -291,20 +331,29 @@ public class TransactionServlet extends HttpServlet {
 
                     txDao.approve(id, userId, notas);
 
-                    // ─── Notificar al solicitante por email ───
+                    // ── Auditoría ───────────────────────────────────────────────
                     try {
-                        com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
-                        com.quintaola.model.User solicitante = userDao.getById(txExistente.getRequesterId());
-                        if (solicitante != null && solicitante.getEmail() != null) {
-                            com.quintaola.util.EmailService.enviarSolicitudAprobada(
-                                    solicitante.getEmail(),
-                                    solicitante.getName(),
-                                    id
-                            );
+                        new AuditDAO().log(userId, "APROBAR", "TRANSACTION", id,
+                                String.format("El %s aprobó la solicitud id=%d (ítem: %s, cantidad: %d)",
+                                        actorRole, id,
+                                        txExistente != null && txExistente.getItemName() != null
+                                                ? txExistente.getItemName() : "—",
+                                        txExistente != null ? txExistente.getQuantity() : 0));
+                    } catch (Exception ignored) {}
+                    // ───────────────────────────────────────────────────────────
+
+                    new Thread(() -> {
+                        try {
+                            com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
+                            com.quintaola.model.User solicitante = userDao.getById(txExistente.getRequesterId());
+                            if (solicitante != null && solicitante.getEmail() != null) {
+                                com.quintaola.util.EmailService.enviarSolicitudAprobada(
+                                        solicitante.getEmail(), solicitante.getName(), id);
+                            }
+                        } catch (Exception emailEx) {
+                            System.err.println("[TransactionServlet] No se pudo enviar email de aprobación: " + emailEx.getMessage());
                         }
-                    } catch (Exception emailEx) {
-                        System.err.println("[TransactionServlet] No se pudo enviar email de aprobación: " + emailEx.getMessage());
-                    }
+                    }).start();
 
                     response.sendRedirect(request.getContextPath()
                             + "/TransactionServlet?action=lista&success=Solicitud+aprobada+y+stock+descontado");
@@ -325,20 +374,19 @@ public class TransactionServlet extends HttpServlet {
                 }
                 break;
 
+            // ─── RECHAZAR ─────────────────────────────────────────────────────
             case "rechazar":
                 try {
-                    int id = Integer.parseInt(request.getParameter("id"));
+                    int id    = Integer.parseInt(request.getParameter("id"));
                     String notas = request.getParameter("notas") != null
                             ? request.getParameter("notas") : "Rechazado sin comentarios.";
 
-                    // 🛡️ Solo Manager (3) y Administrador (4) pueden rechazar
                     if (roleGuard != 3 && roleGuard != 4) {
                         response.sendRedirect(request.getContextPath()
                                 + "/TransactionServlet?action=lista&error=No+tienes+permiso+para+rechazar");
                         return;
                     }
 
-                    // 🛡️ Segregación de funciones: no puedes rechazar tus propias solicitudes
                     Transaction txExistente = txDao.getById(id);
                     if (txExistente != null && txExistente.getRequesterId() == userId) {
                         response.sendRedirect(request.getContextPath()
@@ -348,21 +396,26 @@ public class TransactionServlet extends HttpServlet {
 
                     txDao.reject(id, userId, notas);
 
-                    // ─── Notificar al solicitante con el motivo ───
+                    // ── Auditoría ───────────────────────────────────────────────
                     try {
-                        com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
-                        com.quintaola.model.User solicitante = userDao.getById(txExistente.getRequesterId());
-                        if (solicitante != null && solicitante.getEmail() != null) {
-                            com.quintaola.util.EmailService.enviarSolicitudRechazada(
-                                    solicitante.getEmail(),
-                                    solicitante.getName(),
-                                    id,
-                                    notas
-                            );
+                        new AuditDAO().log(userId, "RECHAZAR", "TRANSACTION", id,
+                                String.format("El %s rechazó la solicitud id=%d. Motivo: %s",
+                                        actorRole, id, notas));
+                    } catch (Exception ignored) {}
+                    // ───────────────────────────────────────────────────────────
+
+                    new Thread(() -> {
+                        try {
+                            com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
+                            com.quintaola.model.User solicitante = userDao.getById(txExistente.getRequesterId());
+                            if (solicitante != null && solicitante.getEmail() != null) {
+                                com.quintaola.util.EmailService.enviarSolicitudRechazada(
+                                        solicitante.getEmail(), solicitante.getName(), id, notas);
+                            }
+                        } catch (Exception emailEx) {
+                            System.err.println("[TransactionServlet] No se pudo enviar email de rechazo: " + emailEx.getMessage());
                         }
-                    } catch (Exception emailEx) {
-                        System.err.println("[TransactionServlet] No se pudo enviar email de rechazo: " + emailEx.getMessage());
-                    }
+                    }).start();
 
                     response.sendRedirect(request.getContextPath()
                             + "/TransactionServlet?action=lista&success=Solicitud+rechazada+correctamente");

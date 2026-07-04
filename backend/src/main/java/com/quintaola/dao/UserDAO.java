@@ -23,8 +23,8 @@ public class UserDAO {
             ps.setString(2, user.getDni());
             ps.setString(3, user.getName());
             ps.setString(4, BCrypt.hashpw(user.getPasswordHash(), BCrypt.gensalt()));
-            ps.setInt(5, user.getRoleId());
-            ps.setInt(6, user.getActivo());
+            ps.setInt   (5, user.getRoleId());
+            ps.setInt   (6, user.getActivo());
             return ps.executeUpdate() > 0;
         }
     }
@@ -42,15 +42,14 @@ public class UserDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     String storedHash = rs.getString("password_hash");
-                    if (BCrypt.checkpw(password, storedHash)) {
-                        return mapRow(rs);
-                    }
+                    if (BCrypt.checkpw(password, storedHash)) return mapRow(rs);
                 }
             }
         }
         return null;
     }
 
+    // ─── getAll: todos los usuarios sin filtros (uso interno / otras vistas) ──
     public List<User> getAll() throws SQLException {
         List<User> users = new ArrayList<>();
         String sql = """
@@ -62,11 +61,83 @@ public class UserDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                users.add(mapRow(rs));
+            while (rs.next()) users.add(mapRow(rs));
+        }
+        return users;
+    }
+
+    // ─── getPage: página sin filtros (se mantiene por compatibilidad) ─────────
+    public List<User> getPage(int offset, int limit) throws SQLException {
+        return getPageFiltered(offset, limit, "", 0);
+    }
+
+    // ─── getPageFiltered: página con búsqueda y filtro de rol ─────────────────
+    //
+    // search    → busca en el nombre completo (LIKE %texto%)
+    //             una sola letra filtra por inicial de nombre O apellido
+    // roleFilter→ 0 = todos los roles; >0 = filtra exactamente ese role_id
+    // Orden     → apellido (última palabra del nombre) A-Z
+    //
+    public List<User> getPageFiltered(int offset, int limit,
+                                      String search, int roleFilter) throws SQLException {
+        List<User> users = new ArrayList<>();
+
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasRole   = roleFilter > 0;
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT u.*, r.name AS role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE 1=1
+            """);
+
+        if (hasSearch) sql.append("AND u.name LIKE ? ");
+        if (hasRole)   sql.append("AND u.role_id = ? ");
+
+        // Orden por apellido: SUBSTRING_INDEX extrae la última palabra del nombre
+        sql.append("ORDER BY SUBSTRING_INDEX(u.name, ' ', 1) ASC ");
+        sql.append("LIMIT ? OFFSET ?");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int i = 1;
+            if (hasSearch) ps.setString(i++, "%" + search.trim() + "%");
+            if (hasRole)   ps.setInt   (i++, roleFilter);
+            ps.setInt(i++, limit);
+            ps.setInt(i,   offset);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) users.add(mapRow(rs));
             }
         }
         return users;
+    }
+
+    // ─── countAll: total sin filtros ──────────────────────────────────────────
+    public int countAll() throws SQLException {
+        return countFiltered("", 0);
+    }
+
+    // ─── countFiltered: total respetando los mismos filtros que getPageFiltered ─
+    public int countFiltered(String search, int roleFilter) throws SQLException {
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasRole   = roleFilter > 0;
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) FROM users u WHERE 1=1 "
+        );
+        if (hasSearch) sql.append("AND u.name LIKE ? ");
+        if (hasRole)   sql.append("AND u.role_id = ? ");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int i = 1;
+            if (hasSearch) ps.setString(i++, "%" + search.trim() + "%");
+            if (hasRole)   ps.setInt   (i,   roleFilter);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
     }
 
     public boolean updateRole(int userId, int roleId) throws SQLException {
@@ -79,7 +150,6 @@ public class UserDAO {
         }
     }
 
-    // ─── DISABLE: desactiva un usuario (soft-delete con activo = 0) ───
     public boolean disable(int userId) throws SQLException {
         String sql = "UPDATE users SET activo = 0 WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -89,7 +159,6 @@ public class UserDAO {
         }
     }
 
-    // ─── ENABLE: reactiva un usuario previamente desactivado ───
     public boolean enable(int userId) throws SQLException {
         String sql = "UPDATE users SET activo = 1 WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -99,7 +168,6 @@ public class UserDAO {
         }
     }
 
-    // ─── APPROVE: aprueba un usuario pendiente (activo = 1) ───
     public boolean approve(int userId) throws SQLException {
         String sql = "UPDATE users SET activo = 1 WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -110,23 +178,12 @@ public class UserDAO {
     }
 
     /**
-     * ─── distinguir "pendiente" vs "desactivado" ───
-     *
-     * Ambos casos tienen activo = 0 en BD, pero conceptualmente son distintos:
-     *   - Pendiente: nunca fue aprobado tras su registro.
-     *   - Desactivado: estuvo activo, pero un SuperAdmin lo deshabilitó.
-     *
-     * Para distinguirlos, miramos audit_log: si el último evento sobre ese
-     * usuario es DESACTIVAR_USUARIO, está desactivado. En cualquier otro caso
-     * (sin eventos, o último evento es APROBAR/RECHAZAR/CREAR), lo tratamos
-     * como pendiente.
-     *
-     * Devuelve un Map<userId, "DEACTIVATED" | "PENDING"> solo para los
-     * usuarios con activo = 0.
+     * Distingue usuarios "pendiente" de "desactivado" (ambos tienen activo=0).
+     * Revisa el último evento en audit_log: si fue DESACTIVAR_USUARIO → DEACTIVATED,
+     * cualquier otro caso → PENDING.
      */
     public Map<Integer, String> getInactiveUsersStatus() throws SQLException {
         Map<Integer, String> result = new HashMap<>();
-
         String sql = """
             SELECT u.id,
                    (SELECT action FROM audit_log
@@ -135,18 +192,13 @@ public class UserDAO {
             FROM users u
             WHERE u.activo = 0
             """;
-
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                int userId = rs.getInt("id");
+                int    userId     = rs.getInt   ("id");
                 String lastAction = rs.getString("last_action");
-                if ("DESACTIVAR_USUARIO".equals(lastAction)) {
-                    result.put(userId, "DEACTIVATED");
-                } else {
-                    result.put(userId, "PENDING");
-                }
+                result.put(userId, "DESACTIVAR_USUARIO".equals(lastAction) ? "DEACTIVATED" : "PENDING");
             }
         }
         return result;
@@ -154,15 +206,15 @@ public class UserDAO {
 
     private User mapRow(ResultSet rs) throws SQLException {
         User user = new User();
-        user.setId          (rs.getInt    ("id"));
-        user.setEmail       (rs.getString ("email"));
-        user.setDni         (rs.getString ("dni"));
-        user.setName        (rs.getString ("name"));
-        user.setPasswordHash(rs.getString ("password_hash"));
-        user.setRoleId      (rs.getInt    ("role_id"));
-        user.setRoleName    (rs.getString ("role_name"));
-        user.setActivo      (rs.getInt    ("activo"));
-        user.setCreatedAt   (rs.getString ("created_at"));
+        user.setId          (rs.getInt   ("id"));
+        user.setEmail       (rs.getString("email"));
+        user.setDni         (rs.getString("dni"));
+        user.setName        (rs.getString("name"));
+        user.setPasswordHash(rs.getString("password_hash"));
+        user.setRoleId      (rs.getInt   ("role_id"));
+        user.setRoleName    (rs.getString("role_name"));
+        user.setActivo      (rs.getInt   ("activo"));
+        user.setCreatedAt   (rs.getString("created_at"));
         try { user.setAvatarUrl(rs.getString("avatar_url")); } catch (Exception ignored) {}
         return user;
     }
@@ -189,16 +241,16 @@ public class UserDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, avatarUrl);
-            ps.setInt(2, userId);
+            ps.setInt   (2, userId);
             return ps.executeUpdate() > 0;
         }
     }
 
     public boolean createWithRole(User user, int roleId) throws SQLException {
         String sql = """
-        INSERT INTO users (email, dni, name, password_hash, role_id, activo)
-        VALUES (?, ?, ?, ?, ?, 1)
-        """;
+            INSERT INTO users (email, dni, name, password_hash, role_id, activo)
+            VALUES (?, ?, ?, ?, ?, 1)
+            """;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, user.getEmail());
@@ -239,20 +291,11 @@ public class UserDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, BCrypt.hashpw(newPassword, BCrypt.gensalt()));
-            ps.setInt(2, userId);
+            ps.setInt   (2, userId);
             return ps.executeUpdate() > 0;
         }
     }
 
-    /**
-     * ─── getApprovers: lista aprobadores activos ───
-     *
-     * Devuelve todos los usuarios activos con rol Manager (3) o Administrador (4).
-     * Se usa para notificarles por email cuando se crea una nueva solicitud.
-     *
-     * NOTA: No incluye SuperAdmin (5) porque por política, el SA solo audita,
-     * no aprueba transacciones.
-     */
     public List<User> getApprovers() throws SQLException {
         List<User> approvers = new ArrayList<>();
         String sql = """
@@ -266,11 +309,8 @@ public class UserDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                approvers.add(mapRow(rs));
-            }
+            while (rs.next()) approvers.add(mapRow(rs));
         }
         return approvers;
     }
-
 }

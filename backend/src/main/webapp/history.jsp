@@ -29,6 +29,28 @@
             default:          return "status-badge";
         }
     }
+
+    private String formatearFecha(Object fechaObj) {
+        if (fechaObj == null) return "—";
+        try {
+            if (fechaObj instanceof java.util.Date) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd-MM-yyyy HH:mm");
+                return sdf.format((java.util.Date) fechaObj);
+            } else if (fechaObj instanceof java.time.LocalDateTime) {
+                java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+                return ((java.time.LocalDateTime) fechaObj).format(dtf);
+            }
+
+            String fechaStr = fechaObj.toString();
+            if (fechaStr.matches("\\d{4}-\\d{2}-\\d{2}.*")) {
+                java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(fechaStr.replace(" ", "T").substring(0, 19));
+                return ldt.format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
+            }
+            return fechaStr;
+        } catch (Exception e) {
+            return fechaObj.toString();
+        }
+    }
 %>
 
 <%
@@ -37,6 +59,11 @@
     List<Transaction> transacciones = (List<Transaction>) request.getAttribute("transacciones");
     Integer totalTx = (Integer) request.getAttribute("totalTransacciones");
     if (totalTx == null) totalTx = 0;
+
+    Integer currentPage = (Integer) request.getAttribute("currentPage");
+    Integer totalPages = (Integer) request.getAttribute("totalPages");
+    if (currentPage == null) currentPage = 1;
+    if (totalPages == null) totalPages = 1;
 
     String filtroTexto  = (String) request.getAttribute("filtroTexto");
     String filtroStatus = (String) request.getAttribute("filtroStatus");
@@ -56,6 +83,14 @@
     String pageSubtitle = esViewer ? "Todas las solicitudes que has hecho" : "Todas las solicitudes del sistema";
 
     request.setAttribute("activeMenu", "history");
+
+    String baseUrlPaginacion = ctx + "/HistoryServlet?action=lista";
+    if (!filtroTexto.isEmpty()) {
+        baseUrlPaginacion += "&q=" + java.net.URLEncoder.encode(filtroTexto, "UTF-8");
+    }
+    if (!filtroStatus.isEmpty()) {
+        baseUrlPaginacion += "&status=" + java.net.URLEncoder.encode(filtroStatus, "UTF-8");
+    }
 %>
 <!doctype html>
 <html lang="es">
@@ -81,164 +116,96 @@
             margin-bottom: 1.5rem;
         }
 
-        .filter-search {
-            position: relative;
-            flex-grow: 1;
-            min-width: 250px;
-            display: flex;
-            align-items: center;
+        .filter-search { position: relative; flex-grow: 1; min-width: 250px; display: flex; align-items: center; }
+        .filter-search svg, .filter-search i {
+            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+            color: var(--gray-400); width: 18px !important; height: 18px !important;
+            pointer-events: none; z-index: 2;
         }
-
-        .filter-search svg,
-        .filter-search i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray-400);
-            width: 18px !important;
-            height: 18px !important;
-            pointer-events: none;
-            z-index: 2;
-        }
-
         .filter-search input {
-            width: 100%;
-            border: 1.5px solid var(--gray-200);
-            border-radius: var(--radius-full);
-            padding: 0.65rem 1rem 0.65rem 2.85rem;
-            font-size: 0.875rem;
-            outline: none;
-            transition: all var(--transition);
-            background: var(--gray-50);
-            font-family: inherit;
-            color: var(--gray-800);
-            height: 42px;
-            box-sizing: border-box;
+            width: 100%; border: 1.5px solid var(--gray-200); border-radius: var(--radius-full);
+            padding: 0.65rem 1rem 0.65rem 2.85rem; font-size: 0.875rem; outline: none;
+            transition: all var(--transition); background: var(--gray-50); font-family: inherit;
+            color: var(--gray-800); height: 42px; box-sizing: border-box;
         }
-
-        .filter-search input::placeholder {
-            color: var(--gray-400);
-            font-weight: 500;
-        }
-
-        .filter-search input:focus {
-            border-color: var(--purple);
-            background: var(--white);
-            box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08);
-        }
+        .filter-search input::placeholder { color: var(--gray-400); font-weight: 500; }
+        .filter-search input:focus { border-color: var(--purple); background: var(--white); box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08); }
 
         .filter-select {
-            border: 1.5px solid var(--gray-200);
-            border-radius: var(--radius-full);
-            padding: 0.65rem 1.25rem;
-            font-size: 0.875rem;
-            background: var(--gray-50);
-            color: var(--gray-700);
-            font-family: inherit;
-            cursor: pointer;
-            outline: none;
-            transition: all var(--transition);
-            min-width: 180px;
-            height: 42px;
-            box-sizing: border-box;
+            border: 1.5px solid var(--gray-200); border-radius: var(--radius-full);
+            padding: 0.65rem 1.25rem; font-size: 0.875rem; background: var(--gray-50);
+            color: var(--gray-700); font-family: inherit; cursor: pointer; outline: none;
+            transition: all var(--transition); min-width: 180px; height: 42px; box-sizing: border-box;
         }
+        .filter-select:hover { border-color: var(--purple); background: var(--white); }
+        .filter-select:focus { border-color: var(--purple); background: var(--white); box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08); }
+        .filter-actions { display: flex; gap: 0.5rem; align-items: center; }
 
-        .filter-select:hover {
-            border-color: var(--purple);
-            background: var(--white);
-        }
-
-        .filter-select:focus {
-            border-color: var(--purple);
-            background: var(--white);
-            box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08);
-        }
-
-        .filter-select:focus {
-            border-color: var(--purple);
-            background: var(--white);
-            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
-        }
-
-        .filter-actions {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        /* ═════ Type badges (IN/OUT) ═════ */
+        /* ═════ Badges de Tipo ═════ */
         .type-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.3rem 0.65rem;
-            border-radius: var(--radius-full);
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.4px;
+            display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.65rem;
+            border-radius: var(--radius-full); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px;
         }
         .type-badge i { width: 12px; height: 12px; }
-
         .type-in  { background: var(--green-bg); color: var(--green-dark); }
         .type-out { background: var(--blue-bg);  color: var(--blue-dark); }
 
         /* ═════ Link Ver detalle ═════ */
         .detail-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            color: var(--pink);
-            font-weight: 700;
-            font-size: 0.82rem;
-            text-decoration: none;
-            transition: color var(--transition);
+            display: inline-flex; align-items: center; gap: 0.3rem; color: var(--pink);
+            font-weight: 700; font-size: 0.82rem; text-decoration: none; transition: color var(--transition);
         }
         .detail-link:hover { color: var(--purple); }
         .detail-link i { width: 14px; height: 14px; }
 
-        /* ═════ Empty state ═════ */
-        .empty-state {
-            padding: 4rem 2rem;
-            text-align: center;
+        /* ═════ Controles de Paginación ═════ */
+        .pag-ola-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 1.25rem; background: var(--white); border-top: 1px solid var(--gray-150);
+            flex-wrap: wrap; gap: 1rem;
         }
+        .pag-ola-info { font-size: 0.85rem; color: var(--gray-500); }
+        .pag-ola-info strong { color: var(--gray-800); }
+
+        .pag-ola-tag {
+            background: var(--gray-100); color: var(--gray-600); padding: 0.2rem 0.5rem;
+            border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; margin-left: 0.5rem;
+        }
+
+        .pag-ola-controls { display: flex; gap: 0.35rem; align-items: center; }
+        .pag-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 32px; height: 32px; padding: 0 6px; border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-600);
+            font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all var(--transition); cursor: pointer;
+        }
+        .pag-btn i { width: 16px; height: 16px; }
+        .pag-btn:hover:not(.pag-btn--disabled):not(.pag-btn--active) {
+            border-color: var(--purple); color: var(--purple); background: var(--purple-bg);
+        }
+        .pag-btn--active {
+            background: linear-gradient(135deg, var(--purple), var(--pink)); color: var(--white) !important; border: none;
+        }
+        .pag-btn--disabled {
+            opacity: 0.4; cursor: not-allowed; pointer-events: none; background: var(--gray-50);
+        }
+        .pag-ellipsis { color: var(--gray-400); padding: 0 4px; font-weight: 600; }
+
+        /* ═════ Empty state ═════ */
+        .empty-state { padding: 4rem 2rem; text-align: center; }
         .empty-state-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 64px;
-            height: 64px;
-            background: var(--purple-bg);
-            color: var(--purple);
-            border-radius: 50%;
-            margin-bottom: 1rem;
+            display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px;
+            background: var(--purple-bg); color: var(--purple); border-radius: 50%; margin-bottom: 1rem;
         }
         .empty-state-icon i { width: 30px; height: 30px; }
-        .empty-state-title {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--gray-700);
-            margin-bottom: 0.4rem;
-        }
-        .empty-state-desc {
-            font-size: 0.88rem;
-            color: var(--gray-500);
-        }
+        .empty-state-title { font-size: 1.05rem; font-weight: 700; color: var(--gray-700); margin-bottom: 0.4rem; }
+        .empty-state-desc { font-size: 0.88rem; color: var(--gray-500); }
 
         /* ═════ Alertas ═════ */
         .alert {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.9rem 1.1rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.88rem;
-            font-weight: 600;
-            margin-bottom: 1.25rem;
-            border: 1px solid var(--red-bg);
-            background: var(--red-bg);
-            color: var(--red-dark);
-            border-color: #FECACA;
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.9rem 1.1rem; border-radius: var(--radius-sm);
+            font-size: 0.88rem; font-weight: 600; margin-bottom: 1.25rem; border: 1px solid var(--red-bg);
+            background: var(--red-bg); color: var(--red-dark); border-color: #FECACA;
         }
         .alert i { width: 18px; height: 18px; flex-shrink: 0; }
     </style>
@@ -255,7 +222,6 @@
 
         <main class="page-main">
 
-            <%-- CABECERA --%>
             <div class="page-header">
                 <div>
                     <h1 class="page-title">
@@ -273,7 +239,6 @@
                 <% } %>
             </div>
 
-            <%-- Alerta error --%>
             <% if (error != null) { %>
             <div class="alert">
                 <i data-lucide="alert-circle"></i>
@@ -281,15 +246,12 @@
             </div>
             <% } %>
 
-            <%-- FILTROS --%>
             <form action="<%= ctx %>/HistoryServlet" method="GET" class="filter-bar">
                 <input type="hidden" name="action" value="lista"/>
 
                 <div class="filter-search">
                     <i data-lucide="search"></i>
-                    <input type="text" name="q"
-                           value="<%= filtroTexto %>"
-                           placeholder="Buscar por solicitante, material o ID..."/>
+                    <input type="text" name="q" value="<%= filtroTexto %>" placeholder="Buscar por solicitante, material o ID..."/>
                 </div>
 
                 <div class="filter-actions">
@@ -300,7 +262,6 @@
                         <option value="REJECTED"   <%= "REJECTED".equals(filtroStatus)     ? "selected" : "" %>>Rechazada</option>
                         <option value="COMPLETED"  <%= "COMPLETED".equals(filtroStatus)    ? "selected" : "" %>>Entregada</option>
                     </select>
-
                     <button type="submit" class="btn-page-primary btn-icon">
                         <i data-lucide="filter"></i>
                         Filtrar
@@ -308,7 +269,6 @@
                 </div>
             </form>
 
-            <%-- TABLA --%>
             <div class="table-panel">
 
                 <% if (transacciones == null || transacciones.isEmpty()) { %>
@@ -323,7 +283,6 @@
 
                 <div class="table-wrapper">
                     <table class="table">
-
                         <thead class="table-head">
                         <tr>
                             <th class="th">ID</th>
@@ -338,81 +297,151 @@
                         </thead>
 
                         <tbody class="table-body">
-
                         <% for (Transaction tx : transacciones) { %>
                         <tr class="table-row">
-
-                            <td class="td-id">
-                                TXN-<%= String.format("%04d", tx.getId()) %>
-                            </td>
-
-                            <td class="td">
-                                <%= tx.getRequesterName() != null ? tx.getRequesterName() : "—" %>
-                            </td>
-
-                            <td class="td" style="font-weight: 600; color: var(--gray-800);">
-                                <%= tx.getItemName() != null ? tx.getItemName() : "—" %>
-                            </td>
-
+                            <td class="td-id">TXN-<%= String.format("%04d", tx.getId()) %></td>
+                            <td class="td"><%= tx.getRequesterName() != null ? tx.getRequesterName() : "—" %></td>
+                            <td class="td" style="font-weight: 600; color: var(--gray-800);"><%= tx.getItemName() != null ? tx.getItemName() : "—" %></td>
                             <td class="td-center">
                                 <%= tx.getQuantity() %>
-                                <% if (tx.getItemUnit() != null) { %>
-                                <%= tx.getItemUnit() %>
-                                <% } %>
+                                <% if (tx.getItemUnit() != null) { %><%= tx.getItemUnit() %><% } %>
                             </td>
-
                             <td class="td-center">
                                 <% if ("IN".equals(tx.getType())) { %>
-                                <span class="type-badge type-in">
-                                        <i data-lucide="arrow-down-circle"></i>
-                                        IN
-                                    </span>
+                                <span class="type-badge type-in"><i data-lucide="arrow-down-circle"></i> ENTRADA</span>
                                 <% } else if ("OUT".equals(tx.getType())) { %>
-                                <span class="type-badge type-out">
-                                        <i data-lucide="arrow-up-circle"></i>
-                                        OUT
-                                    </span>
+                                <span class="type-badge type-out"><i data-lucide="arrow-up-circle"></i> SALIDA</span>
                                 <% } else { %>
-                                <span class="type-badge" style="background: var(--gray-100); color: var(--gray-600);">
-                                        <%= tx.getType() %>
-                                    </span>
+                                <span class="type-badge" style="background: var(--gray-100); color: var(--gray-600);"><%= tx.getType() %></span>
                                 <% } %>
                             </td>
-
-                            <td class="td-light" style="font-family: 'Courier New', monospace; font-size: 0.78rem;">
-                                <%= tx.getCreatedAt() != null ? tx.getCreatedAt() : "—" %>
+                            <td class="td-light" style="font-family: inherit; font-size: 0.85rem; color: var(--gray-600);">
+                                <%= formatearFecha(tx.getCreatedAt()) %>
                             </td>
-
                             <td class="td-center">
-                                <span class="<%= claseBadgeStatus(tx.getStatus()) %>">
-                                    <%= traducirStatus(tx.getStatus()) %>
-                                </span>
+                                <span class="<%= claseBadgeStatus(tx.getStatus()) %>"><%= traducirStatus(tx.getStatus()) %></span>
                             </td>
-
                             <td class="td-center">
-                                <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>"
-                                   class="detail-link">
-                                    <i data-lucide="eye"></i>
-                                    Ver
+                                <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>&origen=historial" class="detail-link">
+                                    <i data-lucide="eye"></i> Ver
                                 </a>
                             </td>
-
                         </tr>
                         <% } %>
-
                         </tbody>
-
                     </table>
                 </div>
 
-                <div class="panel-footer">
-                    <p class="panel-count-text">
-                        Mostrando
-                        <strong style="color: var(--gray-800);"><%= transacciones.size() %></strong>
-                        de
-                        <strong style="color: var(--gray-800);"><%= totalTx %></strong>
-                        transacciones
-                    </p>
+                <%-- Footer con paginación --%>
+                <%
+                    // Cálculos de variables para el snippet exacto
+                    int _page = currentPage;
+                    int _total = totalPages;
+                    int _count = totalTx;
+                    int _from = (_count == 0) ? 0 : ((_page - 1) * 15) + 1;
+                    int _to = Math.min(_page * 15, _count);
+                    String _pUrl = baseUrlPaginacion;
+
+                    // Lógica para la ventana (win) de botones visibles (máximo 5)
+                    int _winS = Math.max(1, _page - 2);
+                    int _winE = Math.min(_total, _winS + 4);
+                    if (_winE - _winS < 4) {
+                        _winS = Math.max(1, _winE - 4);
+                    }
+                %>
+
+                <div class="pag-ola-bar">
+
+                    <div class="pag-ola-info">
+                        <span>
+                            Mostrando
+                            <strong><%= _from %>–<%= _to %></strong>
+                            de
+                            <strong><%= _count %></strong>
+                            solicitudes
+                        </span>
+
+                        <span class="pag-ola-tag">
+                            ≈ 15 por ola
+                        </span>
+                    </div>
+
+                    <% if (_total > 1) { %>
+
+                    <div class="pag-ola-controls">
+
+                        <% if (_page > 1) { %>
+                        <a href="<%= _pUrl %>&page=<%= _page-1 %>" class="pag-btn">
+                            <i data-lucide="chevron-left"></i>
+                        </a>
+                        <% } else { %>
+                        <span class="pag-btn pag-btn--disabled">
+                            <i data-lucide="chevron-left"></i>
+                        </span>
+                        <% } %>
+
+
+                        <% if (_winS > 1) { %>
+
+                        <a href="<%= _pUrl %>&page=1" class="pag-btn">1</a>
+
+                        <% if (_winS > 2) { %>
+                        <span class="pag-ellipsis">…</span>
+                        <% } %>
+
+                        <% } %>
+
+
+                        <% for(int _p = _winS; _p <= _winE; _p++){ %>
+
+                        <% if(_p == _page){ %>
+
+                        <span class="pag-btn pag-btn--active">
+                            <%= _p %>
+                        </span>
+
+                        <% }else{ %>
+
+                        <a href="<%= _pUrl %>&page=<%= _p %>" class="pag-btn">
+                            <%= _p %>
+                        </a>
+
+                        <% } %>
+
+                        <% } %>
+
+
+                        <% if (_winE < _total) { %>
+
+                        <% if (_winE < _total-1) { %>
+                        <span class="pag-ellipsis">…</span>
+                        <% } %>
+
+                        <a href="<%= _pUrl %>&page=<%= _total %>" class="pag-btn">
+                            <%= _total %>
+                        </a>
+
+                        <% } %>
+
+
+                        <% if (_page < _total) { %>
+
+                        <a href="<%= _pUrl %>&page=<%= _page+1 %>" class="pag-btn">
+                            <i data-lucide="chevron-right"></i>
+                        </a>
+
+                        <% } else { %>
+
+                        <span class="pag-btn pag-btn--disabled">
+                            <i data-lucide="chevron-right"></i>
+                        </span>
+
+                        <% } %>
+
+                    </div>
+
+                    <% } %>
+
                 </div>
 
                 <% } %>

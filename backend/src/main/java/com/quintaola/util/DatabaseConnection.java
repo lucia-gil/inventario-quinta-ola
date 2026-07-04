@@ -6,9 +6,10 @@ import java.sql.SQLException;
 
 public class DatabaseConnection {
 
-    private static final String URL      = "jdbc:mysql://localhost:3306/inventorydb?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true";
-    private static final String USER     = "root";
-    private static final String PASSWORD = "lucia1234";//lucia1234
+    // Cambiar para desplegar
+    private static final String URL = "jdbc:mysql://inventario-bd.czzl6s6jv6rq.us-east-1.rds.amazonaws.com:3306/inventorydb?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true";
+    private static final String USER="admin";
+    private static final String PASSWORD="telecom2022";
 
     static {
         // Cargar el driver UNA sola vez al iniciar la clase

@@ -86,16 +86,20 @@
                         <% } %>
                     </p>
                 </div>
+
+                <%-- Se ocultan por completo los botones superiores para el rol de depósito (roleId == 2) --%>
+                <% if (roleId != 2) { %>
                 <div class="flex flex-col sm:flex-row gap-3">
                     <a href="<%= ctx %>/HistoryServlet" class="btn-ghost btn-icon">
                         <i data-lucide="file-text"></i>
                         <span>Ver Historial</span>
                     </a>
-                    <a href="<%= ctx %>/TransactionServlet?action=formCrear" class="btn-page-primary btn-icon">
+                    <a href="<%= ctx %>/TransactionServlet?action=formCrear&origen=home" class="btn-page-primary btn-icon">
                         <i data-lucide="plus"></i>
                         <span>Nueva Solicitud</span>
                     </a>
                 </div>
+                <% } %>
             </div>
 
             <%-- ─── STAT CARDS CON DATOS REALES ─── --%>
@@ -146,6 +150,8 @@
                         <p class="quick-card-desc">Visualiza tus movimientos</p>
                     </a>
 
+                    <%-- El encargado de depósito (roleId == 2) no ve este acceso rápido --%>
+                    <% if (roleId != 2) { %>
                     <a href="<%= ctx %>/TransactionServlet?action=formCrear" class="quick-card">
                         <div class="quick-card-icon">
                             <i data-lucide="shopping-cart"></i>
@@ -153,6 +159,7 @@
                         <h3 class="quick-card-title">Solicitar Material</h3>
                         <p class="quick-card-desc">Registra un nuevo pedido</p>
                     </a>
+                    <% } %>
 
                     <a href="<%= ctx %>/ProfileServlet" class="quick-card">
                         <div class="quick-card-icon">

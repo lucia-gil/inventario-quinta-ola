@@ -10,30 +10,6 @@ USE inventorydb;
 -- ============================================================
 SET @demo_hash = '$2a$10$zxrp6qqbJSIDwhPFDriat.QA3hm/qYZfK.Zwo8.jdJM1Vtve5MnSq';
 
--- ============================================================
--- USUARIOS DEMO
--- IDs autogenerados: 1=Lucía, 2=Carmen, 3=María, 4=Pedro, 5=Ana
--- ============================================================
-
--- VIEWER / SOLICITANTE
-INSERT INTO users (email, dni, name, password_hash, role_id) VALUES
-    ('solicitante@quintaola.com', '10000001', 'Lucía Solicitante',  @demo_hash, 1);
-
--- MEMBER / DEPÓSITO
-INSERT INTO users (email, dni, name, password_hash, role_id) VALUES
-    ('deposito@quintaola.com',    '10000002', 'Carmen del Depósito', @demo_hash, 2);
-
--- MANAGER / APROBADORA
-INSERT INTO users (email, dni, name, password_hash, role_id) VALUES
-    ('coordinadora@quintaola.com','10000003', 'María Aprobadora',   @demo_hash, 3);
-
--- ADMINISTRADOR
-INSERT INTO users (email, dni, name, password_hash, role_id) VALUES
-    ('admin.demo@quintaola.com',  '10000004', 'Pedro Administrador', @demo_hash, 4);
-
--- SUPERADMIN
-INSERT INTO users (email, dni, name, password_hash, role_id) VALUES
-    ('superadmin@quintaola.com',  '10000005', 'Ana SuperAdmin',     @demo_hash, 5);
 
 -- ============================================================
 -- TAGS DEMO (created_by = 4 → Pedro Administrador)
@@ -51,16 +27,16 @@ INSERT INTO tags (name, created_by) VALUES
 -- ITEMS DEMO (10 materiales variados)
 -- ============================================================
 INSERT INTO items (name, description, unit, cached_quantity, min_quantity, status) VALUES
-    ('Kit Humanitario Grande',    'Kit completo de ayuda humanitaria', 'kits',      30, 10, 'OK'),
-    ('Polera Quinta Ola (M)',     'Merchandising oficial talla M',     'unidades',  15, 20, 'LOW'),
-    ('Cemento Portland',          'Bolsa 42.5kg',                       'bolsas',    50, 20, 'OK'),
-    ('Pintura Látex Blanca',      'Pintura para paredes interior',      'galones',    8, 15, 'LOW'),
-    ('Tubos PVC 2"',              'Tubería de desagüe',                 'unidades',   0, 10, 'UNAVAILABLE'),
-    ('Ladrillo King Kong',        'Ladrillo macizo construcción',       'unidades', 200, 50, 'OK'),
-    ('Juego Didáctico Memoria',   'Material lúdico para talleres',      'unidades',  12,  5, 'OK'),
-    ('Donación Ropa Abrigo',      'Ropa de invierno donada',            'prendas',   45, 10, 'OK'),
-    ('Cuerda de Utilería',        'Cuerda 10m para talleres',           'unidades',  20,  5, 'OK'),
-    ('Cinta Adhesiva Industrial', 'Cinta para utilería',                'unidades',  35, 10, 'OK');
+    ('Kit Humanitario Grande',    'Kit completo de ayuda humanitaria', 'kits',      200, 10, 'OK'),
+    ('Polera Quinta Ola (M)',     'Merchandising oficial talla M',     'unidades',  200, 20, 'LOW'),
+    ('Cemento Portland',          'Bolsa 42.5kg',                       'bolsas',    200, 20, 'OK'),
+    ('Pintura Látex Blanca',      'Pintura para paredes interior',      'galones',    200, 15, 'LOW'),
+    ('Tubos PVC 2"',              'Tubería de desagüe',                 'unidades',   200, 10, 'UNAVAILABLE'),
+    ('Ladrillo King Kong',        'Ladrillo macizo construcción',       'unidades', 100, 50, 'OK'),
+    ('Juego Didáctico Memoria',   'Material lúdico para talleres',      'unidades',  200,  5, 'OK'),
+    ('Donación Ropa Abrigo',      'Ropa de invierno donada',            'prendas',   200, 10, 'OK'),
+    ('Cuerda de Utilería',        'Cuerda 10m para talleres',           'unidades',  200,  5, 'OK'),
+    ('Cinta Adhesiva Industrial', 'Cinta para utilería',                'unidades',  350, 10, 'OK');
 
 -- ============================================================
 -- RELACIÓN ITEM-TAGS
@@ -117,24 +93,3 @@ ORDER BY u.id;
 -- Manager:     coordinadora@quintaola.com
 -- Admin:       admin.demo@quintaola.com
 -- SuperAdmin:  superadmin@quintaola.com
-
-USE inventorydb;
-
-UPDATE users SET password_hash = '$2a$10$zxrp6qqbJSIDwhPFDriat.QA3hm/qYZfK.Zwo8.jdJM1Vtve5MnSq' 
-  WHERE email = 'solicitante@quintaola.com';
-
-UPDATE users SET password_hash = '$2a$10$A6qeI3kDvyEBzWIIvwNh.e6WSpzYmv5gYBwWh4sd86wNj7Dte0yW.' 
-  WHERE email = 'deposito@quintaola.com';
-
-UPDATE users SET password_hash = '$2a$10$JLEbpKMR8Ph.0Blc2p/Yau9ZH3Z.swWKwVJlwGuVxQHjSKrq41awu' 
-  WHERE email = 'coordinadora@quintaola.com';
-
-UPDATE users SET password_hash = '$2a$10$dlbkcI/bZQjq0afBnnlwW.dsMoLZtRBrrv.PuuOsHSNslcP.rheLq' 
-  WHERE email = 'admin.demo@quintaola.com';
-
-UPDATE users SET password_hash = '$2a$10$KDS7qWWh27wTO0QWiPpWJeqrgI5QlxQzumELplg0m.h3LSwSzoq36' 
-  WHERE email = 'superadmin@quintaola.com';
-
--- Verificar:
-SELECT id, email, name, LEFT(password_hash, 25) AS hash_inicio FROM users;
-SELECT item_id, requester_id, approver_id, type, quantity, status, notes FROM transactions;

@@ -11,7 +11,38 @@
     List<Item> items = (List<Item>) request.getAttribute("items");
     Integer itemPreseleccionado = (Integer) request.getAttribute("itemPreseleccionado");
     String userName = (String) session.getAttribute("userName");
-    String error = request.getParameter("error");
+
+    // Capturar el error desde el request attribute o parámetro
+    String error = (String) request.getAttribute("error");
+    if (error == null) {
+        error = request.getParameter("error");
+    }
+
+    // Capturar los valores previos para la persistencia de datos
+    String cantidadPrevia = (String) request.getAttribute("cantidadPrevia");
+    if (cantidadPrevia == null) {
+        cantidadPrevia = request.getParameter("cantidad");
+    }
+
+    String fechaPrevia = (String) request.getAttribute("fechaPrevia");
+    if (fechaPrevia == null) {
+        fechaPrevia = request.getParameter("neededBy");
+    }
+
+    String notasPrevias = (String) request.getAttribute("notasPrevias");
+    if (notasPrevias == null) {
+        notasPrevias = request.getParameter("notas");
+    }
+
+    // Regla: Si el error es por Stock Insuficiente, vaciamos únicamente la cantidad errónea.
+    // De lo contrario, mantenemos el valor previo o el valor por defecto "1".
+    String cantidadValue = "1";
+    if (cantidadPrevia != null) {
+        cantidadValue = cantidadPrevia;
+    }
+    if (error != null && error.contains("Stock insuficiente")) {
+        cantidadValue = "";
+    }
 %>
 <!doctype html>
 <html lang="es">
@@ -240,7 +271,7 @@
                 </div>
 
                 <div class="card-body">
-                    <form action="<%= ctx %>/TransactionServlet" method="POST">
+                    <form action="<%= ctx %>/TransactionServlet" method="POST" novalidate>
 
                         <input type="hidden" name="action" value="crear" />
 
@@ -278,12 +309,12 @@
                         <div class="form-row">
                             <div class="field-group" style="margin-bottom: 0;">
                                 <label for="cantidad" class="field-label">Cantidad *</label>
-                                <input type="number" id="cantidad" name="cantidad" min="1" value="1" class="field-input" required>
+                                <input type="number" id="cantidad" name="cantidad" min="1" step="1" value="<%= cantidadValue %>" class="field-input" onkeypress="return event.charCode >= 48 && event.charCode <= 57" onpaste="return false;" required>
                             </div>
 
                             <div class="field-group" style="margin-bottom: 0;">
                                 <label for="needed-by" class="field-label">¿Para cuándo lo necesitas?</label>
-                                <input type="date" id="needed-by" name="neededBy" class="field-input">
+                                <input type="date" id="needed-by" name="neededBy" value="<%= fechaPrevia != null ? fechaPrevia : "" %>" class="field-input">
                                 <p style="font-size: 11px; color: var(--gray-400); margin-top: 0.4rem; font-weight: 500;">
                                     Opcional. Esta fecha ayuda a priorizar.
                                 </p>
@@ -292,7 +323,7 @@
 
                         <div class="field-group" style="margin-top: 1.25rem;">
                             <label for="proposito" class="field-label">Propósito / Uso del material *</label>
-                            <textarea id="proposito" name="notas" rows="4" class="field-input" style="resize: vertical;" placeholder="Describe detalladamente para qué necesitas este material..." required></textarea>
+                            <textarea id="proposito" name="notas" rows="4" class="field-input" style="resize: vertical;" placeholder="Describe detalladamente para qué necesitas este material..." required><%= notasPrevias != null ? notasPrevias : "" %></textarea>
                         </div>
 
                         <div class="form-actions">

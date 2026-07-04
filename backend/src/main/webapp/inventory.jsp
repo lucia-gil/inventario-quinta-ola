@@ -98,6 +98,114 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
+
+        /* 1. Ocultar la flecha nativa de la etiqueta details */
+        .css-modal-wrapper summary {
+            list-style: none;
+            outline: none;
+        }
+        .css-modal-wrapper summary::-webkit-details-marker {
+            display: none;
+        }
+
+        /* 2. El fondo oscuro pantalla completa */
+        .css-modal-wrapper[open] .css-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 12, 23, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            animation: fadeInModal 0.2s ease-out;
+        }
+
+        /* 3. Truco: Botón invisible para cerrar al hacer clic afuera */
+        .css-modal-close-overlay-trigger {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            cursor: default;
+        }
+
+        /* 4. Tarjeta Blanca del Modal */
+        .css-modal-card {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 92%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .css-modal-card h3 {
+            margin: 0.75rem 0 0.5rem 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .css-modal-card p {
+            font-size: 0.88rem;
+            color: #6b7280;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+
+        /* 5. Botones de acción del modal */
+        .css-modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            position: relative;
+            z-index: 20;
+        }
+
+        .btn-cancel-modal {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.6rem 1.2rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: var(--gray-100, #f3f4f6);
+            color: var(--gray-700, #4b5563);
+            cursor: pointer;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            transition: all 0.2s;
+        }
+        .btn-cancel-modal:hover {
+            background: var(--gray-200, #e5e7eb);
+        }
+
+        /* 6. Estilos de los iconos circulares */
+        .modal-icon-container {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        /* Usa los colores de tu sistema, o añade fallbacks si no existen */
+        .modal-icon-container.text-purple { background: var(--purple-bg, #f3e8ff); color: var(--purple, #5b1fa8); }
+        .modal-icon-container.text-pink { background: var(--pink-bg, #fce7f3); color: var(--pink, #e91e8c); }
+
+        /* 7. Animación suave de entrada */
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
         .filter-bar {
             display: flex;
             gap: 0.75rem;
@@ -435,14 +543,13 @@
                             Stock: <strong style="color: var(--gray-700);"><%= item.getCachedQuantity() %></strong>&nbsp;<%= item.getUnit() %>
                         </div>
 
-                        <% if ("UNAVAILABLE".equals(s)) { %>
+                        <<% if ("UNAVAILABLE".equals(s)) { %>
                         <span class="catalog-card-btn" style="background: var(--gray-300); cursor: not-allowed; pointer-events: none;">
-                                        <i data-lucide="x-circle"></i>
-                                        No disponible
-                                    </span>
+                            <i data-lucide="x-circle"></i>
+                            No disponible
+                        </span>
                         <% } else { %>
-                        <a href="<%= ctx %>/TransactionServlet?action=formCrear&itemId=<%= item.getId() %>"
-                           class="catalog-card-btn">
+                        <a href="<%= ctx %>/TransactionServlet?action=formCrear&itemId=<%= item.getId() %>&origen=inventory" class="catalog-card-btn">
                             <i data-lucide="plus"></i>
                             Solicitar
                         </a>
@@ -567,23 +674,52 @@
 
                             <% if (esAdmin) { %>
                             <td class="td-center">
-                                <div class="row-actions">
+                                <div class="row-actions" style="display:flex; align-items:center; gap:0.5rem; justify-content:center;">
+
+                                    <%-- BOTÓN EDITAR (Se queda igual) --%>
                                     <a href="<%= ctx %>/AdminItemServlet?action=formEditar&id=<%= item.getId() %>"
                                        class="btn-edit-row">
                                         <i data-lucide="pencil"></i>
                                         Editar
                                     </a>
 
-                                    <form action="<%= ctx %>/AdminItemServlet" method="POST"
-                                          onsubmit="return confirm('¿Confirmas desactivar este material?');"
-                                          style="display:inline; margin:0;">
-                                        <input type="hidden" name="action" value="desactivar"/>
-                                        <input type="hidden" name="id" value="<%= item.getId() %>"/>
-                                        <button type="submit" class="btn-delete-row">
+                                    <%-- MODAL CSS: DESACTIVAR MATERIAL --%>
+                                    <details class="css-modal-wrapper">
+                                        <summary class="btn-delete-row" style="cursor: pointer; list-style: none;">
                                             <i data-lucide="trash-2"></i>
                                             Desactivar
-                                        </button>
-                                    </form>
+                                        </summary>
+
+                                        <div class="css-modal-overlay">
+                                            <%-- Fondo para cerrar al hacer clic afuera --%>
+                                            <div class="css-modal-close-overlay-trigger"
+                                                 onclick="this.closest('details').removeAttribute('open');">
+                                            </div>
+
+                                            <div class="css-modal-card" style="position: relative; z-index: 10;">
+                                                <div class="modal-icon-container text-pink">
+                                                    <i data-lucide="alert-triangle" style="width:32px; height:32px;"></i>
+                                                </div>
+                                                <h3>¿Desactivar Material?</h3>
+                                                <p>¿Estás seguro de que deseas desactivar este material? Ya no estará disponible en el inventario activo.</p>
+
+                                                <div class="css-modal-actions">
+                                                    <button type="button"
+                                                            class="btn-cancel-modal"
+                                                            onclick="this.closest('details').removeAttribute('open');">
+                                                        Cancelar
+                                                    </button>
+
+                                                    <form action="<%= ctx %>/AdminItemServlet" method="POST" style="margin:0;">
+                                                        <input type="hidden" name="action" value="desactivar"/>
+                                                        <input type="hidden" name="id" value="<%= item.getId() %>"/>
+                                                        <button type="submit" class="btn-delete-row" style="border:none;">Sí, Desactivar</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+
                                 </div>
                             </td>
                             <% } %>

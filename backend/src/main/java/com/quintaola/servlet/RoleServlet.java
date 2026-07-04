@@ -10,27 +10,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-/* ============================================================
-   RoleServlet
-   ============================================================
-   Solo accesible para SuperAdmin.
-   Muestra los 5 roles del sistema con la lista de usuarios
-   que pertenecen a cada uno.
-
-   Desde esta vista el SuperAdmin puede:
-   - Cambiar el rol de cualquier usuario
-   - Desactivar / reactivar cuentas
-   - Aprobar / rechazar usuarios pendientes
-
-   Las acciones se delegan a UserServlet (cambiarRol,
-   desactivarUsuario, reactivarUsuario, approveUser, rejectUser).
-   ============================================================ */
 @WebServlet(name = "RoleServlet", value = "/RoleServlet")
 public class RoleServlet extends HttpServlet {
+
+    /** Usuarios por página en cada tabla de rol */
+    private static final int PAGE_SIZE = 5;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -47,23 +33,87 @@ public class RoleServlet extends HttpServlet {
         RequestDispatcher view;
 
         try {
-            // 1. Traer los 5 roles del sistema
-            List<Role> roles = roleDao.getAll();
+            // ── Filtros ──────────────────────────────────────────────────────
+            String searchQ = request.getParameter("q") != null
+                    ? request.getParameter("q").trim() : "";
 
-            // 2. Para cada rol, traer su lista de usuarios
-            Map<Integer, List<User>> usuariosPorRol = new HashMap<>();
-            for (Role rol : roles) {
-                List<User> usuarios = roleDao.getUsersByRole(rol.getId());
-                usuariosPorRol.put(rol.getId(), usuarios);
+            int rolFilter = 0;
+            String rolParam = request.getParameter("rol");
+            if (rolParam != null && !rolParam.trim().isEmpty()) {
+                try { rolFilter = Integer.parseInt(rolParam); }
+                catch (NumberFormatException ignored) {}
             }
 
-            // 3. Estado de usuarios inactivos (distinguir pendiente vs desactivado)
+            // ── Roles del sistema ─────────────────────────────────────────────
+            List<Role> roles = roleDao.getAll();
+
+            // ── Procesar usuarios por rol (filtrar, ordenar, paginar) ─────────
+            Map<Integer, List<User>> pagedUsuariosPorRol = new HashMap<>();
+            Map<Integer, Integer>   totalsByRole         = new HashMap<>();
+            Map<Integer, Integer>   totalPagesByRole     = new HashMap<>();
+            Map<Integer, Integer>   pagesByRole          = new HashMap<>();
+
+            String qLower = searchQ.toLowerCase();
+
+            for (Role rol : roles) {
+
+                // Obtener todos los usuarios de este rol
+                List<User> todos = roleDao.getUsersByRole(rol.getId());
+
+                // Filtrar por búsqueda (nombre o DNI)
+                List<User> filtered = new ArrayList<>();
+                for (User u : todos) {
+                    boolean nameMatch = u.getName() != null
+                            && u.getName().toLowerCase().contains(qLower);
+                    boolean dniMatch  = u.getDni() != null
+                            && u.getDni().contains(searchQ);
+                    if (searchQ.isEmpty() || nameMatch || dniMatch) {
+                        filtered.add(u);
+                    }
+                }
+
+                // Ordenar A-Z por primera letra del nombre
+                filtered.sort((a, b) -> {
+                    String na = a.getName() != null ? a.getName() : "";
+                    String nb = b.getName() != null ? b.getName() : "";
+                    return na.compareToIgnoreCase(nb);
+                });
+
+                // Calcular paginación para este rol
+                int total      = filtered.size();
+                int totalPages = (int) Math.ceil((double) total / PAGE_SIZE);
+                if (totalPages < 1) totalPages = 1;
+
+                int page = 1;
+                String pageParam = request.getParameter("page_" + rol.getId());
+                if (pageParam != null && !pageParam.trim().isEmpty()) {
+                    try { page = Math.max(1, Integer.parseInt(pageParam)); }
+                    catch (NumberFormatException ignored) {}
+                }
+                page = Math.min(page, totalPages);
+
+                int from = (page - 1) * PAGE_SIZE;
+                int to   = Math.min(from + PAGE_SIZE, total);
+                List<User> paged = (from < total) ? filtered.subList(from, to) : Collections.emptyList();
+
+                pagedUsuariosPorRol.put(rol.getId(), paged);
+                totalsByRole.put(rol.getId(), total);
+                totalPagesByRole.put(rol.getId(), totalPages);
+                pagesByRole.put(rol.getId(), page);
+            }
+
             Map<Integer, String> inactiveStatus = userDao.getInactiveUsersStatus();
 
-            request.setAttribute("roles", roles);
-            request.setAttribute("usuariosPorRol", usuariosPorRol);
-            request.setAttribute("inactiveStatus", inactiveStatus);
-            request.setAttribute("activeMenu", "roles");
+            // ── Atributos para la vista ───────────────────────────────────────
+            request.setAttribute("roles",               roles);
+            request.setAttribute("pagedUsuariosPorRol", pagedUsuariosPorRol);
+            request.setAttribute("totalsByRole",        totalsByRole);
+            request.setAttribute("totalPagesByRole",    totalPagesByRole);
+            request.setAttribute("pagesByRole",         pagesByRole);
+            request.setAttribute("inactiveStatus",      inactiveStatus);
+            request.setAttribute("activeMenu",          "roles");
+            request.setAttribute("searchQ",             searchQ);
+            request.setAttribute("rolFilter",           rolFilter);
 
             view = request.getRequestDispatcher("roles-list.jsp");
             view.forward(request, response);

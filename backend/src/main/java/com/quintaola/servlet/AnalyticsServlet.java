@@ -67,7 +67,7 @@ public class AnalyticsServlet extends HttpServlet {
             request.setAttribute("pending", status_pending_cantidad.toString());
             request.setAttribute("rejected", status_rejected_cantidad.toString());
 
-            request.setAttribute("activeMenu", "dashboard"); // Mantiene iluminada la pestaña Dashboard
+            request.setAttribute("activeMenu", "analytics");
             RequestDispatcher view = request.getRequestDispatcher("analytics.jsp");
             view.forward(request, response);
 

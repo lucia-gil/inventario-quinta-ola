@@ -16,6 +16,9 @@
     Integer roleIdSession = (Integer) session.getAttribute("roleId");
     int rol = roleIdSession != null ? roleIdSession : 0;
 
+    String activeMenu = (String) request.getAttribute("activeMenu");
+    if (activeMenu != null) { session.setAttribute("activeMenu", activeMenu); }
+
     // Manager (3) y Administrador (4) aprueban, PERO no sus propias solicitudes.
     // SuperAdmin (5) no aprueba nada.
     boolean puedeAprobar = false;
@@ -471,10 +474,20 @@
                     </h1>
                     <p class="page-subtitle">Información completa y trazabilidad del pedido</p>
                 </div>
-                <a href="<%= ctx %>/HistoryServlet" class="btn-ghost btn-icon">
+                <%
+                    String origenRegreso = request.getParameter("origen");
+                    if ("historial".equals(origenRegreso)) {
+                %>
+                <a href="<%= ctx %>/HistoryServlet?action=lista" class="btn-ghost btn-icon">
                     <i data-lucide="arrow-left"></i>
-                    Volver al historial
+                    Volver
                 </a>
+                <% } else { %>
+                <a href="<%= ctx %>/TransactionServlet?action=lista" class="btn-ghost btn-icon">
+                    <i data-lucide="arrow-left"></i>
+                    Volver
+                </a>
+                <% } %>
             </div>
 
             <%-- Alertas --%>
@@ -636,27 +649,96 @@
                             </div>
                         </div>
                         <% } else if (puedeAprobar) { %>
-                        <div class="actions-section">
-                            <h3>¿Qué quieres hacer con esta solicitud?</h3>
-                            <div class="actions-row">
-                                <form action="<%= ctx %>/TransactionServlet" method="POST"
-                                      onsubmit="return confirm('¿Confirmas que apruebas esta solicitud?');"
-                                      style="margin: 0;">
-                                    <input type="hidden" name="action" value="aprobar"/>
-                                    <input type="hidden" name="id" value="<%= tx.getId() %>"/>
-                                    <input type="hidden" name="notas" value="Aprobada desde detalle"/>
-                                    <button type="submit" class="btn-approve-big">
-                                        <i data-lucide="check"></i>
-                                        Aprobar Solicitud
-                                    </button>
-                                </form>
+                            <div class="actions-section">
+                                <h3>¿Qué quieres hacer con esta solicitud?</h3>
 
-                                <button onclick="rechazarSolicitud(<%= tx.getId() %>)" class="btn-reject-big">
-                                    <i data-lucide="x"></i>
-                                    Rechazar Solicitud
-                                </button>
+                                <form id="decisionForm" action="<%= ctx %>/TransactionServlet" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="id" value="<%= tx.getId() %>"/>
+                                    <input type="hidden" name="action" id="formAction" value=""/>
+                                    <input type="hidden" name="notas" id="notaFinal" value=""/>
+
+                                    <div class="actions-row">
+                                        <button type="button" class="btn-approve-big" onclick="prepararAprobacion()" id="btnAprobar">
+                                            <i data-lucide="check"></i>
+                                            <span>Aprobar Solicitud</span>
+                                        </button>
+
+                                        <button type="button" class="btn-reject-big" onclick="prepararRechazo()" id="btnRechazar">
+                                            <i data-lucide="x"></i>
+                                            <span>Rechazar Solicitud</span>
+                                        </button>
+                                    </div>
+
+                                    <div id="cajaAprobacion" style="display: none; margin-top: 1rem; background: var(--green-bg); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid #BBF7D0; border-left: 4px solid var(--green);">
+                                        <label for="notasAprobacion" style="font-weight: 700; color: var(--green-dark); font-size: 0.85rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">
+                                            Comentarios de aprobación (Opcional)
+                                        </label>
+                                        <textarea id="notasAprobacion" rows="3" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem;" placeholder="Ej: Material listo para recoger..."></textarea>
+                                    </div>
+
+                                    <div id="cajaRechazo" style="display: none; margin-top: 1rem; background: var(--red-bg); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid #FECACA; border-left: 4px solid var(--red);">
+                                        <label for="notasRechazo" style="font-weight: 700; color: var(--red-dark); font-size: 0.85rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">
+                                            Motivo de rechazo (Obligatorio)
+                                        </label>
+                                        <textarea id="notasRechazo" rows="3" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem;" placeholder="Escribe aquí por qué se rechaza la solicitud..."></textarea>
+                                    </div>
+                                </form>
                             </div>
-                        </div>
+
+                            <script>
+                                const cajaAprobacion = document.getElementById('cajaAprobacion');
+                                const cajaRechazo = document.getElementById('cajaRechazo');
+                                const btnAprobar = document.getElementById('btnAprobar');
+                                const btnRechazar = document.getElementById('btnRechazar');
+                                const notasAprobacion = document.getElementById('notasAprobacion');
+                                const notasRechazo = document.getElementById('notasRechazo');
+                                const notaFinal = document.getElementById('notaFinal');
+                                const formAction = document.getElementById('formAction');
+                                const decisionForm = document.getElementById('decisionForm');
+
+                                function prepararAprobacion() {
+                                    if (cajaAprobacion.style.display === 'none') {
+                                        // Mostrar caja de aprobar, ocultar la de rechazar
+                                        cajaAprobacion.style.display = 'block';
+                                        cajaRechazo.style.display = 'none';
+                                        notasRechazo.required = false;
+
+                                        // Cambiar textos de botones
+                                        btnAprobar.querySelector('span').innerText = 'Confirmar Aprobación';
+                                        btnRechazar.querySelector('span').innerText = 'Rechazar Solicitud';
+                                        notasAprobacion.focus();
+                                    } else {
+                                        // Si ya está abierta y vuelve a hacer clic, enviamos
+                                        formAction.value = 'aprobar';
+                                        // Si dejó el comentario vacío, le ponemos un texto por defecto para la DB
+                                        notaFinal.value = notasAprobacion.value.trim() !== '' ? notasAprobacion.value.trim() : 'Aprobada sin comentarios adicionales';
+                                        decisionForm.submit();
+                                    }
+                                }
+
+                                function prepararRechazo() {
+                                    if (cajaRechazo.style.display === 'none') {
+                                        // Mostrar caja de rechazar, ocultar la de aprobar
+                                        cajaRechazo.style.display = 'block';
+                                        cajaAprobacion.style.display = 'none';
+                                        notasRechazo.required = true;
+
+                                        // Cambiar textos de botones
+                                        btnRechazar.querySelector('span').innerText = 'Confirmar Rechazo';
+                                        btnAprobar.querySelector('span').innerText = 'Aprobar Solicitud';
+                                        notasRechazo.focus();
+                                    } else {
+                                        // Si ya está abierta, validamos que no esté vacía
+                                        if (notasRechazo.value.trim() === "") {
+                                            notasRechazo.reportValidity(); // Muestra burbuja nativa del navegador pidiendo texto
+                                        } else {
+                                            formAction.value = 'rechazar';
+                                            notaFinal.value = notasRechazo.value.trim();
+                                            decisionForm.submit();
+                                        }
+                                    }
+                                }
+                            </script>
                         <% } %>
 
                         <% } %>
@@ -817,26 +899,7 @@
     </div>
 </div>
 
-<%-- Form oculto rechazar --%>
-<form id="rejectForm" action="<%= ctx %>/TransactionServlet" method="POST" style="display:none;">
-    <input type="hidden" name="action" value="rechazar"/>
-    <input type="hidden" name="id" id="rejectTxId"/>
-    <input type="hidden" name="notas" id="rejectNotas"/>
-</form>
-
 <script>
-    function rechazarSolicitud(id) {
-        const motivo = prompt('Por favor indica el motivo del rechazo:');
-        if (motivo === null) return;
-        if (motivo.trim() === '') {
-            alert('El motivo es obligatorio para rechazar.');
-            return;
-        }
-        document.getElementById('rejectTxId').value = id;
-        document.getElementById('rejectNotas').value = motivo;
-        document.getElementById('rejectForm').submit();
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });

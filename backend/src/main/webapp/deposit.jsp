@@ -279,24 +279,104 @@
             margin-right: 0.5rem;
         }
         .download-label i { width: 13px; height: 13px; color: var(--purple); }
+
+        /* ═════ Confirmación Flotante 100% CSS Puro ═════ */
+        .confirm-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .confirm-popover {
+            display: none;
+            position: absolute;
+            right: 105%; /* Se despliega inmediatamente a la izquierda del botón */
+            top: 50%;
+            transform: translateY(-50%); /* Centrado vertical perfecto respecto al botón */
+            background: var(--white);
+            border: 1px solid var(--purple); /* Borde con la paleta de Quinta Ola */
+            padding: 0.5rem 0.8rem;
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            z-index: 100;
+            width: 210px;
+            text-align: center;
+        }
+        /* Pequeña flecha estética apuntando al botón */
+        .confirm-popover::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            transform: translateY(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent transparent var(--white);
+        }
+        .confirm-popover::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            transform: translateY(-50%);
+            border-width: 7px;
+            border-style: solid;
+            border-color: transparent transparent transparent var(--purple);
+            z-index: -1;
+        }
+        .confirm-checkbox:checked ~ .confirm-popover {
+            display: block;
+            animation: slideLeftConfirm 0.15s ease-out;
+        }
+        .confirm-text {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 0.4rem;
+            white-space: nowrap;
+        }
+        .confirm-buttons {
+            display: flex;
+            gap: 0.4rem;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn-confirm-yes, .btn-confirm-no {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: center;
+            border: none;
+        }
+        .btn-confirm-yes {
+            background: #10b981;
+            color: var(--white);
+            cursor: pointer;
+        }
+        .btn-confirm-no {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+        @keyframes slideLeftConfirm {
+            from { opacity: 0; transform: translateY(-50%) translateX(10px); }
+            to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+        }
     </style>
 </head>
 
 <body class="page-body">
 
-<%-- Layout wrapper para que el sidebar no se solape con el contenido --%>
 <div class="layout-wrapper">
 
     <jsp:include page="includes/navbar.jsp"/>
 
     <div class="main-content">
 
-        <%-- Topbar --%>
         <jsp:include page="includes/topbar.jsp"/>
 
         <main class="page-main">
 
-            <%-- Cabecera con botón de descarga del inventario --%>
             <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
                 <div>
                     <h1 class="page-title">
@@ -309,7 +389,6 @@
                     </p>
                 </div>
 
-                <%-- Botones de descarga del inventario actual --%>
                 <div class="download-group">
                     <span class="download-label">
                         <i data-lucide="download"></i>
@@ -330,7 +409,6 @@
                 </div>
             </div>
 
-            <%-- Mensajes de éxito / error --%>
             <% if (success != null) { %>
             <div class="alert alert-success">
                 <i data-lucide="check-circle"></i>
@@ -350,11 +428,6 @@
             </div>
             <% } %>
 
-            <%--
-                Info banner reescrito según la lógica acordada:
-                el stock YA se descontó cuando el Manager aprobó.
-                Aquí solo cierras el ciclo confirmando la entrega física.
-            --%>
             <div class="info-banner">
                 <div class="info-banner-icon">
                     <i data-lucide="info"></i>
@@ -369,7 +442,6 @@
                 </div>
             </div>
 
-            <%-- Tabla de solicitudes aprobadas --%>
             <div class="table-panel">
 
                 <% if (solicitudesPagina == null || solicitudesPagina.isEmpty()) { %>
@@ -408,13 +480,9 @@
                                 TXN-<%= String.format("%04d", tx.getId()) %>
                             </td>
 
-                            <td class="td">
-                                <%= tx.getRequesterName() != null ? tx.getRequesterName() : "—" %>
-                            </td>
+                            <td class="td"><%= tx.getRequesterName() != null ? tx.getRequesterName() : "—" %></td>
 
-                            <td class="td" style="font-weight: 600; color: var(--gray-800);">
-                                <%= tx.getItemName() != null ? tx.getItemName() : "—" %>
-                            </td>
+                            <td class="td" style="font-weight: 600; color: var(--gray-800);"><%= tx.getItemName() != null ? tx.getItemName() : "—" %></td>
 
                             <td class="td-center" style="font-weight: 700; color: var(--gray-800);">
                                 <%= tx.getQuantity() %>
@@ -423,27 +491,34 @@
                                 </span>
                             </td>
 
-                            <td class="td">
-                                <%= tx.getApproverName() != null ? tx.getApproverName() : "—" %>
-                            </td>
+                            <td class="td"><%= tx.getApproverName() != null ? tx.getApproverName() : "—" %></td>
 
-                            <td class="td-light" style="font-family: 'Courier New', monospace; font-size: 0.78rem;">
-                                <%= tx.getCreatedAt() != null ? tx.getCreatedAt() : "—" %>
-                            </td>
+                            <td class="td-light" style="font-size: 0.85rem;"><%= tx.getCreatedAt() != null ? tx.getCreatedAt() : "—" %></td>
 
                             <td class="td-center">
                                 <div class="row-actions">
 
-                                    <form action="<%= ctx %>/DepositServlet" method="POST"
-                                          onsubmit="return confirm('¿Confirmas que entregaste físicamente este material? Esta acción cierra el ciclo de la solicitud.');"
-                                          style="display:inline; margin:0;">
-                                        <input type="hidden" name="action" value="entregar"/>
-                                        <input type="hidden" name="id" value="<%= tx.getId() %>"/>
-                                        <button type="submit" class="btn-deliver">
+                                    <%-- 💎 Confirmación 100% CSS Puro (Sin una sola línea de JS) --%>
+                                    <div class="confirm-container">
+                                        <input type="checkbox" id="confirm-toggle-<%= tx.getId() %>" class="confirm-checkbox" style="display: none;">
+
+                                        <label for="confirm-toggle-<%= tx.getId() %>" class="btn-deliver" style="cursor: pointer;">
                                             <i data-lucide="package-check"></i>
                                             Marcar Entregada
-                                        </button>
-                                    </form>
+                                        </label>
+
+                                        <div class="confirm-popover">
+                                            <p class="confirm-text">¿Confirmas la entrega física?</p>
+                                            <div class="confirm-buttons">
+                                                <form action="<%= ctx %>/DepositServlet" method="POST" style="margin:0;">
+                                                    <input type="hidden" name="action" value="entregar"/>
+                                                    <input type="hidden" name="id" value="<%= tx.getId() %>"/>
+                                                    <button type="submit" class="btn-confirm-yes">Sí</button>
+                                                </form>
+                                                <label for="confirm-toggle-<%= tx.getId() %>" class="btn-confirm-no" style="cursor: pointer;">No</label>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>"
                                        class="detail-link">
@@ -461,7 +536,6 @@
                     </table>
                 </div>
 
-                <%-- Footer con conteo + paginación --%>
                 <div class="panel-footer">
                     <p class="panel-count-text">
                         Mostrando
@@ -510,51 +584,30 @@
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
 
-    /**
-     * Valida la foto seleccionada ANTES de enviarla al servidor.
-     * Si pasa las validaciones, dispara el submit del form oculto.
-     */
     function validarYSubirAvatar(input) {
         const file = input.files[0];
         if (!file) return;
 
-        const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+        const MAX_BYTES = 5 * 1024 * 1024;
         const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
 
-        // 1. Validar tipo (segunda barrera, además de "accept")
         if (TIPOS_PERMITIDOS.indexOf(file.type) === -1) {
-            mostrarAlertaAvatar(
-                'Formato no permitido',
-                'Solo se aceptan imágenes en formato JPG, PNG o WEBP.',
-                'error'
-            );
+            mostrarAlertaAvatar('Formato no permitido', 'Solo se aceptan imágenes en formato JPG, PNG o WEBP.', 'error');
             input.value = '';
             return;
         }
 
-        // 2. Validar tamaño
         if (file.size > MAX_BYTES) {
             const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-            mostrarAlertaAvatar(
-                'Imagen demasiado grande',
-                'Tu imagen pesa ' + sizeMb + ' MB. El máximo permitido es 5 MB. ' +
-                'Por favor comprime la imagen o elige una más pequeña.',
-                'error'
-            );
+            mostrarAlertaAvatar('Imagen demasiado grande', 'Tu imagen pesa ' + sizeMb + ' MB. El máximo permitido es 5 MB.', 'error');
             input.value = '';
             return;
         }
 
-        // 3. Todo OK — enviar form
         document.getElementById('avatar-form').submit();
     }
 
-    /**
-     * Muestra una alerta visual bonita arriba del perfil.
-     * Tipo: 'error' (rojo) o 'success' (verde).
-     */
     function mostrarAlertaAvatar(titulo, mensaje, tipo) {
-        // Eliminar alerta previa si existe
         const previa = document.getElementById('avatar-alert-dynamic');
         if (previa) previa.remove();
 
@@ -564,35 +617,23 @@
         const icono       = tipo === 'error' ? 'alert-triangle'    : 'check-circle';
 
         const html = `
-            <div id="avatar-alert-dynamic"
-                 style="display: flex; align-items: flex-start; gap: 0.7rem;
-                        padding: 1rem 1.2rem; margin-bottom: 1.25rem;
-                        background: ${colorBg}; color: ${colorTxt};
-                        border: 1px solid ${colorBorder};
-                        border-radius: var(--radius-sm); font-size: 0.88rem;
-                        font-weight: 600; animation: slideDown 0.3s ease;">
+            <div id="avatar-alert-dynamic" style="display: flex; align-items: flex-start; gap: 0.7rem; padding: 1rem 1.2rem; margin-bottom: 1.25rem; background: ${colorBg}; color: ${colorTxt}; border: 1px solid ${colorBorder}; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600; animation: slideDown 0.3s ease;">
                 <i data-lucide="${icono}" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;"></i>
                 <div style="flex: 1;">
                     <div style="font-weight: 800; margin-bottom: 0.2rem; font-size: 0.92rem;">${titulo}</div>
                     <div style="font-weight: 500; line-height: 1.5;">${mensaje}</div>
                 </div>
-                <button onclick="this.parentElement.remove()"
-                        style="background: none; border: none; cursor: pointer;
-                               color: ${colorTxt}; padding: 0; opacity: 0.6;">
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; color: ${colorTxt}; padding: 0; opacity: 0.6;">
                     <i data-lucide="x" style="width: 16px; height: 16px;"></i>
                 </button>
             </div>
         `;
 
-        // Insertar arriba del page-header
         const pageHeader = document.querySelector('.page-header');
         if (pageHeader) {
             pageHeader.insertAdjacentHTML('afterend', html);
-            // Re-renderizar íconos
             if (typeof lucide !== 'undefined') lucide.createIcons();
-            // Hacer scroll arriba para que la vea
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            // Auto-ocultar después de 6 segundos
             setTimeout(() => {
                 const el = document.getElementById('avatar-alert-dynamic');
                 if (el) {

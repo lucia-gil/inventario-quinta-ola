@@ -40,7 +40,7 @@ public class EmailService {
 
     // ─── Recursos visuales (constantes) ───
     private static final String LOGO_URL = "https://i.imgur.com/JwQo0O1.png";
-    private static final String APP_URL  = "http://localhost:8080/inventario";
+    private static final String APP_URL =   "http://52.87.7.3:8080/inventario";
     private static final int    YEAR     = 2026;
 
     // ─── Paleta de colores Quinta Ola ───

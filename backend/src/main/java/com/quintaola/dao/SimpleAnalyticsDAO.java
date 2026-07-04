@@ -51,6 +51,7 @@ public class SimpleAnalyticsDAO {
                 FROM current_week_days cwd
                 LEFT JOIN transactions t
                     ON DATE(t.created_at) = cwd.week_date
+                    AND t.status = 'COMPLETED'
                 GROUP BY
                     cwd.day_num,
                     cwd.week_date

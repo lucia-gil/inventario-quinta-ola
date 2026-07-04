@@ -38,14 +38,51 @@ public class UserServlet extends HttpServlet {
 
             case "lista":
                 try {
-                    List<User> usuarios = userDao.getAll();
-                    List<Role> roles = roleDao.getAll();
+                    // ── Filtros opcionales ────────────────────────────────────
+                    String searchQ = request.getParameter("q") != null
+                            ? request.getParameter("q").trim() : "";
+
+                    int rolFilter = 0;
+                    String rolParam = request.getParameter("rol");
+                    if (rolParam != null && !rolParam.trim().isEmpty()) {
+                        try { rolFilter = Integer.parseInt(rolParam); }
+                        catch (NumberFormatException ignored) {}
+                    }
+
+                    // ── Paginación: 15 registros por página ───────────────────
+                    final int PAGE_SIZE = 15;
+                    int currentPage = 1;
+                    String pageParam = request.getParameter("page");
+                    if (pageParam != null && !pageParam.trim().isEmpty()) {
+                        try { currentPage = Math.max(1, Integer.parseInt(pageParam)); }
+                        catch (NumberFormatException ignored) {}
+                    }
+                    int offset = (currentPage - 1) * PAGE_SIZE;
+
+                    // Usa los métodos filtrados del DAO
+                    List<User> usuarios   = userDao.getPageFiltered(offset, PAGE_SIZE, searchQ, rolFilter);
+                    int        totalCount = userDao.countFiltered(searchQ, rolFilter);
+                    int        totalPages = (int) Math.ceil((double) totalCount / PAGE_SIZE);
+                    if (totalPages < 1) totalPages = 1;
+                    currentPage = Math.min(currentPage, totalPages);
+                    // ─────────────────────────────────────────────────────────
+
+                    List<Role>           roles          = roleDao.getAll();
                     Map<Integer, String> inactiveStatus = userDao.getInactiveUsersStatus();
 
-                    request.setAttribute("usuarios", usuarios);
-                    request.setAttribute("roles", roles);
+                    request.setAttribute("usuarios",       usuarios);
+                    request.setAttribute("roles",          roles);
                     request.setAttribute("inactiveStatus", inactiveStatus);
-                    request.setAttribute("activeMenu", "members");
+                    request.setAttribute("activeMenu",     "members");
+
+                    // Atributos de paginación
+                    request.setAttribute("currentPage", currentPage);
+                    request.setAttribute("totalPages",  totalPages);
+                    request.setAttribute("totalCount",  totalCount);
+
+                    // Atributos de filtros (para mantener estado del formulario)
+                    request.setAttribute("searchQ",   searchQ);
+                    request.setAttribute("rolFilter", rolFilter);
 
                     view = request.getRequestDispatcher("admin-users.jsp");
                     view.forward(request, response);
@@ -92,348 +129,227 @@ public class UserServlet extends HttpServlet {
         String action = request.getParameter("action") == null
                 ? "" : request.getParameter("action");
 
-        UserDAO userDao = new UserDAO();
+        UserDAO  userDao  = new UserDAO();
         AuditDAO auditDao = new AuditDAO();
 
-        HttpSession sesion = request.getSession();
-        Integer actorId = (Integer) sesion.getAttribute("userId");
-        Integer actorRoleId = (Integer) sesion.getAttribute("roleId");
-        String actorRole = (String) sesion.getAttribute("roleName");
+        HttpSession sesion = request.getSession(false);
+        Integer actorId         = (Integer) sesion.getAttribute("userId");
+        Integer actorRoleId     = (Integer) sesion.getAttribute("roleId");
+        String  actorRole       = (String)  sesion.getAttribute("roleName");
         if (actorRole == null) actorRole = "Usuario";
 
-        // ─── DETECTAR DESDE DÓNDE VINO LA ACCIÓN ───
-        // Si el form envió redirectTo=roles, regresa a /RoleServlet.
-        // Si no, sigue el comportamiento por defecto (admin-users).
-        String redirectTo = request.getParameter("redirectTo");
-        String redirectBase;
-        if ("roles".equals(redirectTo)) {
-            redirectBase = "/RoleServlet";
-        } else {
-            redirectBase = "/UserServlet";
-        }
-        String ctx = request.getContextPath();
+        String redirectTo   = request.getParameter("redirectTo");
+        String redirectBase = "roles".equals(redirectTo) ? "/RoleServlet" : "/UserServlet";
+        String ctx          = request.getContextPath();
 
         switch (action) {
 
-            // ─── APROBAR USUARIO PENDIENTE ───
             case "approveUser":
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
-
-                    // Obtener datos del usuario ANTES de aprobarlo (los necesitamos para el email)
                     User aprobado = userDao.getById(userId);
-
                     boolean ok = userDao.approve(userId);
-
                     if (ok) {
-                        // Auditoría
                         try {
-                            String detalles = String.format(
-                                    "El %s aprobó la cuenta del usuario '%s' (id=%d, email=%s)",
-                                    actorRole,
-                                    aprobado != null ? aprobado.getName() : "desconocido",
-                                    userId,
-                                    aprobado != null ? aprobado.getEmail() : "—"
-                            );
-                            auditDao.log(actorId, "APROBAR_USUARIO", "USER", userId, detalles);
+                            auditDao.log(actorId, "APROBAR_USUARIO", "USER", userId,
+                                    String.format("El %s aprobó la cuenta del usuario '%s' (id=%d, email=%s)",
+                                            actorRole,
+                                            aprobado != null ? aprobado.getName() : "desconocido",
+                                            userId,
+                                            aprobado != null ? aprobado.getEmail() : "—"));
                         } catch (Exception ignored) {}
-
-                        // ─── Email de aprobación al usuario ───
                         if (aprobado != null && aprobado.getEmail() != null) {
                             try {
-                                com.quintaola.util.EmailService.enviarAprobacion(
-                                        aprobado.getEmail(),
-                                        aprobado.getName()
-                                );
+                                com.quintaola.util.EmailService.enviarAprobacion(aprobado.getEmail(), aprobado.getName());
                             } catch (Exception emailEx) {
-                                System.err.println("[UserServlet] No se pudo enviar email de aprobación: " + emailEx.getMessage());
+                                System.err.println("[UserServlet] Email aprobación: " + emailEx.getMessage());
                             }
                         }
-
                         response.sendRedirect(ctx + redirectBase + "?success=Usuario+aprobado.+Ya+puede+iniciar+sesion");
                     } else {
                         response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+aprobar+al+usuario");
                     }
-
                 } catch (Exception e) {
                     response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }
                 break;
 
-            // ─── RECHAZAR USUARIO PENDIENTE ───
             case "rejectUser":
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
-
                     User aRechazar = userDao.getById(userId);
                     boolean ok = userDao.disable(userId);
-
                     if (ok && aRechazar != null) {
-                        // Auditoría
                         try {
-                            String detalles = String.format(
-                                    "El %s rechazó la cuenta del usuario '%s' (id=%d, email=%s)",
-                                    actorRole,
-                                    aRechazar.getName(),
-                                    userId,
-                                    aRechazar.getEmail()
-                            );
-                            auditDao.log(actorId, "RECHAZAR_USUARIO", "USER", userId, detalles);
+                            auditDao.log(actorId, "RECHAZAR_USUARIO", "USER", userId,
+                                    String.format("El %s rechazó la cuenta del usuario '%s' (id=%d, email=%s)",
+                                            actorRole, aRechazar.getName(), userId, aRechazar.getEmail()));
                         } catch (Exception ignored) {}
-
-                        // ─── Email de rechazo al usuario ───
                         if (aRechazar.getEmail() != null) {
                             try {
-                                com.quintaola.util.EmailService.enviarRechazo(
-                                        aRechazar.getEmail(),
-                                        aRechazar.getName()
-                                );
+                                com.quintaola.util.EmailService.enviarRechazo(aRechazar.getEmail(), aRechazar.getName());
                             } catch (Exception emailEx) {
-                                System.err.println("[UserServlet] No se pudo enviar email de rechazo: " + emailEx.getMessage());
+                                System.err.println("[UserServlet] Email rechazo: " + emailEx.getMessage());
                             }
                         }
-
                         response.sendRedirect(ctx + redirectBase + "?success=Solicitud+de+registro+rechazada");
                     } else {
                         response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+rechazar+al+usuario");
                     }
-
                 } catch (Exception e) {
                     response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }
                 break;
 
-            // ─── DESACTIVAR USUARIO (solo SuperAdmin) ───
             case "desactivarUsuario":
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
-
                     if (actorRoleId == null || actorRoleId != 5) {
-                        response.sendRedirect(ctx + redirectBase + "?error=Solo+el+SuperAdmin+puede+desactivar+usuarios");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=Solo+el+SuperAdmin+puede+desactivar+usuarios"); return;
                     }
-
                     if (actorId != null && actorId == userId) {
-                        response.sendRedirect(ctx + redirectBase + "?error=No+puedes+desactivarte+a+ti+mismo");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=No+puedes+desactivarte+a+ti+mismo"); return;
                     }
-
                     User aDesactivar = userDao.getById(userId);
                     if (aDesactivar == null) {
-                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado"); return;
                     }
-
                     if (aDesactivar.getRoleId() == 5) {
-                        response.sendRedirect(ctx + redirectBase + "?error=No+se+puede+desactivar+al+SuperAdmin");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=No+se+puede+desactivar+al+SuperAdmin"); return;
                     }
-
                     boolean ok = userDao.disable(userId);
-
                     if (ok) {
                         try {
-                            String detalles = String.format(
-                                    "El %s desactivó la cuenta de '%s' (id=%d, email=%s, rol=%s). El usuario ya no podrá iniciar sesión.",
-                                    actorRole,
-                                    aDesactivar.getName(),
-                                    userId,
-                                    aDesactivar.getEmail(),
-                                    aDesactivar.getRoleName()
-                            );
-                            auditDao.log(actorId, "DESACTIVAR_USUARIO", "USER", userId, detalles);
+                            auditDao.log(actorId, "DESACTIVAR_USUARIO", "USER", userId,
+                                    String.format("El %s desactivó la cuenta de '%s' (id=%d, email=%s, rol=%s).",
+                                            actorRole, aDesactivar.getName(), userId,
+                                            aDesactivar.getEmail(), aDesactivar.getRoleName()));
                         } catch (Exception ignored) {}
-
                         response.sendRedirect(ctx + redirectBase + "?success=Usuario+desactivado+correctamente");
                     } else {
                         response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+desactivar");
                     }
-
                 } catch (Exception e) {
                     response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }
                 break;
 
-            // ─── REACTIVAR USUARIO (solo SuperAdmin) ───
             case "reactivarUsuario":
                 try {
                     int userId = Integer.parseInt(request.getParameter("userId"));
-
                     if (actorRoleId == null || actorRoleId != 5) {
-                        response.sendRedirect(ctx + redirectBase + "?error=Solo+el+SuperAdmin+puede+reactivar+usuarios");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=Solo+el+SuperAdmin+puede+reactivar+usuarios"); return;
                     }
-
                     User aReactivar = userDao.getById(userId);
                     if (aReactivar == null) {
-                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado"); return;
                     }
-
                     boolean ok = userDao.enable(userId);
-
                     if (ok) {
                         try {
-                            String detalles = String.format(
-                                    "El %s reactivó la cuenta de '%s' (id=%d, email=%s). El usuario ya puede iniciar sesión nuevamente.",
-                                    actorRole,
-                                    aReactivar.getName(),
-                                    userId,
-                                    aReactivar.getEmail()
-                            );
-                            auditDao.log(actorId, "REACTIVAR_USUARIO", "USER", userId, detalles);
+                            auditDao.log(actorId, "REACTIVAR_USUARIO", "USER", userId,
+                                    String.format("El %s reactivó la cuenta de '%s' (id=%d, email=%s).",
+                                            actorRole, aReactivar.getName(), userId, aReactivar.getEmail()));
                         } catch (Exception ignored) {}
-
                         response.sendRedirect(ctx + redirectBase + "?success=Usuario+reactivado+correctamente");
                     } else {
                         response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+reactivar");
                     }
-
                 } catch (Exception e) {
                     response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }
                 break;
 
-            // ─── CREAR usuario nuevo ───
             case "crear":
                 try {
-                    String name = request.getParameter("name");
-                    String email = request.getParameter("email");
-                    String dni = request.getParameter("dni");
+                    String name     = request.getParameter("name");
+                    String email    = request.getParameter("email");
+                    String dni      = request.getParameter("dni");
                     String password = request.getParameter("password");
-                    int roleId = Integer.parseInt(request.getParameter("roleId"));
+                    int    roleId   = Integer.parseInt(request.getParameter("roleId"));
 
                     if (actorRoleId != null && actorRoleId == 4 && roleId >= 4) {
-                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=No+tienes+permiso+para+crear+ese+rol");
-                        return;
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=No+tienes+permiso+para+crear+ese+rol"); return;
                     }
-
-                    // ─── Validar política de contraseñas ───
                     String passError = com.quintaola.util.PasswordValidator.getErrorMessage(password);
                     if (passError != null) {
-                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=" + passError.replace(" ", "+"));
-                        return;
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=" + passError.replace(" ", "+")); return;
                     }
-
-                    // ─── Validar nombre (debe tener letras reales, no solo símbolos permitidos) ───
-                    if (name == null
-                            || !name.trim().matches("[\\p{L}\\s'\\-]{2,100}")
-                            || !name.matches(".*\\p{L}.*")) {
-                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Nombre+invalido.+Debe+contener+al+menos+una+letra");
-                        return;
+                    if (name == null || !name.trim().matches("[\\p{L}\\s'\\-]{2,100}") || !name.matches(".*\\p{L}.*")) {
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Nombre+invalido.+Debe+contener+al+menos+una+letra"); return;
                     }
-
-                    // ─── Validar DNI (8 dígitos) ───
                     if (dni == null || !dni.matches("\\d{8}")) {
-                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=DNI+debe+tener+8+digitos");
-                        return;
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=DNI+debe+tener+8+digitos"); return;
                     }
-
-                    // ─── Validar email ───
                     if (email == null || !email.trim().toLowerCase().matches("^[\\w.+\\-]+@[\\w\\-]+(\\.[\\w\\-]+)+$")) {
-                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Email+invalido");
-                        return;
+                        response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=Email+invalido"); return;
                     }
-
-                    String hash = BCrypt.hashpw(password, BCrypt.gensalt(10));
 
                     User nuevo = new User();
-                    nuevo.setName(name.trim());
-                    nuevo.setEmail(email.trim().toLowerCase());
-                    nuevo.setDni(dni.trim());
-                    nuevo.setPasswordHash(hash);
+                    nuevo.setName        (name.trim());
+                    nuevo.setEmail       (email.trim().toLowerCase());
+                    nuevo.setDni         (dni.trim());
+                    nuevo.setPasswordHash(BCrypt.hashpw(password, BCrypt.gensalt(10)));
 
                     boolean ok = userDao.createWithRole(nuevo, roleId);
-
                     if (ok) {
                         try {
                             RoleDAO rdao = new RoleDAO();
                             Role rolAsignado = rdao.getById(roleId);
-                            String nombreRol = rolAsignado != null ? rolAsignado.getName() : ("roleId=" + roleId);
-
-                            String detalles = String.format(
-                                    "El %s creó al usuario '%s' (email=%s, dni=%s) con rol '%s'",
-                                    actorRole,
-                                    nuevo.getName(),
-                                    nuevo.getEmail(),
-                                    nuevo.getDni(),
-                                    nombreRol
-                            );
-                            auditDao.log(actorId, "CREAR_USUARIO", "USER", 0, detalles);
+                            auditDao.log(actorId, "CREAR_USUARIO", "USER", 0,
+                                    String.format("El %s creó al usuario '%s' (email=%s, dni=%s) con rol '%s'",
+                                            actorRole, nuevo.getName(), nuevo.getEmail(), nuevo.getDni(),
+                                            rolAsignado != null ? rolAsignado.getName() : "roleId=" + roleId));
                         } catch (Exception ignored) {}
-
                         String redirect = (actorRoleId != null && actorRoleId == 5)
                                 ? "/RoleServlet?success=Usuario+creado+correctamente"
                                 : "/UserServlet?success=Usuario+creado+correctamente";
-
                         response.sendRedirect(ctx + redirect);
                     } else {
                         response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=No+se+pudo+crear");
                     }
-
                 } catch (Exception e) {
                     String msg = e.getMessage();
-                    if (msg != null && msg.contains("Duplicate")) {
-                        msg = "Email o DNI ya registrado";
-                    }
+                    if (msg != null && msg.contains("Duplicate")) msg = "Email o DNI ya registrado";
                     response.sendRedirect(ctx + "/UserServlet?action=formCrear&error=" + msg.replace(" ", "+"));
                 }
                 break;
 
-            // ─── CAMBIAR ROL ───
             case "cambiarRol":
                 try {
-                    int userId = Integer.parseInt(request.getParameter("userId"));
+                    int userId     = Integer.parseInt(request.getParameter("userId"));
                     int nuevoRolId = Integer.parseInt(request.getParameter("nuevoRolId"));
 
                     User afectado = userDao.getById(userId);
                     if (afectado == null) {
-                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=Usuario+no+encontrado"); return;
                     }
-                    String rolAnterior = afectado.getRoleName();
-                    String nombreAfectado = afectado.getName();
-
                     if (actorId != null && actorId == userId) {
-                        response.sendRedirect(ctx + redirectBase + "?error=No+puedes+cambiar+tu+propio+rol");
-                        return;
+                        response.sendRedirect(ctx + redirectBase + "?error=No+puedes+cambiar+tu+propio+rol"); return;
                     }
-
                     if (actorRoleId != null && actorRoleId == 4) {
                         if (afectado.getRoleId() >= 4) {
-                            response.sendRedirect(ctx + redirectBase + "?error=No+tienes+permiso+para+modificar+a+ese+usuario");
-                            return;
+                            response.sendRedirect(ctx + redirectBase + "?error=No+tienes+permiso+para+modificar+a+ese+usuario"); return;
                         }
                         if (nuevoRolId >= 4) {
-                            response.sendRedirect(ctx + redirectBase + "?error=No+puedes+asignar+ese+rol");
-                            return;
+                            response.sendRedirect(ctx + redirectBase + "?error=No+puedes+asignar+ese+rol"); return;
                         }
                     }
-
                     boolean ok = userDao.changeRole(userId, nuevoRolId);
-
                     if (ok) {
                         try {
                             RoleDAO rdao = new RoleDAO();
                             Role rolNuevo = rdao.getById(nuevoRolId);
-                            String nombreRolNuevo = rolNuevo != null ? rolNuevo.getName() : ("roleId=" + nuevoRolId);
-
-                            String detalles = String.format(
-                                    "El %s cambió el rol de '%s' (id=%d) de '%s' a '%s'",
-                                    actorRole,
-                                    nombreAfectado,
-                                    userId,
-                                    rolAnterior,
-                                    nombreRolNuevo
-                            );
-                            auditDao.log(actorId, "CAMBIO_ROL", "USER", userId, detalles);
+                            auditDao.log(actorId, "CAMBIO_ROL", "USER", userId,
+                                    String.format("El %s cambió el rol de '%s' (id=%d) de '%s' a '%s'",
+                                            actorRole, afectado.getName(), userId,
+                                            afectado.getRoleName(),
+                                            rolNuevo != null ? rolNuevo.getName() : "roleId=" + nuevoRolId));
                         } catch (Exception ignored) {}
-
                         response.sendRedirect(ctx + redirectBase + "?success=Rol+actualizado+correctamente");
                     } else {
                         response.sendRedirect(ctx + redirectBase + "?error=No+se+pudo+cambiar+el+rol");
                     }
-
                 } catch (Exception e) {
                     response.sendRedirect(ctx + redirectBase + "?error=" + e.getMessage().replace(" ", "+"));
                 }

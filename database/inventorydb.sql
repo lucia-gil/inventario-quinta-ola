@@ -124,17 +124,6 @@ CREATE TABLE permissions (
     category    VARCHAR(50)
 );
 
-INSERT INTO permissions (code, description, category) VALUES
-    ('inventory.edit',    'Editar items del inventario',       'inventario'),
-    ('inventory.delete',  'Eliminar items del inventario',     'inventario'),
-    ('user.manage',       'Gestionar cuentas de usuarios',     'usuarios'),
-    ('user.delete',       'Eliminar usuarios',                 'usuarios'),
-    ('request.approve',   'Aprobar solicitudes',               'solicitudes'),
-    ('request.reject',    'Rechazar solicitudes',              'solicitudes'),
-    ('stock.update',      'Actualizar cantidades de stock',    'deposito'),
-    ('report.export',     'Exportar reportes a CSV/Excel',     'reportes'),
-    ('audit.view',        'Ver bitácora de auditoría',         'auditoria');
-
 -- ============================================================
 -- USER_PERMISSIONS (qué permisos extra tiene cada usuario)
 -- ============================================================
