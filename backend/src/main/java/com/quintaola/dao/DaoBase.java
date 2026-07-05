@@ -11,9 +11,11 @@ import java.sql.SQLException;
  */
 public abstract class DaoBase {
 
-    private static final String URL  = "jdbc:mysql://127.0.0.1:3306/inventorydb";
-    private static final String USER = "root";
-    private static final String PASS = "lucia1234";
+    private static final String URL = "jdbc:mysql://inventario-bd.czzl6s6jv6rq.us-east-1.rds.amazonaws.com:3306/inventorydb";
+
+    private static final String USER="admin";
+
+    private static final String PASS="telecom2022";;
 
     protected Connection getConnection() throws SQLException, ClassNotFoundException {
         Class.forName("com.mysql.cj.jdbc.Driver");

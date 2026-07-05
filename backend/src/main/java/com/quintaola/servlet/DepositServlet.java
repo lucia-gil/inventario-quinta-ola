@@ -79,6 +79,9 @@ public class DepositServlet extends HttpServlet {
 
                     int txId = Integer.parseInt(request.getParameter("id"));
 
+                    // Obtener datos del solicitante ANTES de entregar (los necesitamos para el email)
+                    com.quintaola.model.Transaction txEntregar = txDao.getById(txId);
+
                     // El DAO se encarga de:
                     // 1. Cambiar estado a COMPLETED
                     // 2. Descontar del stock del item
@@ -86,6 +89,23 @@ public class DepositServlet extends HttpServlet {
                     boolean ok = txDao.deliver(txId);
 
                     if (ok) {
+                        // ─── Notificar al solicitante por email ───
+                        if (txEntregar != null) {
+                            try {
+                                com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
+                                com.quintaola.model.User solicitante = userDao.getById(txEntregar.getRequesterId());
+                                if (solicitante != null && solicitante.getEmail() != null) {
+                                    com.quintaola.util.EmailService.enviarEntrega(
+                                            solicitante.getEmail(),
+                                            solicitante.getName(),
+                                            txId
+                                    );
+                                }
+                            } catch (Exception emailEx) {
+                                System.err.println("[DepositServlet] No se pudo enviar email de entrega: " + emailEx.getMessage());
+                            }
+                        }
+
                         response.sendRedirect(request.getContextPath()
                                 + "/DepositServlet?success=Solicitud+entregada+y+stock+actualizado");
                     } else {
