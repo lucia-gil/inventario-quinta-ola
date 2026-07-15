@@ -39,8 +39,8 @@ Puedes probar los distintos roles del sistema utilizando las siguientes credenci
 
 | Rol | Correo / Usuario | Contraseña |
 | :--- | :--- | :--- |
-| **Viewer** (Solicitante) | `solicitante@quintaola.com` | `admin123` |
-| **Member** (Depósito) | `deposito@quintaola.com` | `admin123` |
-| **Manager** (Coordinadora)| `coordinadora@quintaola.com` | `admin123` |
-| **Admin** | `admin.demo@quintaola.com` | `admin123` |
-| **SuperAdmin** | `superadmin@quintaola.com` | `admin123` |
+| **Viewer** (Solicitante) | `solicitante@quintaola.com` | `demo123` |
+| **Member** (Depósito) | `deposito@quintaola.com` | `demo123` |
+| **Manager** (Coordinadora)| `coordinadora@quintaola.com` | `demo123` |
+| **Admin** | `admin.demo@quintaola.com` | `demo123` |
+| **SuperAdmin** | `superadmin@quintaola.com` | `demo123` |
