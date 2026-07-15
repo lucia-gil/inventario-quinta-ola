@@ -154,6 +154,7 @@ public class SessionFilter implements Filter {
             case "/admin-users.jsp":   return "/UserServlet";
             case "/roles-list.jsp":    return "/RoleServlet";
             case "/audit-list.jsp":    return "/AuditServlet";
+            case "/request-form.jsp":  return "/TransactionServlet";
             case "/admin-item.jsp":    return "/AdminItemServlet";
             case "/analytics.jsp":     return "/AnalyticsServlet";
             case "/notifications.jsp": return "/NotificationServlet";
