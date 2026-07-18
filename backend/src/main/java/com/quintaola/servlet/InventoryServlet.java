@@ -39,8 +39,6 @@ public class InventoryServlet extends HttpServlet {
         switch (action) {
             case "lista":
                 try {
-                    List<Item> todosLosItems = itemDao.getAll();
-
                     String filtroTexto = request.getParameter("q");
                     String filtroTag   = request.getParameter("tag");
                     String filtroStock = request.getParameter("stock");
@@ -48,6 +46,15 @@ public class InventoryServlet extends HttpServlet {
                     if (filtroTexto == null) filtroTexto = "";
                     if (filtroTag   == null) filtroTag = "";
                     if (filtroStock == null) filtroStock = "";
+
+                    // "Desactivados" es una fuente de datos distinta (activo=0),
+                    // no un valor del enum status (OK/LOW/UNAVAILABLE), así que
+                    // se resuelve aparte en vez de filtrar sobre getAll().
+                    boolean filtrandoInactivos = "INACTIVE".equals(filtroStock);
+
+                    List<Item> todosLosItems = filtrandoInactivos
+                            ? itemDao.getAllInactive()
+                            : itemDao.getAll();
 
                     // ─── 2. FILTRADO ───
                     List<Item> itemsFiltrados = new ArrayList<>();
@@ -61,7 +68,11 @@ public class InventoryServlet extends HttpServlet {
                         boolean matchTag = filtroTag.isEmpty()
                                 || (item.getTags() != null && item.getTags().contains(filtroTag));
 
-                        boolean matchStock = filtroStock.isEmpty()
+                        // Si el filtro es "INACTIVE", todosLosItems ya viene
+                        // pre-filtrado desde getAllInactive() — no hay status
+                        // de stock que comparar en ese caso.
+                        boolean matchStock = filtrandoInactivos
+                                || filtroStock.isEmpty()
                                 || filtroStock.equals(item.getStatus());
 
                         if (matchTexto && matchTag && matchStock) {

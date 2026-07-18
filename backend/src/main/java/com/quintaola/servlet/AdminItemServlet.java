@@ -118,6 +118,25 @@ public class AdminItemServlet extends HttpServlet {
                 return;
             }
 
+            // ─── REACTIVAR ─────────────────────────────────────────────────────
+            if ("reactivar".equals(action)) {
+                int id = Integer.parseInt(request.getParameter("id"));
+                boolean ok = itemDao.reactivate(id);
+                if (ok) {
+                    // Auditoría
+                    try {
+                        new AuditDAO().log(actorId, "REACTIVAR_ITEM", "ITEM", id,
+                                String.format("El %s reactivó el ítem id=%d", actorRole, id));
+                    } catch (Exception ignored) {}
+                    // Vuelve al filtro de "Desactivados" para que el admin vea
+                    // el resultado inmediato de la acción que acaba de hacer.
+                    response.sendRedirect(ctx + "/InventoryServlet?action=lista&stock=INACTIVE&success=Material+reactivado");
+                } else {
+                    response.sendRedirect(ctx + "/InventoryServlet?action=lista&stock=INACTIVE&error=No+se+pudo+reactivar");
+                }
+                return;
+            }
+
             // ─── ENTRADA DE STOCK ──────────────────────────────────────────────
             if ("entrada".equals(action)) {
                 String itemIdStr   = request.getParameter("itemId");

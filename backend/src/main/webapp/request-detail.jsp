@@ -16,8 +16,21 @@
     Integer roleIdSession = (Integer) session.getAttribute("roleId");
     int rol = roleIdSession != null ? roleIdSession : 0;
 
-    String activeMenu = (String) request.getAttribute("activeMenu");
-    if (activeMenu != null) { session.setAttribute("activeMenu", activeMenu); }
+    // "origen" en la URL manda siempre que lo reconozcamos — así el sidebar
+    // resalta la sección correcta sin importar qué activeMenu haya puesto
+    // el servlet por defecto (ej: TransactionServlet siempre marca
+    // "transactions" salvo que sepa manejar el caso de "despacho").
+    String origenParam = request.getParameter("origen");
+    String activeMenu;
+    if ("historial".equals(origenParam))      activeMenu = "history";
+    else if ("despacho".equals(origenParam))  activeMenu = "deposit";
+    else if ("lista".equals(origenParam))     activeMenu = "transactions";
+    else                                       activeMenu = (String) request.getAttribute("activeMenu");
+
+    if (activeMenu != null) {
+        request.setAttribute("activeMenu", activeMenu);
+        session.setAttribute("activeMenu", activeMenu);
+    }
 
     // Manager (3) y Administrador (4) aprueban, PERO no sus propias solicitudes.
     // SuperAdmin (5) no aprueba nada.
@@ -80,7 +93,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Detalle de Solicitud | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -474,20 +487,17 @@
                     </h1>
                     <p class="page-subtitle">Información completa y trazabilidad del pedido</p>
                 </div>
-                <%
-                    String origenRegreso = request.getParameter("origen");
-                    if ("historial".equals(origenRegreso)) {
-                %>
-                <a href="<%= ctx %>/HistoryServlet?action=lista" class="btn-ghost btn-icon">
+                <%-- "Volver" usa el historial real del navegador — así respeta
+                     de dónde vino el usuario sin asumir un destino fijo que
+                     podría no tener permiso (ej: TransactionServlet es solo
+                     para Manager/Administrador, pero cualquier rol puede
+                     terminar en esta página). El href es solo un respaldo
+                     por si no hay historial (ej: entró por link directo). --%>
+                <a href="<%= ctx %>/HomeServlet" class="btn-ghost btn-icon"
+                   onclick="if (document.referrer && document.referrer.indexOf(window.location.host) !== -1) { history.back(); return false; }">
                     <i data-lucide="arrow-left"></i>
                     Volver
                 </a>
-                <% } else { %>
-                <a href="<%= ctx %>/TransactionServlet?action=lista" class="btn-ghost btn-icon">
-                    <i data-lucide="arrow-left"></i>
-                    Volver
-                </a>
-                <% } %>
             </div>
 
             <%-- Alertas --%>
@@ -649,96 +659,96 @@
                             </div>
                         </div>
                         <% } else if (puedeAprobar) { %>
-                            <div class="actions-section">
-                                <h3>¿Qué quieres hacer con esta solicitud?</h3>
+                        <div class="actions-section">
+                            <h3>¿Qué quieres hacer con esta solicitud?</h3>
 
-                                <form id="decisionForm" action="<%= ctx %>/TransactionServlet" method="POST" style="margin: 0;">
-                                    <input type="hidden" name="id" value="<%= tx.getId() %>"/>
-                                    <input type="hidden" name="action" id="formAction" value=""/>
-                                    <input type="hidden" name="notas" id="notaFinal" value=""/>
+                            <form id="decisionForm" action="<%= ctx %>/TransactionServlet" method="POST" style="margin: 0;">
+                                <input type="hidden" name="id" value="<%= tx.getId() %>"/>
+                                <input type="hidden" name="action" id="formAction" value=""/>
+                                <input type="hidden" name="notas" id="notaFinal" value=""/>
 
-                                    <div class="actions-row">
-                                        <button type="button" class="btn-approve-big" onclick="prepararAprobacion()" id="btnAprobar">
-                                            <i data-lucide="check"></i>
-                                            <span>Aprobar Solicitud</span>
-                                        </button>
+                                <div class="actions-row">
+                                    <button type="button" class="btn-approve-big" onclick="prepararAprobacion()" id="btnAprobar">
+                                        <i data-lucide="check"></i>
+                                        <span>Aprobar Solicitud</span>
+                                    </button>
 
-                                        <button type="button" class="btn-reject-big" onclick="prepararRechazo()" id="btnRechazar">
-                                            <i data-lucide="x"></i>
-                                            <span>Rechazar Solicitud</span>
-                                        </button>
-                                    </div>
+                                    <button type="button" class="btn-reject-big" onclick="prepararRechazo()" id="btnRechazar">
+                                        <i data-lucide="x"></i>
+                                        <span>Rechazar Solicitud</span>
+                                    </button>
+                                </div>
 
-                                    <div id="cajaAprobacion" style="display: none; margin-top: 1rem; background: var(--green-bg); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid #BBF7D0; border-left: 4px solid var(--green);">
-                                        <label for="notasAprobacion" style="font-weight: 700; color: var(--green-dark); font-size: 0.85rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">
-                                            Comentarios de aprobación (Opcional)
-                                        </label>
-                                        <textarea id="notasAprobacion" rows="3" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem;" placeholder="Ej: Material listo para recoger..."></textarea>
-                                    </div>
+                                <div id="cajaAprobacion" style="display: none; margin-top: 1rem; background: var(--green-bg); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid #BBF7D0; border-left: 4px solid var(--green);">
+                                    <label for="notasAprobacion" style="font-weight: 700; color: var(--green-dark); font-size: 0.85rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">
+                                        Comentarios de aprobación (Opcional)
+                                    </label>
+                                    <textarea id="notasAprobacion" rows="3" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem;" placeholder="Ej: Material listo para recoger..."></textarea>
+                                </div>
 
-                                    <div id="cajaRechazo" style="display: none; margin-top: 1rem; background: var(--red-bg); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid #FECACA; border-left: 4px solid var(--red);">
-                                        <label for="notasRechazo" style="font-weight: 700; color: var(--red-dark); font-size: 0.85rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">
-                                            Motivo de rechazo (Obligatorio)
-                                        </label>
-                                        <textarea id="notasRechazo" rows="3" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem;" placeholder="Escribe aquí por qué se rechaza la solicitud..."></textarea>
-                                    </div>
-                                </form>
-                            </div>
+                                <div id="cajaRechazo" style="display: none; margin-top: 1rem; background: var(--red-bg); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid #FECACA; border-left: 4px solid var(--red);">
+                                    <label for="notasRechazo" style="font-weight: 700; color: var(--red-dark); font-size: 0.85rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">
+                                        Motivo de rechazo (Obligatorio)
+                                    </label>
+                                    <textarea id="notasRechazo" rows="3" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem;" placeholder="Escribe aquí por qué se rechaza la solicitud..."></textarea>
+                                </div>
+                            </form>
+                        </div>
 
-                            <script>
-                                const cajaAprobacion = document.getElementById('cajaAprobacion');
-                                const cajaRechazo = document.getElementById('cajaRechazo');
-                                const btnAprobar = document.getElementById('btnAprobar');
-                                const btnRechazar = document.getElementById('btnRechazar');
-                                const notasAprobacion = document.getElementById('notasAprobacion');
-                                const notasRechazo = document.getElementById('notasRechazo');
-                                const notaFinal = document.getElementById('notaFinal');
-                                const formAction = document.getElementById('formAction');
-                                const decisionForm = document.getElementById('decisionForm');
+                        <script>
+                            const cajaAprobacion = document.getElementById('cajaAprobacion');
+                            const cajaRechazo = document.getElementById('cajaRechazo');
+                            const btnAprobar = document.getElementById('btnAprobar');
+                            const btnRechazar = document.getElementById('btnRechazar');
+                            const notasAprobacion = document.getElementById('notasAprobacion');
+                            const notasRechazo = document.getElementById('notasRechazo');
+                            const notaFinal = document.getElementById('notaFinal');
+                            const formAction = document.getElementById('formAction');
+                            const decisionForm = document.getElementById('decisionForm');
 
-                                function prepararAprobacion() {
-                                    if (cajaAprobacion.style.display === 'none') {
-                                        // Mostrar caja de aprobar, ocultar la de rechazar
-                                        cajaAprobacion.style.display = 'block';
-                                        cajaRechazo.style.display = 'none';
-                                        notasRechazo.required = false;
+                            function prepararAprobacion() {
+                                if (cajaAprobacion.style.display === 'none') {
+                                    // Mostrar caja de aprobar, ocultar la de rechazar
+                                    cajaAprobacion.style.display = 'block';
+                                    cajaRechazo.style.display = 'none';
+                                    notasRechazo.required = false;
 
-                                        // Cambiar textos de botones
-                                        btnAprobar.querySelector('span').innerText = 'Confirmar Aprobación';
-                                        btnRechazar.querySelector('span').innerText = 'Rechazar Solicitud';
-                                        notasAprobacion.focus();
+                                    // Cambiar textos de botones
+                                    btnAprobar.querySelector('span').innerText = 'Confirmar Aprobación';
+                                    btnRechazar.querySelector('span').innerText = 'Rechazar Solicitud';
+                                    notasAprobacion.focus();
+                                } else {
+                                    // Si ya está abierta y vuelve a hacer clic, enviamos
+                                    formAction.value = 'aprobar';
+                                    // Si dejó el comentario vacío, le ponemos un texto por defecto para la DB
+                                    notaFinal.value = notasAprobacion.value.trim() !== '' ? notasAprobacion.value.trim() : 'Aprobada sin comentarios adicionales';
+                                    decisionForm.submit();
+                                }
+                            }
+
+                            function prepararRechazo() {
+                                if (cajaRechazo.style.display === 'none') {
+                                    // Mostrar caja de rechazar, ocultar la de aprobar
+                                    cajaRechazo.style.display = 'block';
+                                    cajaAprobacion.style.display = 'none';
+                                    notasRechazo.required = true;
+
+                                    // Cambiar textos de botones
+                                    btnRechazar.querySelector('span').innerText = 'Confirmar Rechazo';
+                                    btnAprobar.querySelector('span').innerText = 'Aprobar Solicitud';
+                                    notasRechazo.focus();
+                                } else {
+                                    // Si ya está abierta, validamos que no esté vacía
+                                    if (notasRechazo.value.trim() === "") {
+                                        notasRechazo.reportValidity(); // Muestra burbuja nativa del navegador pidiendo texto
                                     } else {
-                                        // Si ya está abierta y vuelve a hacer clic, enviamos
-                                        formAction.value = 'aprobar';
-                                        // Si dejó el comentario vacío, le ponemos un texto por defecto para la DB
-                                        notaFinal.value = notasAprobacion.value.trim() !== '' ? notasAprobacion.value.trim() : 'Aprobada sin comentarios adicionales';
+                                        formAction.value = 'rechazar';
+                                        notaFinal.value = notasRechazo.value.trim();
                                         decisionForm.submit();
                                     }
                                 }
-
-                                function prepararRechazo() {
-                                    if (cajaRechazo.style.display === 'none') {
-                                        // Mostrar caja de rechazar, ocultar la de aprobar
-                                        cajaRechazo.style.display = 'block';
-                                        cajaAprobacion.style.display = 'none';
-                                        notasRechazo.required = true;
-
-                                        // Cambiar textos de botones
-                                        btnRechazar.querySelector('span').innerText = 'Confirmar Rechazo';
-                                        btnAprobar.querySelector('span').innerText = 'Aprobar Solicitud';
-                                        notasRechazo.focus();
-                                    } else {
-                                        // Si ya está abierta, validamos que no esté vacía
-                                        if (notasRechazo.value.trim() === "") {
-                                            notasRechazo.reportValidity(); // Muestra burbuja nativa del navegador pidiendo texto
-                                        } else {
-                                            formAction.value = 'rechazar';
-                                            notaFinal.value = notasRechazo.value.trim();
-                                            decisionForm.submit();
-                                        }
-                                    }
-                                }
-                            </script>
+                            }
+                        </script>
                         <% } %>
 
                         <% } %>

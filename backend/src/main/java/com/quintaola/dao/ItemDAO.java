@@ -1,22 +1,3 @@
-// ============================================================
-// ITEM DAO METHODS (SIGNATURE + OUTPUT CONTRACT)
-// ============================================================
-//
-// getAll()            - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// getAllAdmin()       - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// getById(id)         - id, name, description, image_url, unit, cached_quantity, min_quantity, status, activo, created_at, tags
-// create(item)        - boolean
-// update(item)        - boolean
-// disable(id)         - boolean
-//
-// getLowStock()       - ResultSet
-// getOkStock()        - ResultSet
-// getUnavailable()    - ResultSet
-// getNewest()         - ResultSet
-// getOldest()         - ResultSet
-// getMostRequested()  - ResultSet
-// ============================================================
-
 package com.quintaola.dao;
 
 import com.quintaola.model.Item;
@@ -60,6 +41,31 @@ public class ItemDAO {
             FROM items i
             LEFT JOIN item_tags it ON it.item_id = i.id
             LEFT JOIN tags t ON t.id = it.tag_id
+            GROUP BY i.id
+            ORDER BY i.created_at DESC
+            """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                items.add(mapRow(rs));
+            }
+        }
+        return items;
+    }
+
+    // ── GET ALL INACTIVE — listar SOLO los materiales desactivados ─────────────
+    // Usado para el filtro "Desactivados" en la Lista de Materiales.
+    public List<Item> getAllInactive() throws SQLException {
+        List<Item> items = new ArrayList<>();
+        String sql = """
+            SELECT i.*, GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') AS tags
+            FROM items i
+            LEFT JOIN item_tags it ON it.item_id = i.id
+            LEFT JOIN tags t ON t.id = it.tag_id
+            WHERE i.activo = 0
             GROUP BY i.id
             ORDER BY i.created_at DESC
             """;
@@ -157,6 +163,21 @@ public class ItemDAO {
     // ── DISABLE — deshabilitar en lugar de borrar ─────────────────
     public boolean disable(int id) throws SQLException {
         String sql = "UPDATE items SET activo = 0 WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    // ── REACTIVATE — volver a habilitar un material desactivado ───
+    // Espejo de disable(): mismo patrón, misma forma de uso desde el servlet.
+    // NOTA: no reactiva el status (OK/LOW/UNAVAILABLE) — ese se recalcula solo
+    // según cached_quantity vs min_quantity la próxima vez que se consulte/actualice.
+    public boolean reactivate(int id) throws SQLException {
+        String sql = "UPDATE items SET activo = 1 WHERE id = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

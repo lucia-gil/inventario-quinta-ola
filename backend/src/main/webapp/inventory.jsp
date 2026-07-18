@@ -334,6 +334,26 @@
             font-weight: 700; color: var(--gray-800); font-size: 0.9rem;
         }
 
+        /* ── Fila desactivada (mismo tratamiento que Miembros) ─────────────── */
+        .row-deactivated { opacity: 0.55; background: var(--gray-50); }
+        .row-deactivated .item-cell-name { text-decoration: line-through; }
+        .stock-deactivated {
+            display: inline-flex; align-items: center; gap: 0.28rem;
+            padding: 0.28rem 0.65rem; border-radius: var(--radius-full);
+            font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+            background: var(--gray-200); color: var(--gray-700);
+        }
+        .stock-deactivated i { width: 11px; height: 11px; }
+        .btn-reactivate-row {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); border: none;
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+            color: var(--white); font-size: 0.78rem; font-weight: 700;
+            cursor: pointer; transition: all var(--transition); text-decoration: none; font-family: inherit;
+        }
+        .btn-reactivate-row:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(34,197,94,0.3); }
+        .btn-reactivate-row i { width: 13px; height: 13px; }
+
         .tag-chip {
             display: inline-block;
             padding: 0.25rem 0.65rem;
@@ -476,6 +496,9 @@
                         <option value="OK"           <%= "OK".equals(filtroStock)           ? "selected" : "" %>>OK (En Stock)</option>
                         <option value="LOW"          <%= "LOW".equals(filtroStock)          ? "selected" : "" %>>Bajo Stock</option>
                         <option value="UNAVAILABLE"  <%= "UNAVAILABLE".equals(filtroStock)  ? "selected" : "" %>>Sin Stock</option>
+                        <% if (esAdmin) { %>
+                        <option value="INACTIVE"     <%= "INACTIVE".equals(filtroStock)     ? "selected" : "" %>>Desactivados</option>
+                        <% } %>
                     </select>
 
                     <button type="submit" class="btn-page-primary btn-icon">
@@ -603,8 +626,10 @@
                         </thead>
                         <tbody class="table-body">
 
-                        <% for (Item item : itemsToShow) { %>
-                        <tr class="table-row">
+                        <% for (Item item : itemsToShow) {
+                            boolean itemInactivo = !item.isActivo();
+                        %>
+                        <tr class="table-row <%= itemInactivo ? "row-deactivated" : "" %>">
                             <td class="td">
                                 <div class="item-cell">
                                     <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) { %>
@@ -639,7 +664,9 @@
                             </td>
 
                             <td class="td-center">
-                                <%
+                                <% if (itemInactivo) { %>
+                                <span class="stock-deactivated"><i data-lucide="ban"></i>Desactivado</span>
+                                <% } else {
                                     String st = item.getStatus();
                                     String badgeClass, badgeText;
                                     if ("OK".equals(st))               { badgeClass = "stock-ok";   badgeText = "OK"; }
@@ -648,11 +675,51 @@
                                     else                               { badgeClass = "stock-ok";   badgeText = st; }
                                 %>
                                 <span class="<%= badgeClass %>"><%= badgeText %></span>
+                                <% } %>
                             </td>
 
                             <% if (esAdmin) { %>
                             <td class="td-center">
                                 <div class="row-actions" style="display:flex; align-items:center; gap:0.5rem; justify-content:center;">
+
+                                    <% if (itemInactivo) { %>
+                                    <%-- MATERIAL DESACTIVADO: solo se puede reactivar --%>
+                                    <details class="css-modal-wrapper">
+                                        <summary class="btn-reactivate-row" style="cursor: pointer; list-style: none;">
+                                            <i data-lucide="rotate-ccw"></i>
+                                            Reactivar
+                                        </summary>
+
+                                        <div class="css-modal-overlay">
+                                            <div class="css-modal-close-overlay-trigger"
+                                                 onclick="this.closest('details').removeAttribute('open');">
+                                            </div>
+
+                                            <div class="css-modal-card" style="position: relative; z-index: 10;">
+                                                <div class="modal-icon-container text-pink">
+                                                    <i data-lucide="rotate-ccw" style="width:32px; height:32px;"></i>
+                                                </div>
+                                                <h3>¿Reactivar Material?</h3>
+                                                <p>"<%= item.getName() %>" volverá a estar disponible en el inventario y en el catálogo de solicitudes.</p>
+
+                                                <div class="css-modal-actions">
+                                                    <button type="button"
+                                                            class="btn-cancel-modal"
+                                                            onclick="this.closest('details').removeAttribute('open');">
+                                                        Cancelar
+                                                    </button>
+
+                                                    <form action="<%= ctx %>/AdminItemServlet" method="POST" style="margin:0;">
+                                                        <input type="hidden" name="action" value="reactivar"/>
+                                                        <input type="hidden" name="id" value="<%= item.getId() %>"/>
+                                                        <button type="submit" class="btn-reactivate-row" style="border:none;">Sí, Reactivar</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
+
+                                    <% } else { %>
 
                                     <%-- BOTÓN EDITAR (Se queda igual) --%>
                                     <a href="<%= ctx %>/AdminItemServlet?action=formEditar&id=<%= item.getId() %>"
@@ -697,6 +764,7 @@
                                             </div>
                                         </div>
                                     </details>
+                                    <% } %>
 
                                 </div>
                             </td>

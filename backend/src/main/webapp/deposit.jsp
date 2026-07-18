@@ -58,7 +58,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Depósito | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -488,7 +488,7 @@
                                         </div>
                                     </div>
 
-                                    <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>"
+                                    <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>&origen=despacho"
                                        class="detail-link">
                                         <i data-lucide="eye"></i>
                                         Ver
