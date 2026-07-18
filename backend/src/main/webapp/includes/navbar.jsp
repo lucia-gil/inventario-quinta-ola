@@ -32,7 +32,8 @@
 
     <div class="sidebar-header">
         <a href="<%= ctx %>/<%= esSuperAdmin ? "RoleServlet" : "HomeServlet" %>">
-            <img src="<%= ctx %>/img/QuintaOlaLogo.png" alt="Quinta Ola" class="sidebar-logo"/>
+            <img src="<%= ctx %>/img/QuintaOlaLogo.png" alt="Quinta Ola" class="sidebar-logo sidebar-logo-full"/>
+            <img src="<%= ctx %>/img/QuintaOlaIcon.png" alt="Quinta Ola" class="sidebar-logo sidebar-logo-icon"/>
         </a>
     </div>
 

@@ -104,7 +104,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -228,10 +228,10 @@
             align-items: center;
             margin-bottom: 1.5rem;
         }
-        .filter-search { 
-            position: relative; 
-            flex-grow: 1; 
-            min-width: 250px; 
+        .filter-search {
+            position: relative;
+            flex-grow: 1;
+            min-width: 250px;
             flex-direction: row;
             display: flex;
             align-items: center;
@@ -282,7 +282,14 @@
             box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
         }
 
-        .filter-actions { display: flex; gap: 0.5rem; align-items: center; }
+        .filter-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+        @media (max-width: 640px) {
+            .filter-search { min-width: 100%; }
+            .filter-actions { width: 100%; }
+            .filter-select { flex: 1 1 140px; min-width: 0; }
+            .filter-actions .btn-page-primary { flex: 1 1 100%; justify-content: center; }
+        }
 
         .catalog-grid {
             display: grid;

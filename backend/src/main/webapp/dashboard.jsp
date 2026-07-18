@@ -50,7 +50,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Dashboard | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -153,6 +153,11 @@
         .alert-card-action:hover { background: var(--gray-900); transform: translateY(-1px); }
         .alert-card-action i { width: 13px; height: 13px; }
 
+        @media (max-width: 640px) {
+            .alert-card { flex-wrap: wrap; }
+            .alert-card-action { flex-basis: 100%; justify-content: center; margin-top: 0.25rem; }
+        }
+
         .mini-metric {
             display: flex; align-items: center; justify-content: space-between;
             padding: 1rem 0; border-bottom: 1px solid var(--gray-100);
@@ -166,7 +171,7 @@
         .mini-metric-value { font-size: 1.15rem; font-weight: 800; color: var(--gray-800); }
         .mini-metric-value.accent { color: var(--pink); }
 
-        .compact-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .compact-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.85rem; }
         .compact-table th {
             padding: 0.7rem 1.5rem; background: var(--gray-50);
             font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
@@ -433,45 +438,47 @@
                     </a>
                 </div>
 
-                <table class="compact-table">
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Solicitante</th>
-                        <th>Material</th>
-                        <th style="text-align: center;">Cantidad</th>
-                        <th style="text-align: center;">Estado</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <% if (ultimas == null || ultimas.isEmpty()) { %>
-                    <tr class="empty-row">
-                        <td colspan="5">Sin movimientos recientes</td>
-                    </tr>
-                    <% } else {
-                        int count = 0;
-                        for (Transaction tx : ultimas) {
-                            if (count >= 8) break;
-                            count++;
-                            String status = tx.getStatus();
-                            String bc, bt;
-                            if ("APPROVED".equals(status))       { bc = "status-approved";  bt = "Aprobada"; }
-                            else if ("PENDING".equals(status))   { bc = "status-pending";   bt = "Pendiente"; }
-                            else if ("REJECTED".equals(status))  { bc = "status-rejected";  bt = "Rechazada"; }
-                            else if ("COMPLETED".equals(status)) { bc = "status-delivered"; bt = "Entregada"; }
-                            else { bc = "status-badge"; bt = status; }
-                    %>
-                    <tr>
-                        <td><span class="tx-id">TXN-<%= String.format("%04d", tx.getId()) %></span></td>
-                        <td><%= tx.getRequesterName() %></td>
-                        <td style="font-weight: 600; color: var(--gray-800);"><%= tx.getItemName() %></td>
-                        <td style="text-align: center;"><%= tx.getQuantity() %> <%= tx.getItemUnit() %></td>
-                        <td style="text-align: center;"><span class="<%= bc %>"><%= bt %></span></td>
-                    </tr>
-                    <% }
-                    } %>
-                    </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table class="compact-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Solicitante</th>
+                            <th>Material</th>
+                            <th style="text-align: center;">Cantidad</th>
+                            <th style="text-align: center;">Estado</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <% if (ultimas == null || ultimas.isEmpty()) { %>
+                        <tr class="empty-row">
+                            <td colspan="5">Sin movimientos recientes</td>
+                        </tr>
+                        <% } else {
+                            int count = 0;
+                            for (Transaction tx : ultimas) {
+                                if (count >= 8) break;
+                                count++;
+                                String status = tx.getStatus();
+                                String bc, bt;
+                                if ("APPROVED".equals(status))       { bc = "status-approved";  bt = "Aprobada"; }
+                                else if ("PENDING".equals(status))   { bc = "status-pending";   bt = "Pendiente"; }
+                                else if ("REJECTED".equals(status))  { bc = "status-rejected";  bt = "Rechazada"; }
+                                else if ("COMPLETED".equals(status)) { bc = "status-delivered"; bt = "Entregada"; }
+                                else { bc = "status-badge"; bt = status; }
+                        %>
+                        <tr>
+                            <td><span class="tx-id">TXN-<%= String.format("%04d", tx.getId()) %></span></td>
+                            <td><%= tx.getRequesterName() %></td>
+                            <td style="font-weight: 600; color: var(--gray-800);"><%= tx.getItemName() %></td>
+                            <td style="text-align: center;"><%= tx.getQuantity() %> <%= tx.getItemUnit() %></td>
+                            <td style="text-align: center;"><span class="<%= bc %>"><%= bt %></span></td>
+                        </tr>
+                        <% }
+                        } %>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </main>

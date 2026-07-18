@@ -154,6 +154,18 @@ input, select, textarea { font-family: inherit; }
     filter: brightness(0) invert(1);
 }
 
+/* Logo completo (ícono + texto) en desktop; solo ícono en mobile — sin JS, toggle por CSS */
+.sidebar-logo-icon { display: none; }
+
+@media (max-width: 900px) {
+    .sidebar-header { padding: 0.5rem 0 1.25rem; }
+    .sidebar-logo-full { display: none; }
+    .sidebar-logo-icon {
+        display: inline-block;
+        max-width: 32px;
+    }
+}
+
 .sidebar-menu {
     flex-grow: 1;
     display: flex;
@@ -454,11 +466,10 @@ input, select, textarea { font-family: inherit; }
 .page-main-narrow {
     margin: 0 auto;
     width: 100%;
-    flex-grow: 1;
     padding: 2rem;
 }
 
-.page-main { max-width: 1400px; }
+.page-main { max-width: 1400px; flex-grow: 1; }
 .page-main-narrow { max-width: 900px; }
 
 .page-main > *:not(:last-child),
@@ -683,18 +694,22 @@ input, select, textarea { font-family: inherit; }
    visible siempre mientras se desliza el resto de la tabla en mobile. */
 @media (max-width: 900px) {
     .table th:first-child,
-    .table td:first-child {
+    .table td:first-child,
+    .compact-table th:first-child,
+    .compact-table td:first-child {
         position: sticky;
         left: 0;
         z-index: 2;
         background: var(--white);
         box-shadow: 2px 0 6px rgba(0,0,0,0.05);
     }
-    .table thead th:first-child {
+    .table thead th:first-child,
+    .compact-table thead th:first-child {
         background: var(--gray-50);
         z-index: 3;
     }
-    .table-row:hover td:first-child {
+    .table-row:hover td:first-child,
+    .compact-table tr:hover td:first-child {
         background: var(--gray-50);
     }
 }

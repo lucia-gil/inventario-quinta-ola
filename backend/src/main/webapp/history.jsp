@@ -98,7 +98,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Historial | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -139,7 +139,15 @@
         }
         .filter-select:hover { border-color: var(--purple); background: var(--white); }
         .filter-select:focus { border-color: var(--purple); background: var(--white); box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08); }
-        .filter-actions { display: flex; gap: 0.5rem; align-items: center; }
+        .filter-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+        @media (max-width: 640px) {
+            .filter-search { min-width: 100%; }
+            .filter-actions { width: 100%; }
+            .filter-select { flex: 1 1 140px; min-width: 0; }
+            .filter-actions .btn-page-primary,
+            .filter-actions button[type="submit"] { flex: 1 1 100%; justify-content: center; }
+        }
 
         /* ═════ Badges de Tipo ═════ */
         .type-badge {
