@@ -77,11 +77,7 @@ body {
     color: var(--gray-800);
     -webkit-font-smoothing: antialiased;
     background: var(--gray-50);
-    overflow-x: hidden;
-}
-
-html {
-    overflow-x: hidden;
+    overflow-x: clip; /* recorta desbordes horizontales sin crear un scroll-container propio (a diferencia de "hidden", esto no rompe position:sticky) */
 }
 
 a { text-decoration: none; color: inherit; }
@@ -1104,6 +1100,113 @@ input, select, textarea { font-family: inherit; }
     .footer { padding: 2.5rem 1.25rem 1.5rem; }
 }
 
+
+/* ════════════════════════════════════════════════════════════
+   MODAL — Componente "Ola" (único, reutilizado en toda la app)
+   Técnica CSS-only por ancla + :target — sin JavaScript.
+   Mutuamente excluyente por diseño: solo un #fragmento puede
+   coincidir en la URL a la vez, así que abrir un modal cierra
+   automáticamente cualquier otro que hubiera quedado abierto.
+   ════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(17, 5, 35, 0.58);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    z-index: 9000;
+    align-items: center; justify-content: center;
+    padding: 1rem;
+}
+
+.modal-overlay:target { display: flex; }
+
+.modal-box {
+    position: relative;
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.22), 0 4px 16px rgba(109,40,217,0.10);
+    padding: 2.1rem 1.75rem 1.6rem;
+    max-width: 400px; width: 100%; text-align: center;
+    overflow: hidden;
+    animation: modal-surge 0.32s cubic-bezier(.22,1.4,.44,1) both;
+}
+
+/* Franja ondulada de marca — "cresta" en el borde superior del modal */
+.modal-box::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='6' viewBox='0 0 28 6'%3E%3Cpath d='M0 3 Q7 0 14 3 T28 3' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%235B1FA8'/%3E%3Cstop offset='1' stop-color='%23E91E8C'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 28px 6px;
+    animation: modal-wave-drift 3.5s linear infinite;
+}
+
+@keyframes modal-wave-drift {
+    from { background-position-x: 0; }
+    to   { background-position-x: 56px; }
+}
+
+@keyframes modal-surge {
+    from { opacity: 0; transform: scale(0.92) translateY(22px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-icon {
+    width: 58px; height: 58px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.1rem;
+    animation: modal-icon-float 2.6s ease-in-out 0.32s infinite;
+}
+.modal-icon i { width: 26px; height: 26px; }
+
+@keyframes modal-icon-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+}
+
+.modal-icon--green  { background: var(--green-bg); }
+.modal-icon--green i { color: var(--green-dark); }
+.modal-icon--red    { background: var(--red-bg); }
+.modal-icon--red i  { color: var(--red-dark); }
+.modal-icon--purple { background: var(--purple-bg); }
+.modal-icon--purple i { color: var(--purple); }
+
+.modal-title { font-size: 1.08rem; font-weight: 800; color: var(--gray-800); margin: 0 0 0.45rem; }
+.modal-name  { color: var(--purple); }
+.modal-desc  { font-size: 0.83rem; color: var(--gray-500); line-height: 1.65; margin: 0 0 1.5rem; }
+
+.modal-btns { display: flex; gap: 0.65rem; }
+
+.btn-modal-cancel {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.62rem 0.75rem;
+    background: var(--white); color: var(--gray-600);
+    border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+    font-size: 0.84rem; font-weight: 600; text-decoration: none;
+    transition: all var(--transition);
+}
+.btn-modal-cancel:hover { border-color: var(--gray-400); color: var(--gray-800); }
+
+.modal-form { flex: 1; display: flex; }
+
+.btn-modal-ok {
+    flex: 1; width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+    padding: 0.62rem 0.75rem; border: none; border-radius: var(--radius-sm);
+    font-size: 0.84rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: all var(--transition);
+}
+.btn-modal-ok i { width: 13px; height: 13px; }
+.btn-modal-ok--green  { background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); color: var(--white); }
+.btn-modal-ok--green:hover  { box-shadow: 0 4px 14px rgba(34,197,94,0.4); transform: translateY(-1px); }
+.btn-modal-ok--red    { background: linear-gradient(135deg, #f87171 0%, #dc2626 100%); color: var(--white); }
+.btn-modal-ok--red:hover    { box-shadow: 0 4px 14px rgba(220,38,38,0.4); transform: translateY(-1px); }
+.btn-modal-ok--purple { background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%); color: var(--white); }
+.btn-modal-ok--purple:hover { box-shadow: 0 4px 14px rgba(91,31,168,0.4); transform: translateY(-1px); }
 
 /* ════════════════════════════════════════════════════════════
    PAGINADOR — Componente "Ola" (único, reutilizado en toda la app)

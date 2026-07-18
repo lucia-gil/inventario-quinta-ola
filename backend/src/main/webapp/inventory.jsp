@@ -104,7 +104,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=17" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -435,6 +435,8 @@
 
         <main class="page-main">
 
+            <a id="modal-cerrar" style="display:block;height:0;overflow:hidden;"></a>
+
             <div class="page-header">
                 <div>
                     <h1 class="page-title">
@@ -537,7 +539,7 @@
                         <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) { %>
                         <img src="<%= item.getImageUrl() %>"
                              alt="<%= item.getName() %>"
-                             onerror="this.outerHTML='<div class=\'catalog-card-img-placeholder\'><i data-lucide=\'package\'></i></div>'; if(typeof lucide!==\'undefined\')lucide.createIcons();"/>
+                             onerror="this.outerHTML='<div class=\'catalog-card-img-placeholder\'><i data-lucide=\'package\'></i></div>'; if(typeof lucide!=='undefined')lucide.createIcons();"/>
                         <% } else { %>
                         <div class="catalog-card-img-placeholder">
                             <i data-lucide="package"></i>
@@ -684,40 +686,10 @@
 
                                     <% if (itemInactivo) { %>
                                     <%-- MATERIAL DESACTIVADO: solo se puede reactivar --%>
-                                    <details class="css-modal-wrapper">
-                                        <summary class="btn-reactivate-row" style="cursor: pointer; list-style: none;">
-                                            <i data-lucide="rotate-ccw"></i>
-                                            Reactivar
-                                        </summary>
-
-                                        <div class="css-modal-overlay">
-                                            <div class="css-modal-close-overlay-trigger"
-                                                 onclick="this.closest('details').removeAttribute('open');">
-                                            </div>
-
-                                            <div class="css-modal-card" style="position: relative; z-index: 10;">
-                                                <div class="modal-icon-container text-pink">
-                                                    <i data-lucide="rotate-ccw" style="width:32px; height:32px;"></i>
-                                                </div>
-                                                <h3>¿Reactivar Material?</h3>
-                                                <p>"<%= item.getName() %>" volverá a estar disponible en el inventario y en el catálogo de solicitudes.</p>
-
-                                                <div class="css-modal-actions">
-                                                    <button type="button"
-                                                            class="btn-cancel-modal"
-                                                            onclick="this.closest('details').removeAttribute('open');">
-                                                        Cancelar
-                                                    </button>
-
-                                                    <form action="<%= ctx %>/AdminItemServlet" method="POST" style="margin:0;">
-                                                        <input type="hidden" name="action" value="reactivar"/>
-                                                        <input type="hidden" name="id" value="<%= item.getId() %>"/>
-                                                        <button type="submit" class="btn-reactivate-row" style="border:none;">Sí, Reactivar</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </details>
+                                    <a href="#modal-reactivar-<%= item.getId() %>" class="btn-reactivate-row">
+                                        <i data-lucide="rotate-ccw"></i>
+                                        Reactivar
+                                    </a>
 
                                     <% } else { %>
 
@@ -728,42 +700,10 @@
                                         Editar
                                     </a>
 
-                                    <%-- MODAL CSS: DESACTIVAR MATERIAL --%>
-                                    <details class="css-modal-wrapper">
-                                        <summary class="btn-delete-row" style="cursor: pointer; list-style: none;">
-                                            <i data-lucide="trash-2"></i>
-                                            Desactivar
-                                        </summary>
-
-                                        <div class="css-modal-overlay">
-                                            <%-- Fondo para cerrar al hacer clic afuera --%>
-                                            <div class="css-modal-close-overlay-trigger"
-                                                 onclick="this.closest('details').removeAttribute('open');">
-                                            </div>
-
-                                            <div class="css-modal-card" style="position: relative; z-index: 10;">
-                                                <div class="modal-icon-container text-pink">
-                                                    <i data-lucide="alert-triangle" style="width:32px; height:32px;"></i>
-                                                </div>
-                                                <h3>¿Desactivar Material?</h3>
-                                                <p>¿Estás seguro de que deseas desactivar este material? Ya no estará disponible en el inventario activo.</p>
-
-                                                <div class="css-modal-actions">
-                                                    <button type="button"
-                                                            class="btn-cancel-modal"
-                                                            onclick="this.closest('details').removeAttribute('open');">
-                                                        Cancelar
-                                                    </button>
-
-                                                    <form action="<%= ctx %>/AdminItemServlet" method="POST" style="margin:0;">
-                                                        <input type="hidden" name="action" value="desactivar"/>
-                                                        <input type="hidden" name="id" value="<%= item.getId() %>"/>
-                                                        <button type="submit" class="btn-delete-row" style="border:none;">Sí, Desactivar</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </details>
+                                    <a href="#modal-desactivar-<%= item.getId() %>" class="btn-delete-row">
+                                        <i data-lucide="trash-2"></i>
+                                        Desactivar
+                                    </a>
                                     <% } %>
 
                                 </div>
@@ -800,7 +740,57 @@
 
                 <% } %>
 
+            </div><%-- /table-panel --%>
+
+            <%-- ═══════ MODALES — Confirmación Desactivar / Reactivar ═══════ --%>
+            <% if (esAdmin && itemsToShow != null) {
+                for (Item mItem : itemsToShow) {
+                    boolean mInactivo = !mItem.isActivo();
+            %>
+            <% if (mInactivo) { %>
+            <div id="modal-reactivar-<%= mItem.getId() %>" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-icon modal-icon--purple"><i data-lucide="rotate-ccw"></i></div>
+                    <h3 class="modal-title">¿Reactivar material?</h3>
+                    <p class="modal-desc">
+                        "<strong class="modal-name"><%= mItem.getName() %></strong>" volverá a estar
+                        disponible en el inventario y en el catálogo de solicitudes.
+                    </p>
+                    <div class="modal-btns">
+                        <a href="#modal-cerrar" class="btn-modal-cancel">Cancelar</a>
+                        <form action="<%= ctx %>/AdminItemServlet" method="POST" class="modal-form">
+                            <input type="hidden" name="action" value="reactivar"/>
+                            <input type="hidden" name="id" value="<%= mItem.getId() %>"/>
+                            <button type="submit" class="btn-modal-ok btn-modal-ok--purple">
+                                <i data-lucide="rotate-ccw"></i>Sí, reactivar
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
+            <% } else { %>
+            <div id="modal-desactivar-<%= mItem.getId() %>" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-icon modal-icon--red"><i data-lucide="alert-triangle"></i></div>
+                    <h3 class="modal-title">¿Desactivar material?</h3>
+                    <p class="modal-desc">
+                        "<strong class="modal-name"><%= mItem.getName() %></strong>" ya no estará disponible
+                        en el inventario activo ni en el catálogo de solicitudes. Podrás reactivarlo cuando quieras.
+                    </p>
+                    <div class="modal-btns">
+                        <a href="#modal-cerrar" class="btn-modal-cancel">Cancelar</a>
+                        <form action="<%= ctx %>/AdminItemServlet" method="POST" class="modal-form">
+                            <input type="hidden" name="action" value="desactivar"/>
+                            <input type="hidden" name="id" value="<%= mItem.getId() %>"/>
+                            <button type="submit" class="btn-modal-ok btn-modal-ok--red">
+                                <i data-lucide="alert-triangle"></i>Sí, desactivar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+            <% } } %>
 
             <% } %>
 
