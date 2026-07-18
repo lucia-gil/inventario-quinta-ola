@@ -6,15 +6,23 @@ import com.quintaola.model.Item;
 import com.quintaola.util.DatabaseConnection;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
 
 @WebServlet(name = "AdminItemServlet", value = "/AdminItemServlet")
+// ¡MUY IMPORTANTE PARA SUBIR IMÁGENES! Mismo patrón que ProfileServlet.
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024,      // 1 MB en memoria, después a disco
+        maxFileSize       = 1024 * 1024 * 5,  // 5 MB máximo por foto
+        maxRequestSize    = 1024 * 1024 * 10  // 10 MB máximo por petición
+)
 public class AdminItemServlet extends HttpServlet {
 
     private boolean tienePermiso(HttpSession session) {
@@ -222,8 +230,7 @@ public class AdminItemServlet extends HttpServlet {
 
             // ─── Datos comunes del form (crear / actualizar) ───────────────────
             String name        = request.getParameter("nombre");
-            String tagName     = request.getParameter("tags");
-            String tagNuevo    = request.getParameter("tagNuevo");
+            String[] tagsArr   = request.getParameterValues("tags"); // ahora soporta múltiples etiquetas
             String unit        = request.getParameter("unidad");
             String imageUrl    = request.getParameter("imagen");
             String description = request.getParameter("descripcion");
@@ -234,6 +241,20 @@ public class AdminItemServlet extends HttpServlet {
                     ? Integer.parseInt(request.getParameter("minimo")) : 0;
 
             if (imageUrl != null) imageUrl = imageUrl.trim();
+
+            // ─── Imagen subida desde el equipo: si hay archivo, manda sobre la URL manual ───
+            try {
+                String imagenSubida = procesarImagenSubida(request);
+                if (imagenSubida != null) imageUrl = imagenSubida;
+            } catch (IllegalArgumentException validacionImg) {
+                String idParam = request.getParameter("id");
+                String redirectTarget = "actualizar".equals(action) && idParam != null
+                        ? ctx + "/AdminItemServlet?action=formEditar&id=" + idParam
+                        : ctx + "/AdminItemServlet?action=formCrear";
+                response.sendRedirect(redirectTarget + "&error="
+                        + java.net.URLEncoder.encode(validacionImg.getMessage(), "UTF-8"));
+                return;
+            }
 
             if ("actualizar".equals(action)) {
                 if (imageUrl == null || imageUrl.isEmpty()) {
@@ -251,9 +272,6 @@ public class AdminItemServlet extends HttpServlet {
                     imageUrl = "/img/placeholder.png";
                 }
             }
-
-            String tagFinal = (tagNuevo != null && !tagNuevo.trim().isEmpty())
-                    ? tagNuevo.trim() : tagName;
 
             Item item = new Item();
             item.setName(name);
@@ -273,8 +291,12 @@ public class AdminItemServlet extends HttpServlet {
 
                 int newId = itemDao.create(item);
                 if (newId > 0) {
-                    if (tagFinal != null && !tagFinal.trim().isEmpty()) {
-                        itemDao.assignTag(newId, tagFinal, actorId);
+                    if (tagsArr != null) {
+                        for (String t : tagsArr) {
+                            if (t != null && !t.trim().isEmpty()) {
+                                itemDao.assignTag(newId, t.trim(), actorId);
+                            }
+                        }
                     }
                     // Auditoría
                     try {
@@ -299,9 +321,15 @@ public class AdminItemServlet extends HttpServlet {
 
                 boolean ok = itemDao.update(item);
                 if (ok) {
-                    if (tagFinal != null && !tagFinal.trim().isEmpty()) {
-                        itemDao.clearTags(id);
-                        itemDao.assignTag(id, tagFinal, actorId);
+                    // Reemplazamos el set completo de etiquetas por el que llegó del picker
+                    // (permite tener varias, y también quitarlas todas si el usuario las borró).
+                    itemDao.clearTags(id);
+                    if (tagsArr != null) {
+                        for (String t : tagsArr) {
+                            if (t != null && !t.trim().isEmpty()) {
+                                itemDao.assignTag(id, t.trim(), actorId);
+                            }
+                        }
                     }
                     // Auditoría
                     try {
@@ -322,5 +350,68 @@ public class AdminItemServlet extends HttpServlet {
             e.printStackTrace();
             response.sendRedirect(ctx + "/InventoryServlet?error=Error+al+procesar+el+material");
         }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MÉTODO PARA SUBIR Y GUARDAR LA IMAGEN DEL MATERIAL
+    // Mismo patrón/límites que ProfileServlet.procesarAvatar().
+    // Devuelve la ruta relativa (ej: "/uploads/items/item_123.jpg") si el
+    // usuario subió un archivo válido, o null si no subió ningún archivo
+    // (en ese caso el llamador debe usar la URL manual como antes).
+    // Lanza IllegalArgumentException con un mensaje ya listo para mostrar
+    // al usuario si el archivo no pasa las validaciones.
+    // ────────────────────────────────────────────────────────────────────────
+    private String procesarImagenSubida(HttpServletRequest request) throws Exception {
+
+        final long MAX_BYTES = 5L * 1024 * 1024; // 5 MB
+        final String MAX_MB_TEXT = "5 MB";
+
+        Part filePart;
+        try {
+            filePart = request.getPart("imagenFile");
+        } catch (IllegalStateException ex) {
+            // Disparado por: archivo más grande que maxFileSize del @MultipartConfig
+            throw new IllegalArgumentException(
+                    "La imagen excede el tamaño máximo permitido (" + MAX_MB_TEXT + "). Elige una imagen más pequeña.");
+        }
+
+        // No subieron ningún archivo — el llamador debe usar la URL manual
+        if (filePart == null || filePart.getSize() == 0) {
+            return null;
+        }
+
+        // Validar tamaño (doble barrera por si acaso)
+        if (filePart.getSize() > MAX_BYTES) {
+            double sizeMb = filePart.getSize() / (1024.0 * 1024.0);
+            String sizeFmt = String.format("%.1f", sizeMb).replace(",", ".");
+            throw new IllegalArgumentException(
+                    "Tu imagen pesa " + sizeFmt + " MB y el máximo permitido es " + MAX_MB_TEXT + ". Usa una imagen más pequeña.");
+        }
+
+        // Validar extensión (seguridad básica)
+        String fileName = filePart.getSubmittedFileName();
+        String ext = "";
+        if (fileName != null && fileName.contains(".")) {
+            ext = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+        }
+
+        if (!ext.equals(".jpg") && !ext.equals(".jpeg") && !ext.equals(".png") && !ext.equals(".webp")) {
+            throw new IllegalArgumentException("Formato no permitido. Solo JPG, PNG o WEBP.");
+        }
+
+        // Crear carpeta si no existe (uploads/items)
+        String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "items";
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        // Generar nombre único y guardar
+        String newFileName = "item_" + System.currentTimeMillis()
+                + "_" + Math.abs(new java.util.Random().nextInt(9999)) + ext;
+        String filePath = uploadPath + File.separator + newFileName;
+        filePart.write(filePath);
+
+        return "/uploads/items/" + newFileName;
     }
 }

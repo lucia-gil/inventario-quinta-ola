@@ -104,7 +104,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=17" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=18" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -536,8 +536,10 @@
                 %>
                 <div class="catalog-card">
                     <div class="catalog-card-img">
-                        <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) { %>
-                        <img src="<%= item.getImageUrl() %>"
+                        <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+                            String imgSrc = item.getImageUrl().startsWith("http") ? item.getImageUrl() : ctx + item.getImageUrl();
+                        %>
+                        <img src="<%= imgSrc %>"
                              alt="<%= item.getName() %>"
                              onerror="this.outerHTML='<div class=\'catalog-card-img-placeholder\'><i data-lucide=\'package\'></i></div>'; if(typeof lucide!=='undefined')lucide.createIcons();"/>
                         <% } else { %>
@@ -634,11 +636,13 @@
                         <tr class="table-row <%= itemInactivo ? "row-deactivated" : "" %>">
                             <td class="td">
                                 <div class="item-cell">
-                                    <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) { %>
-                                    <img src="<%= item.getImageUrl() %>"
+                                    <% if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+                                        String imgSrc = item.getImageUrl().startsWith("http") ? item.getImageUrl() : ctx + item.getImageUrl();
+                                    %>
+                                    <img src="<%= imgSrc %>"
                                          alt="<%= item.getName() %>"
                                          class="item-cell-img"
-                                         onerror="this.style.display='none'"/>
+                                         onerror="this.outerHTML='<div class=\'item-cell-img-fallback\'><i data-lucide=\'package\'></i></div>'; if(typeof lucide!=='undefined')lucide.createIcons();"/>
                                     <% } else { %>
                                     <div class="item-cell-img-fallback">
                                         <i data-lucide="package"></i>
