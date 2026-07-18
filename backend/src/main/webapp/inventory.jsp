@@ -86,6 +86,16 @@
         totalPages = 1;
     }
 
+    // Ventana de páginas visibles para el paginador "Ola"
+    int _winS = Math.max(1, currentPage - 2);
+    int _winE = Math.min(totalPages, currentPage + 2);
+
+    // URL base de paginación, preservando filtros activos
+    String _pUrlInv = ctx + "/InventoryServlet?action=lista";
+    if (!filtroTexto.isEmpty()) _pUrlInv += "&q=" + java.net.URLEncoder.encode(filtroTexto, "UTF-8");
+    if (!filtroTag.isEmpty())   _pUrlInv += "&tag=" + java.net.URLEncoder.encode(filtroTag, "UTF-8");
+    if (!filtroStock.isEmpty()) _pUrlInv += "&stock=" + filtroStock;
+
     request.setAttribute("activeMenu", "inventory");
 %>
 <!doctype html>
@@ -94,7 +104,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -371,34 +381,7 @@
         }
         .empty-state-desc { font-size: 0.88rem; color: var(--gray-500); }
 
-        .pagination {
-            display: flex; justify-content: center;
-            gap: 0.4rem; align-items: center;
-            margin-top: 1.5rem; flex-wrap: wrap;
-        }
-        .pagination a, .pagination .pagination-current {
-            display: inline-flex; align-items: center; gap: 0.3rem;
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.82rem; font-weight: 600;
-            text-decoration: none;
-            transition: all var(--transition);
-        }
-        .pagination a {
-            background: var(--white);
-            border: 1.5px solid var(--gray-200);
-            color: var(--gray-700);
-        }
-        .pagination a:hover {
-            background: var(--purple-bg);
-            border-color: var(--purple);
-            color: var(--purple);
-        }
-        .pagination a i { width: 13px; height: 13px; }
-        .pagination-current {
-            background: var(--purple); color: var(--white);
-            border: 1.5px solid var(--purple);
-        }
+        /* Paginación: ver componente global ".pager" en style.css */
 
         .alert {
             display: flex; align-items: center; gap: 0.6rem;
@@ -560,36 +543,24 @@
             </div>
 
             <% if (totalPages > 1) { %>
-            <div class="pagination">
-                <% if (currentPage > 1) {
-                    String prevUrl = ctx + "/InventoryServlet?action=lista&page=" + (currentPage - 1);
-                    if (!filtroTexto.isEmpty()) prevUrl += "&q=" + java.net.URLEncoder.encode(filtroTexto, "UTF-8");
-                    if (!filtroTag.isEmpty())   prevUrl += "&tag=" + java.net.URLEncoder.encode(filtroTag, "UTF-8");
-                    if (!filtroStock.isEmpty()) prevUrl += "&stock=" + filtroStock;
-                %>
-                <a href="<%= prevUrl %>">
-                    <i data-lucide="chevron-left"></i> Anterior
-                </a>
-                <% } %>
-
-                <span class="pagination-current">Pág <%= currentPage %> de <%= totalPages %></span>
-
-                <% if (currentPage < totalPages) {
-                    String nextUrl = ctx + "/InventoryServlet?action=lista&page=" + (currentPage + 1);
-                    if (!filtroTexto.isEmpty()) nextUrl += "&q=" + java.net.URLEncoder.encode(filtroTexto, "UTF-8");
-                    if (!filtroTag.isEmpty())   nextUrl += "&tag=" + java.net.URLEncoder.encode(filtroTag, "UTF-8");
-                    if (!filtroStock.isEmpty()) nextUrl += "&stock=" + filtroStock;
-                %>
-                <a href="<%= nextUrl %>">
-                    Siguiente <i data-lucide="chevron-right"></i>
-                </a>
-                <% } %>
+            <div class="pager" style="margin-top: 1.25rem; border-radius: var(--radius-lg); border: 1px solid var(--gray-100); box-shadow: var(--shadow-sm);">
+                <div class="pager-info">
+                    <span>Mostrando <strong><%= itemsToShow.size() %></strong> de <strong><%= request.getAttribute("totalFiltrados") != null ? request.getAttribute("totalFiltrados") : 0 %></strong> materiales</span>
+                    <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ <%= pageSize %> por ola</span>
+                </div>
+                <div class="pager-nav">
+                    <% if (currentPage > 1) { %><a href="<%= _pUrlInv %>&page=<%= currentPage-1 %>" class="pager-btn"><i data-lucide="chevron-left"></i></a>
+                    <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-left"></i></span><% } %>
+                    <% if (_winS > 1) { %><a href="<%= _pUrlInv %>&page=1" class="pager-btn">1</a><% if (_winS > 2) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><% } %>
+                    <% for (int _p = _winS; _p <= _winE; _p++) { %>
+                    <% if (_p == currentPage) { %><span class="pager-btn pager-btn--active"><%= _p %></span>
+                    <% } else { %><a href="<%= _pUrlInv %>&page=<%= _p %>" class="pager-btn"><%= _p %></a><% } %>
+                    <% } %>
+                    <% if (_winE < totalPages) { %><% if (_winE < totalPages-1) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><a href="<%= _pUrlInv %>&page=<%= totalPages %>" class="pager-btn"><%= totalPages %></a><% } %>
+                    <% if (currentPage < totalPages) { %><a href="<%= _pUrlInv %>&page=<%= currentPage+1 %>" class="pager-btn"><i data-lucide="chevron-right"></i></a>
+                    <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-right"></i></span><% } %>
+                </div>
             </div>
-
-            <p style="text-align: center; margin-top: 0.75rem; font-size: 0.78rem; color: var(--gray-500);">
-                Mostrando <strong style="color: var(--gray-700);"><%= itemsToShow.size() %></strong>
-                de <strong style="color: var(--gray-700);"><%= request.getAttribute("totalFiltrados") != null ? request.getAttribute("totalFiltrados") : 0 %></strong> materiales
-            </p>
             <% } %>
 
             <% } %>
@@ -730,39 +701,24 @@
                     </table>
                 </div>
 
-                <div class="panel-footer">
-                    <p class="panel-count-text">
-                        Mostrando
-                        <strong style="color: var(--gray-800);"><%= itemsToShow.size() %></strong>
-                        de
-                        <strong style="color: var(--gray-800);"><%= request.getAttribute("totalFiltrados") != null ? request.getAttribute("totalFiltrados") : 0 %></strong> items
-                    </p>
+                <div class="pager">
+                    <div class="pager-info">
+                        <span>Mostrando <strong><%= itemsToShow.size() %></strong> de <strong><%= request.getAttribute("totalFiltrados") != null ? request.getAttribute("totalFiltrados") : 0 %></strong> items</span>
+                        <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ <%= pageSize %> por ola</span>
+                    </div>
 
                     <% if (totalPages > 1) { %>
-                    <div class="pagination" style="margin-top: 0;">
-                        <% if (currentPage > 1) {
-                            String prevUrl = ctx + "/InventoryServlet?action=lista&page=" + (currentPage - 1);
-                            if (!filtroTexto.isEmpty()) prevUrl += "&q=" + java.net.URLEncoder.encode(filtroTexto, "UTF-8");
-                            if (!filtroTag.isEmpty())   prevUrl += "&tag=" + java.net.URLEncoder.encode(filtroTag, "UTF-8");
-                            if (!filtroStock.isEmpty()) prevUrl += "&stock=" + filtroStock;
-                        %>
-                        <a href="<%= prevUrl %>">
-                            <i data-lucide="chevron-left"></i> Anterior
-                        </a>
+                    <div class="pager-nav">
+                        <% if (currentPage > 1) { %><a href="<%= _pUrlInv %>&page=<%= currentPage-1 %>" class="pager-btn"><i data-lucide="chevron-left"></i></a>
+                        <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-left"></i></span><% } %>
+                        <% if (_winS > 1) { %><a href="<%= _pUrlInv %>&page=1" class="pager-btn">1</a><% if (_winS > 2) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><% } %>
+                        <% for (int _p = _winS; _p <= _winE; _p++) { %>
+                        <% if (_p == currentPage) { %><span class="pager-btn pager-btn--active"><%= _p %></span>
+                        <% } else { %><a href="<%= _pUrlInv %>&page=<%= _p %>" class="pager-btn"><%= _p %></a><% } %>
                         <% } %>
-
-                        <span class="pagination-current">Pág <%= currentPage %> de <%= totalPages %></span>
-
-                        <% if (currentPage < totalPages) {
-                            String nextUrl = ctx + "/InventoryServlet?action=lista&page=" + (currentPage + 1);
-                            if (!filtroTexto.isEmpty()) nextUrl += "&q=" + java.net.URLEncoder.encode(filtroTexto, "UTF-8");
-                            if (!filtroTag.isEmpty())   nextUrl += "&tag=" + java.net.URLEncoder.encode(filtroTag, "UTF-8");
-                            if (!filtroStock.isEmpty()) nextUrl += "&stock=" + filtroStock;
-                        %>
-                        <a href="<%= nextUrl %>">
-                            Siguiente <i data-lucide="chevron-right"></i>
-                        </a>
-                        <% } %>
+                        <% if (_winE < totalPages) { %><% if (_winE < totalPages-1) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><a href="<%= _pUrlInv %>&page=<%= totalPages %>" class="pager-btn"><%= totalPages %></a><% } %>
+                        <% if (currentPage < totalPages) { %><a href="<%= _pUrlInv %>&page=<%= currentPage+1 %>" class="pager-btn"><i data-lucide="chevron-right"></i></a>
+                        <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-right"></i></span><% } %>
                     </div>
                     <% } %>
                 </div>

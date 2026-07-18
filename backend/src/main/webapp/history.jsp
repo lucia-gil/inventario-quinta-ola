@@ -98,7 +98,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Historial | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -158,38 +158,7 @@
         .detail-link:hover { color: var(--purple); }
         .detail-link i { width: 14px; height: 14px; }
 
-        /* ═════ Controles de Paginación ═════ */
-        .pag-ola-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1rem 1.25rem; background: var(--white); border-top: 1px solid var(--gray-150);
-            flex-wrap: wrap; gap: 1rem;
-        }
-        .pag-ola-info { font-size: 0.85rem; color: var(--gray-500); }
-        .pag-ola-info strong { color: var(--gray-800); }
-
-        .pag-ola-tag {
-            background: var(--gray-100); color: var(--gray-600); padding: 0.2rem 0.5rem;
-            border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; margin-left: 0.5rem;
-        }
-
-        .pag-ola-controls { display: flex; gap: 0.35rem; align-items: center; }
-        .pag-btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            min-width: 32px; height: 32px; padding: 0 6px; border-radius: var(--radius-sm);
-            border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-600);
-            font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all var(--transition); cursor: pointer;
-        }
-        .pag-btn i { width: 16px; height: 16px; }
-        .pag-btn:hover:not(.pag-btn--disabled):not(.pag-btn--active) {
-            border-color: var(--purple); color: var(--purple); background: var(--purple-bg);
-        }
-        .pag-btn--active {
-            background: linear-gradient(135deg, var(--purple), var(--pink)); color: var(--white) !important; border: none;
-        }
-        .pag-btn--disabled {
-            opacity: 0.4; cursor: not-allowed; pointer-events: none; background: var(--gray-50);
-        }
-        .pag-ellipsis { color: var(--gray-400); padding: 0 4px; font-weight: 600; }
+        /* Paginación: ver componente global ".pager" en style.css */
 
         /* ═════ Empty state ═════ */
         .empty-state { padding: 4rem 2rem; text-align: center; }
@@ -350,9 +319,9 @@
                     }
                 %>
 
-                <div class="pag-ola-bar">
+                <div class="pager">
 
-                    <div class="pag-ola-info">
+                    <div class="pager-info">
                         <span>
                             Mostrando
                             <strong><%= _from %>–<%= _to %></strong>
@@ -361,21 +330,19 @@
                             solicitudes
                         </span>
 
-                        <span class="pag-ola-tag">
-                            ≈ 15 por ola
-                        </span>
+                        <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ 15 por ola</span>
                     </div>
 
                     <% if (_total > 1) { %>
 
-                    <div class="pag-ola-controls">
+                    <div class="pager-nav">
 
                         <% if (_page > 1) { %>
-                        <a href="<%= _pUrl %>&page=<%= _page-1 %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _page-1 %>" class="pager-btn">
                             <i data-lucide="chevron-left"></i>
                         </a>
                         <% } else { %>
-                        <span class="pag-btn pag-btn--disabled">
+                        <span class="pager-btn pager-btn--disabled">
                             <i data-lucide="chevron-left"></i>
                         </span>
                         <% } %>
@@ -383,10 +350,10 @@
 
                         <% if (_winS > 1) { %>
 
-                        <a href="<%= _pUrl %>&page=1" class="pag-btn">1</a>
+                        <a href="<%= _pUrl %>&page=1" class="pager-btn">1</a>
 
                         <% if (_winS > 2) { %>
-                        <span class="pag-ellipsis">…</span>
+                        <span class="pager-dots"><span></span><span></span><span></span></span>
                         <% } %>
 
                         <% } %>
@@ -396,13 +363,13 @@
 
                         <% if(_p == _page){ %>
 
-                        <span class="pag-btn pag-btn--active">
+                        <span class="pager-btn pager-btn--active">
                             <%= _p %>
                         </span>
 
                         <% }else{ %>
 
-                        <a href="<%= _pUrl %>&page=<%= _p %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _p %>" class="pager-btn">
                             <%= _p %>
                         </a>
 
@@ -414,10 +381,10 @@
                         <% if (_winE < _total) { %>
 
                         <% if (_winE < _total-1) { %>
-                        <span class="pag-ellipsis">…</span>
+                        <span class="pager-dots"><span></span><span></span><span></span></span>
                         <% } %>
 
-                        <a href="<%= _pUrl %>&page=<%= _total %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _total %>" class="pager-btn">
                             <%= _total %>
                         </a>
 
@@ -426,13 +393,13 @@
 
                         <% if (_page < _total) { %>
 
-                        <a href="<%= _pUrl %>&page=<%= _page+1 %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _page+1 %>" class="pager-btn">
                             <i data-lucide="chevron-right"></i>
                         </a>
 
                         <% } else { %>
 
-                        <span class="pag-btn pag-btn--disabled">
+                        <span class="pager-btn pager-btn--disabled">
                             <i data-lucide="chevron-right"></i>
                         </span>
 

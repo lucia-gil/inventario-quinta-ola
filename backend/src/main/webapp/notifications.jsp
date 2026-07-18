@@ -22,7 +22,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Notificaciones | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=3" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet" />
 </head>
 <body class="page-body">
 

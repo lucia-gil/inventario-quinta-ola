@@ -20,9 +20,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Análisis de Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=13" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ── Responsive: grids que en el original eran fijos a 3 columnas ── */
+        .analytics-main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        @media (min-width: 1100px) {
+            .analytics-main-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .analytics-report-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 640px) {
+            .analytics-report-cards { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 900px) {
+            .analytics-report-cards { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
 </head>
 
 <body class="page-body">
@@ -53,7 +77,7 @@
             </div>
 
             <%-- ── Grid principal: 3 columnas ─────────────────────────────── --%>
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1.5rem;">
+            <div class="analytics-main-grid">
 
                 <%-- Gráfica 1: Distribución (1 columna) --%>
                 <div class="panel" style="grid-column:span 1; display:flex; flex-direction:column; padding:1.25rem;">
@@ -133,7 +157,7 @@
                     </div>
 
                     <%-- Cards de reportes: siempre 3 columnas --%>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem;">
+                    <div class="analytics-report-cards">
 
                         <%-- Reporte 1: Salidas del período --%>
                         <div style="border:1.5px solid var(--gray-100); border-radius:12px; padding:1.25rem; transition:all 0.2s;"

@@ -143,13 +143,13 @@
 
     <div class="sidebar-footer">
         <div class="sidebar-actions">
-            <a href="<%= ctx %>/ProfileServlet" class="sidebar-profile">
+            <a href="<%= ctx %>/ProfileServlet" class="sidebar-profile" title="Mi Perfil">
                 <i data-lucide="user" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
-                Mi Perfil
+                <span>Mi Perfil</span>
             </a>
-            <a href="<%= ctx %>/AuthServlet?action=logout" class="sidebar-logout">
+            <a href="<%= ctx %>/AuthServlet?action=logout" class="sidebar-logout" title="Cerrar Sesión">
                 <i data-lucide="log-out" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
-                Cerrar Sesión
+                <span>Cerrar Sesión</span>
             </a>
         </div>
     </div>

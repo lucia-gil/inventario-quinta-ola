@@ -42,7 +42,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Catálogo de Materiales | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=11" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -263,25 +263,15 @@
         .item-cta-request { color: var(--white); background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); }
         .item-cta-request:hover { opacity: 0.92; }
 
-        /* ═════ Paginación ═════ */
-        .pagination-container {
-            display: flex; justify-content: center; align-items: center; gap: 0.5rem;
-            margin-top: 3rem; width: 100%; grid-column: 1 / -1;
-        }
-        .page-btn {
-            background: var(--white); border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
-            min-width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
-            color: var(--gray-700); cursor: pointer; transition: all var(--transition); font-weight: 600; font-size: 0.9rem;
-            font-family: inherit;
-        }
-        .page-btn:hover:not(:disabled) {
-            border-color: var(--purple); color: var(--purple); background: var(--purple-bg);
-        }
-        .page-btn.active {
-            background: var(--purple); color: var(--white); border-color: var(--purple);
-        }
-        .page-btn:disabled {
-            opacity: 0.4; cursor: not-allowed; background: var(--gray-50);
+        /* Paginación: ver componente global ".pager" en style.css */
+        #pagination-controls {
+            grid-column: 1 / -1;
+            margin-top: 2.5rem;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-100);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
         }
 
         /* ═════ Empty State ═════ */
@@ -558,7 +548,7 @@
         <% } } %>
 
         <%-- Contenedor de Paginación Dinámica --%>
-        <div class="pagination-container" id="pagination-controls"></div>
+        <div id="pagination-controls"></div>
 
     </div>
 </main>
@@ -670,19 +660,45 @@
             return;
         }
 
-        let html = `<button class="page-btn" onclick="cambiarPagina(${currentPage - 1})" ${currentPage == 1 ? 'disabled' : ''}>
-                        <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+        const start = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+        const end = Math.min(currentPage * ITEMS_PER_PAGE, filteredCards.length);
+        const winS = Math.max(1, currentPage - 2);
+        const winE = Math.min(totalPages, currentPage + 2);
+        const dots = `<span class="pager-dots"><span></span><span></span><span></span></span>`;
+
+        let nav = `<button class="pager-btn ${currentPage === 1 ? 'pager-btn--disabled' : ''}" onclick="cambiarPagina(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                        <i data-lucide="chevron-left"></i>
                     </button>`;
 
-        for(let i = 1; i <= totalPages; i++) {
-            html += `<button class="page-btn ${i == currentPage ? 'active' : ''}" onclick="cambiarPagina(${i})">${i}</button>`;
+        if (winS > 1) {
+            nav += `<button class="pager-btn" onclick="cambiarPagina(1)">1</button>`;
+            if (winS > 2) nav += dots;
         }
 
-        html += `<button class="page-btn" onclick="cambiarPagina(${currentPage + 1})" ${currentPage == totalPages ? 'disabled' : ''}>
-                    <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+        for (let i = winS; i <= winE; i++) {
+            nav += i === currentPage
+                ? `<span class="pager-btn pager-btn--active">${i}</span>`
+                : `<button class="pager-btn" onclick="cambiarPagina(${i})">${i}</button>`;
+        }
+
+        if (winE < totalPages) {
+            if (winE < totalPages - 1) nav += dots;
+            nav += `<button class="pager-btn" onclick="cambiarPagina(${totalPages})">${totalPages}</button>`;
+        }
+
+        nav += `<button class="pager-btn ${currentPage === totalPages ? 'pager-btn--disabled' : ''}" onclick="cambiarPagina(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    <i data-lucide="chevron-right"></i>
                  </button>`;
 
-        container.innerHTML = html;
+        container.innerHTML = `
+            <div class="pager">
+                <div class="pager-info">
+                    <span>Mostrando <strong>${start}–${end}</strong> de <strong>${filteredCards.length}</strong> materiales</span>
+                    <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ ${ITEMS_PER_PAGE} por ola</span>
+                </div>
+                <div class="pager-nav">${nav}</div>
+            </div>`;
+
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 

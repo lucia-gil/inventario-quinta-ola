@@ -12,6 +12,36 @@
     String filtroEntidad         = (String) request.getAttribute("filtroEntidad");
     String error                 = (String) request.getAttribute("error");
 
+    // ─── PAGINACIÓN (12 registros por ola) ───
+    int pageSize = 12;
+    int currentPage = 1;
+    int totalPages = 1;
+    int totalRegs = registros != null ? registros.size() : 0;
+    List<AuditLog> registrosPagina = registros;
+
+    if (registros != null && !registros.isEmpty()) {
+        String pageParam = request.getParameter("page");
+        if (pageParam != null) {
+            try { currentPage = Integer.parseInt(pageParam); } catch (Exception ignored) {}
+        }
+        if (currentPage < 1) currentPage = 1;
+
+        totalPages = (int) Math.ceil((double) totalRegs / pageSize);
+        if (totalPages < 1) totalPages = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        int _start = (currentPage - 1) * pageSize;
+        int _end   = Math.min(_start + pageSize, totalRegs);
+        registrosPagina = registros.subList(_start, _end);
+    }
+
+    int _winS = Math.max(1, currentPage - 2);
+    int _winE = Math.min(totalPages, currentPage + 2);
+
+    String _pUrlAudit = ctx + "/AuditServlet";
+    if (filtroEntidad != null && !filtroEntidad.isEmpty()) _pUrlAudit += "?entity=" + filtroEntidad;
+    String _qSepAudit = (filtroEntidad != null && !filtroEntidad.isEmpty()) ? "&" : "?";
+
     request.setAttribute("activeMenu", "audit");
 %>
 <!doctype html>
@@ -20,7 +50,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Bitácora de Auditoría | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=13" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -274,7 +304,7 @@
                         </thead>
                         <tbody class="table-body">
 
-                        <% for (AuditLog log : registros) {
+                        <% for (AuditLog log : registrosPagina) {
 
                             String actionClass = "action-default";
                             String actionIcon  = "circle";
@@ -413,6 +443,27 @@
                         <% } %>
                         </tbody>
                     </table>
+                </div>
+
+                <div class="pager">
+                    <div class="pager-info">
+                        <span>Mostrando <strong><%= registrosPagina.size() %></strong> de <strong><%= totalRegs %></strong> registros</span>
+                        <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ <%= pageSize %> por ola</span>
+                    </div>
+                    <% if (totalPages > 1) { %>
+                    <div class="pager-nav">
+                        <% if (currentPage > 1) { %><a href="<%= _pUrlAudit %><%= _qSepAudit %>page=<%= currentPage-1 %>" class="pager-btn"><i data-lucide="chevron-left"></i></a>
+                        <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-left"></i></span><% } %>
+                        <% if (_winS > 1) { %><a href="<%= _pUrlAudit %><%= _qSepAudit %>page=1" class="pager-btn">1</a><% if (_winS > 2) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><% } %>
+                        <% for (int _p = _winS; _p <= _winE; _p++) { %>
+                        <% if (_p == currentPage) { %><span class="pager-btn pager-btn--active"><%= _p %></span>
+                        <% } else { %><a href="<%= _pUrlAudit %><%= _qSepAudit %>page=<%= _p %>" class="pager-btn"><%= _p %></a><% } %>
+                        <% } %>
+                        <% if (_winE < totalPages) { %><% if (_winE < totalPages-1) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><a href="<%= _pUrlAudit %><%= _qSepAudit %>page=<%= totalPages %>" class="pager-btn"><%= totalPages %></a><% } %>
+                        <% if (currentPage < totalPages) { %><a href="<%= _pUrlAudit %><%= _qSepAudit %>page=<%= currentPage+1 %>" class="pager-btn"><i data-lucide="chevron-right"></i></a>
+                        <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-right"></i></span><% } %>
+                    </div>
+                    <% } %>
                 </div>
                 <% } %>
             </div>

@@ -46,6 +46,10 @@
         solicitudesPagina = solicitudes.subList(start, end);
     }
 
+    // Ventana de páginas visibles para el paginador "Ola"
+    int _winS = Math.max(1, currentPage - 2);
+    int _winE = Math.min(totalPages, currentPage + 2);
+
     request.setAttribute("activeMenu", "deposit");
 %>
 <!doctype html>
@@ -54,7 +58,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Depósito | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -188,43 +192,7 @@
             color: var(--gray-500);
         }
 
-        /* ═════ Paginación ═════ */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.4rem;
-            align-items: center;
-            margin-top: 0;
-            flex-wrap: wrap;
-        }
-        .pagination a,
-        .pagination .pagination-current {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.82rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all var(--transition);
-        }
-        .pagination a {
-            background: var(--white);
-            border: 1.5px solid var(--gray-200);
-            color: var(--gray-700);
-        }
-        .pagination a:hover {
-            background: var(--purple-bg);
-            border-color: var(--purple);
-            color: var(--purple);
-        }
-        .pagination a i { width: 13px; height: 13px; }
-        .pagination-current {
-            background: var(--purple);
-            color: var(--white);
-            border: 1.5px solid var(--purple);
-        }
+        /* Paginación: ver componente global ".pager" en style.css */
 
         /* ═════ Botones de descarga de inventario ═════ */
         .download-group {
@@ -536,34 +504,23 @@
                     </table>
                 </div>
 
-                <div class="panel-footer">
-                    <p class="panel-count-text">
-                        Mostrando
-                        <strong style="color: var(--gray-800);"><%= solicitudesPagina.size() %></strong>
-                        de
-                        <strong style="color: var(--gray-800);"><%= totalSolicitudes %></strong>
-                        solicitudes pendientes
-                    </p>
-
+                <div class="pager">
+                    <div class="pager-info">
+                        <span>Mostrando <strong><%= solicitudesPagina.size() %></strong> de <strong><%= totalSolicitudes %></strong> solicitudes pendientes</span>
+                        <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ 8 por ola</span>
+                    </div>
                     <% if (totalPages > 1) { %>
-                    <div class="pagination">
-                        <% if (currentPage > 1) { %>
-                        <a href="<%= ctx %>/DepositServlet?page=<%= currentPage - 1 %>">
-                            <i data-lucide="chevron-left"></i>
-                            Anterior
-                        </a>
+                    <div class="pager-nav">
+                        <% if (currentPage > 1) { %><a href="<%= ctx %>/DepositServlet?page=<%= currentPage-1 %>" class="pager-btn"><i data-lucide="chevron-left"></i></a>
+                        <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-left"></i></span><% } %>
+                        <% if (_winS > 1) { %><a href="<%= ctx %>/DepositServlet?page=1" class="pager-btn">1</a><% if (_winS > 2) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><% } %>
+                        <% for (int _p = _winS; _p <= _winE; _p++) { %>
+                        <% if (_p == currentPage) { %><span class="pager-btn pager-btn--active"><%= _p %></span>
+                        <% } else { %><a href="<%= ctx %>/DepositServlet?page=<%= _p %>" class="pager-btn"><%= _p %></a><% } %>
                         <% } %>
-
-                        <span class="pagination-current">
-                            Pág <%= currentPage %> de <%= totalPages %>
-                        </span>
-
-                        <% if (currentPage < totalPages) { %>
-                        <a href="<%= ctx %>/DepositServlet?page=<%= currentPage + 1 %>">
-                            Siguiente
-                            <i data-lucide="chevron-right"></i>
-                        </a>
-                        <% } %>
+                        <% if (_winE < totalPages) { %><% if (_winE < totalPages-1) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><a href="<%= ctx %>/DepositServlet?page=<%= totalPages %>" class="pager-btn"><%= totalPages %></a><% } %>
+                        <% if (currentPage < totalPages) { %><a href="<%= ctx %>/DepositServlet?page=<%= currentPage+1 %>" class="pager-btn"><i data-lucide="chevron-right"></i></a>
+                        <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-right"></i></span><% } %>
                     </div>
                     <% } %>
                 </div>

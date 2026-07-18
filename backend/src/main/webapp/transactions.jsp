@@ -61,7 +61,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Bandeja de Aprobaciones | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=10" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=12" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -253,58 +253,7 @@
             background: var(--purple-bg);
         }
 
-        .pag-ola-bar {
-            display: flex; align-items: center;
-            justify-content: space-between;
-            padding: 0.8rem 1.25rem 0.95rem;
-            flex-wrap: wrap; gap: 0.6rem;
-            border-top: 2.5px solid transparent;
-            border-image: linear-gradient(
-                    90deg, var(--purple-light), var(--pink), var(--purple-light)
-            ) 1;
-            background: linear-gradient(180deg, rgba(109,40,217,0.03) 0%, transparent 100%);
-        }
-        .pag-ola-info {
-            display: flex; align-items: center; gap: 0.5rem;
-            font-size: 0.8rem; color: var(--gray-500);
-        }
-        .pag-ola-info strong { color: var(--gray-700); }
-        .pag-ola-tag {
-            font-size: 0.67rem; font-weight: 700;
-            background: var(--purple-bg); color: var(--purple);
-            padding: 0.17rem 0.55rem;
-            border-radius: var(--radius-full); letter-spacing: 0.3px;
-        }
-        .pag-ola-controls { display: flex; align-items: center; gap: 0.22rem; }
-        .pag-btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            gap: 0.2rem; min-width: 32px; height: 32px; padding: 0 0.6rem;
-            border-radius: 999px;
-            font-size: 0.78rem; font-weight: 600;
-            color: var(--gray-600); background: var(--white);
-            border: 1.5px solid var(--gray-200);
-            text-decoration: none;
-            transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
-            white-space: nowrap; line-height: 1;
-        }
-        .pag-btn:hover {
-            border-color: var(--purple-light); color: var(--purple);
-            background: var(--purple-bg);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(109,40,217,0.14);
-        }
-        .pag-btn--active {
-            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
-            color: #fff !important; border-color: transparent !important;
-            box-shadow: 0 3px 10px rgba(109,40,217,0.32);
-            cursor: default; pointer-events: none;
-        }
-        .pag-btn--disabled { opacity: 0.32; cursor: not-allowed; pointer-events: none; }
-        .pag-btn i { width: 12px; height: 12px; }
-        .pag-ellipsis {
-            color: var(--gray-400); font-size: 0.78rem;
-            padding: 0 0.18rem; user-select: none;
-        }
+        /* Paginación: ver componente global ".pager" en style.css */
 
         .alert {
             display: flex;
@@ -536,9 +485,9 @@
                 </div>
 
                 <%-- Footer con paginación --%>
-                <div class="pag-ola-bar">
+                <div class="pager">
 
-                    <div class="pag-ola-info">
+                    <div class="pager-info">
                         <span>
                             Mostrando
                             <strong><%= _from %>–<%= _to %></strong>
@@ -547,21 +496,19 @@
                             solicitudes
                         </span>
 
-                        <span class="pag-ola-tag">
-                            ≈ 15 por ola
-                        </span>
+                        <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ 15 por ola</span>
                     </div>
 
                     <% if (_total > 1) { %>
 
-                    <div class="pag-ola-controls">
+                    <div class="pager-nav">
 
                         <% if (_page > 1) { %>
-                        <a href="<%= _pUrl %>&page=<%= _page-1 %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _page-1 %>" class="pager-btn">
                             <i data-lucide="chevron-left"></i>
                         </a>
                         <% } else { %>
-                        <span class="pag-btn pag-btn--disabled">
+                        <span class="pager-btn pager-btn--disabled">
                             <i data-lucide="chevron-left"></i>
                         </span>
                         <% } %>
@@ -569,10 +516,10 @@
 
                         <% if (_winS > 1) { %>
 
-                        <a href="<%= _pUrl %>&page=1" class="pag-btn">1</a>
+                        <a href="<%= _pUrl %>&page=1" class="pager-btn">1</a>
 
                         <% if (_winS > 2) { %>
-                        <span class="pag-ellipsis">…</span>
+                        <span class="pager-dots"><span></span><span></span><span></span></span>
                         <% } %>
 
                         <% } %>
@@ -582,13 +529,13 @@
 
                         <% if(_p == _page){ %>
 
-                        <span class="pag-btn pag-btn--active">
+                        <span class="pager-btn pager-btn--active">
                                     <%= _p %>
                                 </span>
 
                         <% }else{ %>
 
-                        <a href="<%= _pUrl %>&page=<%= _p %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _p %>" class="pager-btn">
                             <%= _p %>
                         </a>
 
@@ -600,10 +547,10 @@
                         <% if (_winE < _total) { %>
 
                         <% if (_winE < _total-1) { %>
-                        <span class="pag-ellipsis">…</span>
+                        <span class="pager-dots"><span></span><span></span><span></span></span>
                         <% } %>
 
-                        <a href="<%= _pUrl %>&page=<%= _total %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _total %>" class="pager-btn">
                             <%= _total %>
                         </a>
 
@@ -612,13 +559,13 @@
 
                         <% if (_page < _total) { %>
 
-                        <a href="<%= _pUrl %>&page=<%= _page+1 %>" class="pag-btn">
+                        <a href="<%= _pUrl %>&page=<%= _page+1 %>" class="pager-btn">
                             <i data-lucide="chevron-right"></i>
                         </a>
 
                         <% } else { %>
 
-                        <span class="pag-btn pag-btn--disabled">
+                        <span class="pager-btn pager-btn--disabled">
                             <i data-lucide="chevron-right"></i>
                         </span>
 
