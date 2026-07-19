@@ -7,6 +7,7 @@ import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 
@@ -327,6 +328,15 @@ public class AuthServlet extends HttpServlet {
                         return;
                     }
 
+                    // ─── No permitir repetir la contraseña anterior ───
+                    User usuarioCp = userDao.getById(cpUserId);
+                    if (usuarioCp != null && BCrypt.checkpw(newPass, usuarioCp.getPasswordHash())) {
+                        request.setAttribute("error", "La nueva contraseña no puede ser igual a la anterior.");
+                        view = request.getRequestDispatcher("/change-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+
                     boolean ok = userDao.updatePassword(cpUserId, newPass);
                     if (ok) {
                         String roleNameCp = (String) cpSess.getAttribute("roleName");
@@ -347,13 +357,28 @@ public class AuthServlet extends HttpServlet {
             case "forgotPassword":
                 try {
                     String emailForgot = request.getParameter("email");
+
+                    // ─── Validación estricta del correo ───
                     if (emailForgot == null || emailForgot.trim().isEmpty()) {
                         request.setAttribute("error", "Ingresa un correo válido.");
                         view = request.getRequestDispatcher("/forgot-password.jsp");
                         view.forward(request, response);
                         return;
                     }
+
                     emailForgot = emailForgot.trim().toLowerCase();
+
+                    // Rechaza saltos de línea/retorno de carro (previene inyección de
+                    // encabezados en el correo) y limita longitud razonable
+                    if (emailForgot.contains("\n") || emailForgot.contains("\r")
+                            || emailForgot.length() > 100
+                            || !emailForgot.matches("^[\\w.+\\-]+@[\\w\\-]+(\\.[\\w\\-]+)+$")) {
+                        request.setAttribute("error", "Ingresa un correo electrónico válido.");
+                        view = request.getRequestDispatcher("/forgot-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+
                     User userForgot = userDao.getByEmail(emailForgot);
 
                     // Por seguridad, siempre mostramos el mismo mensaje exista o no
@@ -406,6 +431,16 @@ public class AuthServlet extends HttpServlet {
                     }
                     if (newPass == null || !newPass.equals(confirmPass)) {
                         request.setAttribute("error", "Las contraseñas no coinciden.");
+                        request.setAttribute("token", tokenPost);
+                        view = request.getRequestDispatcher("/reset-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+
+                    // ─── No permitir repetir la contraseña anterior ───
+                    User usuarioActual = userDao.getById(uid);
+                    if (usuarioActual != null && BCrypt.checkpw(newPass, usuarioActual.getPasswordHash())) {
+                        request.setAttribute("error", "La nueva contraseña no puede ser igual a la anterior.");
                         request.setAttribute("token", tokenPost);
                         view = request.getRequestDispatcher("/reset-password.jsp");
                         view.forward(request, response);

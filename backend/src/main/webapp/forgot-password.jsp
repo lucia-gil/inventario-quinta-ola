@@ -43,7 +43,14 @@
 
         <div style="margin-bottom: 1.5rem;">
             <label class="form-label">Correo electrónico</label>
-            <input type="email" name="email" class="input-page" required placeholder="tucorreo@quintaola.com"/>
+            <input type="email"
+                   name="email"
+                   class="input-page"
+                   required
+                   placeholder="tucorreo@quintaola.com"
+                   maxlength="100"
+                   pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+                   autocomplete="email"/>
         </div>
 
         <button type="submit" class="btn-page-primary btn-icon" style="width:100%; justify-content:center; padding: 0.75rem;">
