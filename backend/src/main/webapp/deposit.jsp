@@ -2,15 +2,16 @@
     ════════════════════════════════════════════════════════════════════
      deposit.jsp — Vista del encargado de depósito (rediseño Quinta Ola)
     ════════════════════════════════════════════════════════════════════
-     CAMBIOS NUEVOS DE ESTA ITERACIÓN:
-     - Eliminado el botón "Ver historial completo" del header (ya está
-       en la navbar lateral, era redundante).
-     - Texto del info banner reescrito según la lógica acordada:
-       el stock YA se descontó al aprobar; aquí solo se cierra el ciclo
-       confirmando la entrega física. No se vuelve a tocar inventario.
-     - Agregada paginación de 8 solicitudes por página, con preservación
-       de filtros futuros y estilo Quinta Ola (chevron-left/right).
-     - NUEVO: botón "Descargar Inventario" para el Member (CSV/Excel).
+     CAMBIOS DE ESTA ITERACIÓN:
+     - Buscador + filtro de estado (Pendientes / Entregadas / Todas),
+       usando el componente global ".filter-bar" de style.css.
+     - Botón "Limpiar filtros" cuando hay algo activo.
+     - Nueva columna "Estado" en la tabla (relevante ahora que se
+       pueden ver también las entregadas).
+     - La acción de la fila se adapta: solo se puede "Marcar Entregada"
+       si la solicitud sigue APROBADA; si ya está COMPLETED, se muestra
+       un texto en vez del botón.
+     - Paginación y modales ahora preservan los filtros activos.
     ════════════════════════════════════════════════════════════════════
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -23,7 +24,12 @@
     String errParam = request.getParameter("error");
     String success = request.getParameter("success");
 
-    // ─── PAGINACIÓN client-side (8 por página) ───
+    String filtroEstado = (String) request.getAttribute("filtroEstado");
+    String filtroQ       = (String) request.getAttribute("filtroQ");
+    if (filtroEstado == null) filtroEstado = "pendientes";
+    if (filtroQ == null) filtroQ = "";
+
+    // ─── PAGINACIÓN client-side (8 por página), preservando filtros ───
     int pageSize = 8;
     int currentPage = 1;
     int totalPages = 1;
@@ -50,6 +56,12 @@
     int _winS = Math.max(1, currentPage - 2);
     int _winE = Math.min(totalPages, currentPage + 2);
 
+    // URL base de paginación, preservando filtros activos
+    String _pUrlDep = ctx + "/DepositServlet?estado=" + filtroEstado;
+    if (!filtroQ.isEmpty()) _pUrlDep += "&q=" + java.net.URLEncoder.encode(filtroQ, "UTF-8");
+
+    boolean hayFiltrosActivos = !"pendientes".equals(filtroEstado) || !filtroQ.isEmpty();
+
     request.setAttribute("activeMenu", "deposit");
 %>
 <!doctype html>
@@ -58,7 +70,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Depósito | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=21" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -192,7 +204,7 @@
             color: var(--gray-500);
         }
 
-        /* Paginación: ver componente global ".pager" en style.css */
+        /* Buscador + paginación: ver componentes globales ".filter-bar" y ".pager" en style.css */
 
         /* ═════ Botones de descarga de inventario ═════ */
         .download-group {
@@ -305,7 +317,13 @@
                         Gestión de Depósito
                     </h1>
                     <p class="page-subtitle">
+                        <% if ("entregadas".equals(filtroEstado)) { %>
+                        Historial de solicitudes ya entregadas.
+                        <% } else if ("todas".equals(filtroEstado)) { %>
+                        Todas las solicitudes aprobadas y entregadas.
+                        <% } else { %>
                         Solicitudes aprobadas listas para entrega física.
+                        <% } %>
                     </p>
                 </div>
 
@@ -362,17 +380,54 @@
                 </div>
             </div>
 
+            <%-- ═══════ BUSCADOR + FILTROS (componente global "Ola") ═══════ --%>
+            <form action="<%= ctx %>/DepositServlet" method="GET" class="filter-bar">
+
+                <div class="filter-search">
+                    <i data-lucide="search"></i>
+                    <input type="text" name="q"
+                           value="<%= filtroQ %>"
+                           placeholder="Buscar por ID, solicitante o material..."/>
+                </div>
+
+                <div class="filter-actions">
+                    <select name="estado" class="filter-select">
+                        <option value="pendientes" <%= "pendientes".equals(filtroEstado) ? "selected" : "" %>>Pendientes de entrega</option>
+                        <option value="entregadas" <%= "entregadas".equals(filtroEstado) ? "selected" : "" %>>Entregadas</option>
+                        <option value="todas"      <%= "todas".equals(filtroEstado)      ? "selected" : "" %>>Todas</option>
+                    </select>
+
+                    <button type="submit" class="btn-page-primary btn-icon">
+                        <i data-lucide="filter"></i>
+                        Filtrar
+                    </button>
+
+                    <% if (hayFiltrosActivos) { %>
+                    <a href="<%= ctx %>/DepositServlet" class="btn-clear-filter">
+                        <i data-lucide="x"></i>
+                        Limpiar
+                    </a>
+                    <% } %>
+                </div>
+            </form>
+
             <div class="table-panel">
 
                 <% if (solicitudesPagina == null || solicitudesPagina.isEmpty()) { %>
 
                 <div class="empty-state">
                     <div class="empty-state-icon">
-                        <i data-lucide="party-popper"></i>
+                        <i data-lucide="<%= hayFiltrosActivos ? "search-x" : "party-popper" %>"></i>
                     </div>
-                    <p class="empty-state-title">¡Todo al día!</p>
+                    <p class="empty-state-title">
+                        <%= hayFiltrosActivos ? "Sin resultados" : "¡Todo al día!" %>
+                    </p>
                     <p class="empty-state-desc">
+                        <% if (hayFiltrosActivos) { %>
+                        No hay solicitudes que coincidan con tu búsqueda o filtro.
+                        <% } else { %>
                         No hay solicitudes pendientes de entrega en este momento.
+                        <% } %>
                     </p>
                 </div>
 
@@ -388,12 +443,15 @@
                             <th class="th-center">Cantidad</th>
                             <th class="th">Aprobada por</th>
                             <th class="th">Fecha aprobación</th>
+                            <th class="th-center">Estado</th>
                             <th class="th-center" style="width: 220px;">Acción</th>
                         </tr>
                         </thead>
                         <tbody class="table-body">
 
-                        <% for (Transaction tx : solicitudesPagina) { %>
+                        <% for (Transaction tx : solicitudesPagina) {
+                            boolean yaEntregada = "COMPLETED".equals(tx.getStatus());
+                        %>
                         <tr class="table-row">
 
                             <td class="td-id">
@@ -416,12 +474,24 @@
                             <td class="td-light" style="font-size: 0.85rem;"><%= tx.getCreatedAt() != null ? tx.getCreatedAt() : "—" %></td>
 
                             <td class="td-center">
+                                <% if (yaEntregada) { %>
+                                <span class="status-delivered">Entregada</span>
+                                <% } else { %>
+                                <span class="status-approved">Aprobada</span>
+                                <% } %>
+                            </td>
+
+                            <td class="td-center">
                                 <div class="row-actions">
 
+                                    <% if (yaEntregada) { %>
+                                    <span style="color: var(--gray-400); font-size: 0.78rem; font-style: italic;">— Ya entregada —</span>
+                                    <% } else { %>
                                     <a href="#modal-entregar-<%= tx.getId() %>" class="btn-deliver">
                                         <i data-lucide="package-check"></i>
                                         Marcar Entregada
                                     </a>
+                                    <% } %>
 
                                     <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>&origen=despacho"
                                        class="detail-link">
@@ -441,20 +511,20 @@
 
                 <div class="pager">
                     <div class="pager-info">
-                        <span>Mostrando <strong><%= solicitudesPagina.size() %></strong> de <strong><%= totalSolicitudes %></strong> solicitudes pendientes</span>
+                        <span>Mostrando <strong><%= solicitudesPagina.size() %></strong> de <strong><%= totalSolicitudes %></strong> solicitudes</span>
                         <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ 8 por ola</span>
                     </div>
                     <% if (totalPages > 1) { %>
                     <div class="pager-nav">
-                        <% if (currentPage > 1) { %><a href="<%= ctx %>/DepositServlet?page=<%= currentPage-1 %>" class="pager-btn"><i data-lucide="chevron-left"></i></a>
+                        <% if (currentPage > 1) { %><a href="<%= _pUrlDep %>&page=<%= currentPage-1 %>" class="pager-btn"><i data-lucide="chevron-left"></i></a>
                         <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-left"></i></span><% } %>
-                        <% if (_winS > 1) { %><a href="<%= ctx %>/DepositServlet?page=1" class="pager-btn">1</a><% if (_winS > 2) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><% } %>
+                        <% if (_winS > 1) { %><a href="<%= _pUrlDep %>&page=1" class="pager-btn">1</a><% if (_winS > 2) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><% } %>
                         <% for (int _p = _winS; _p <= _winE; _p++) { %>
                         <% if (_p == currentPage) { %><span class="pager-btn pager-btn--active"><%= _p %></span>
-                        <% } else { %><a href="<%= ctx %>/DepositServlet?page=<%= _p %>" class="pager-btn"><%= _p %></a><% } %>
+                        <% } else { %><a href="<%= _pUrlDep %>&page=<%= _p %>" class="pager-btn"><%= _p %></a><% } %>
                         <% } %>
-                        <% if (_winE < totalPages) { %><% if (_winE < totalPages-1) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><a href="<%= ctx %>/DepositServlet?page=<%= totalPages %>" class="pager-btn"><%= totalPages %></a><% } %>
-                        <% if (currentPage < totalPages) { %><a href="<%= ctx %>/DepositServlet?page=<%= currentPage+1 %>" class="pager-btn"><i data-lucide="chevron-right"></i></a>
+                        <% if (_winE < totalPages) { %><% if (_winE < totalPages-1) { %><span class="pager-dots"><span></span><span></span><span></span></span><% } %><a href="<%= _pUrlDep %>&page=<%= totalPages %>" class="pager-btn"><%= totalPages %></a><% } %>
+                        <% if (currentPage < totalPages) { %><a href="<%= _pUrlDep %>&page=<%= currentPage+1 %>" class="pager-btn"><i data-lucide="chevron-right"></i></a>
                         <% } else { %><span class="pager-btn pager-btn--disabled"><i data-lucide="chevron-right"></i></span><% } %>
                     </div>
                     <% } %>
@@ -464,9 +534,10 @@
 
             </div><%-- /table-panel --%>
 
-            <%-- ═══════ MODALES — Confirmación de entrega ═══════ --%>
+            <%-- ═══════ MODALES — Confirmación de entrega (solo para las APROBADAS) ═══════ --%>
             <% if (solicitudesPagina != null) {
                 for (Transaction mTx : solicitudesPagina) {
+                    if (!"COMPLETED".equals(mTx.getStatus())) {
             %>
             <div id="modal-entregar-<%= mTx.getId() %>" class="modal-overlay">
                 <div class="modal-box">
@@ -497,7 +568,9 @@
                     </form>
                 </div>
             </div>
-            <% } } %>
+            <%      }
+            }
+            } %>
 
         </main>
 

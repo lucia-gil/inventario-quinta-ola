@@ -92,6 +92,28 @@ public class TransactionDAO {
         return list;
     }
 
+    // Solicitudes ya ENTREGADAS (COMPLETED) — usado en el filtro "Entregadas"
+    // de la vista de Depósito. Ordenadas por fecha de entrega más reciente.
+    public List<Transaction> getCompleted() throws SQLException {
+        List<Transaction> list = new ArrayList<>();
+        String sql = """
+            SELECT t.*, i.name AS item_name, i.unit AS item_unit, i.image_url AS item_img,
+                   u.name AS requester_name, a.name AS approver_name
+            FROM transactions t
+            JOIN items i ON t.item_id = i.id
+            JOIN users u ON t.requester_id = u.id
+            LEFT JOIN users a ON t.approver_id = a.id
+            WHERE t.status = 'COMPLETED'
+            ORDER BY t.delivered_at DESC
+            """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapRow(rs));
+        }
+        return list;
+    }
+
     public List<Transaction> getByUser(int userId) throws SQLException {
         List<Transaction> list = new ArrayList<>();
         String sql = """

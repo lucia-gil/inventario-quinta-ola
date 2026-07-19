@@ -8,17 +8,19 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /* ============================================================
    DepositServlet
    ============================================================
    Vista del encargado de deposito (rol Member = 2).
-   Muestra todas las solicitudes APROBADAS pero aun no entregadas,
-   y permite marcarlas como entregadas (lo que descuenta del stock).
+   Muestra las solicitudes APROBADAS (pendientes de entrega) por
+   defecto, con filtro opcional para ver también las ENTREGADAS
+   (COMPLETED) o ambas juntas, más búsqueda por texto libre.
 
    URLs:
-     GET  /DepositServlet                       -> lista aprobadas pendientes de entregar
+     GET  /DepositServlet                       -> lista (con filtros opcionales: q, estado)
      POST /DepositServlet (action=entregar)    -> marca una como entregada
    ============================================================ */
 @WebServlet(name = "DepositServlet", value = "/DepositServlet")
@@ -39,10 +41,48 @@ public class DepositServlet extends HttpServlet {
         RequestDispatcher view;
 
         try {
-            // Traemos solo las solicitudes APROBADAS (no las pendientes, no las entregadas)
-            List<Transaction> aprobadas = txDao.getApproved();
+            // ─── Filtro de estado: pendientes (default) | entregadas | todas ───
+            String estado = request.getParameter("estado");
+            if (estado == null || estado.trim().isEmpty()) estado = "pendientes";
 
-            request.setAttribute("solicitudes", aprobadas);
+            List<Transaction> solicitudes;
+            switch (estado) {
+                case "entregadas":
+                    solicitudes = txDao.getCompleted();
+                    break;
+                case "todas":
+                    solicitudes = new ArrayList<>();
+                    solicitudes.addAll(txDao.getApproved());
+                    solicitudes.addAll(txDao.getCompleted());
+                    break;
+                default:
+                    estado = "pendientes";
+                    solicitudes = txDao.getApproved();
+                    break;
+            }
+
+            // ─── Búsqueda por texto libre: ID, solicitante o material ───
+            String q = request.getParameter("q");
+            if (q != null) q = q.trim();
+            if (q != null && !q.isEmpty()) {
+                String qLower = q.toLowerCase();
+                List<Transaction> filtradas = new ArrayList<>();
+                for (Transaction t : solicitudes) {
+                    String idOriginal   = String.valueOf(t.getId());
+                    String idFormateado = String.format("txn-%04d", t.getId());
+                    String solicitante  = t.getRequesterName() != null ? t.getRequesterName().toLowerCase() : "";
+                    String material     = t.getItemName()      != null ? t.getItemName().toLowerCase()      : "";
+                    if (idOriginal.contains(qLower) || idFormateado.contains(qLower)
+                            || solicitante.contains(qLower) || material.contains(qLower)) {
+                        filtradas.add(t);
+                    }
+                }
+                solicitudes = filtradas;
+            }
+
+            request.setAttribute("solicitudes", solicitudes);
+            request.setAttribute("filtroEstado", estado);
+            request.setAttribute("filtroQ", q != null ? q : "");
             request.setAttribute("activeMenu", "deposit");
 
             view = request.getRequestDispatcher("deposit.jsp");

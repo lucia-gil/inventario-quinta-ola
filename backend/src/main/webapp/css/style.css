@@ -1398,6 +1398,11 @@ input, select, textarea { font-family: inherit; }
 
 .modal-overlay:target { display: flex; }
 
+/* Variante controlada por JS (no por :target) — se usa en páginas donde
+   el fragmento de la URL se actualiza con history.replaceState() en vez
+   de navegación real (ej: request-detail.jsp, para no romper "Volver"). */
+.modal-overlay.is-open { display: flex; }
+
 .modal-box {
     position: relative;
     background: var(--white);
@@ -1484,6 +1489,123 @@ input, select, textarea { font-family: inherit; }
 .btn-modal-ok--red:hover    { box-shadow: 0 4px 14px rgba(220,38,38,0.4); transform: translateY(-1px); }
 .btn-modal-ok--purple { background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%); color: var(--white); }
 .btn-modal-ok--purple:hover { box-shadow: 0 4px 14px rgba(91,31,168,0.4); transform: translateY(-1px); }
+
+/* ════════════════════════════════════════════════════════════
+   BUSCADOR — Componente "Ola" (único, reutilizado en toda la app)
+   Barra de búsqueda + filtros con estilo consistente. Úsalo así:
+
+   <form class="filter-bar" method="GET" action="...">
+       <div class="filter-search">
+           <i data-lucide="search"></i>
+           <input type="text" name="q" placeholder="Buscar..." value="...">
+       </div>
+       <div class="filter-actions">
+           <select name="estado" class="filter-select">...</select>
+           <button type="submit" class="btn-page-primary btn-icon">
+               <i data-lucide="filter"></i>Filtrar
+           </button>
+           <!-- si hay filtros activos -->
+           <a href="...sin-parametros..." class="btn-clear-filter">
+               <i data-lucide="x"></i>Limpiar
+           </a>
+       </div>
+   </form>
+   ════════════════════════════════════════════════════════════ */
+
+.filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.filter-search {
+    position: relative;
+    flex-grow: 1;
+    min-width: 250px;
+    flex-direction: row;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.filter-search > i {
+    position: absolute;
+    left: 0.95rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    width: 16px; height: 16px;
+    pointer-events: none;
+    z-index: 2;
+}
+.filter-search input {
+    width: 100%;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-full);
+    padding: 0.6rem 1rem 0.6rem 2.65rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: all var(--transition);
+    background: var(--gray-50);
+    font-family: inherit;
+}
+.filter-search input:focus {
+    border-color: var(--purple);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+}
+
+.filter-select {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+    background: var(--gray-50);
+    color: var(--gray-700);
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: all var(--transition);
+    min-width: 170px;
+}
+.filter-select:focus {
+    border-color: var(--purple);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+}
+
+.filter-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+
+.btn-clear-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--white);
+    color: var(--gray-500);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+.btn-clear-filter:hover { border-color: #FECACA; color: var(--red-dark); background: var(--red-bg); }
+.btn-clear-filter i { width: 13px; height: 13px; }
+
+@media (max-width: 640px) {
+    .filter-search { min-width: 100%; }
+    .filter-actions { width: 100%; }
+    .filter-select { flex: 1 1 140px; min-width: 0; }
+    .filter-actions .btn-page-primary { flex: 1 1 100%; justify-content: center; }
+    .filter-actions .btn-clear-filter { flex: 1 1 100%; justify-content: center; }
+}
 
 /* ════════════════════════════════════════════════════════════
    PAGINADOR — Componente "Ola" (único, reutilizado en toda la app)
