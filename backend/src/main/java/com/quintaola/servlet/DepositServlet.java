@@ -79,6 +79,12 @@ public class DepositServlet extends HttpServlet {
 
                     int txId = Integer.parseInt(request.getParameter("id"));
 
+                    // Nota opcional del encargado sobre algún imprevisto en la entrega
+                    // (retraso, material sustituto, cambio de color, etc.). No se guarda
+                    // en la BD por ahora — solo viaja en el correo al solicitante.
+                    String notasEntrega = request.getParameter("notas");
+                    if (notasEntrega != null) notasEntrega = notasEntrega.trim();
+
                     // Obtener datos del solicitante ANTES de entregar (los necesitamos para el email)
                     com.quintaola.model.Transaction txEntregar = txDao.getById(txId);
 
@@ -95,11 +101,22 @@ public class DepositServlet extends HttpServlet {
                                 com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
                                 com.quintaola.model.User solicitante = userDao.getById(txEntregar.getRequesterId());
                                 if (solicitante != null && solicitante.getEmail() != null) {
-                                    com.quintaola.util.EmailService.enviarEntrega(
-                                            solicitante.getEmail(),
-                                            solicitante.getName(),
-                                            txId
-                                    );
+                                    if (notasEntrega != null && !notasEntrega.isEmpty()) {
+                                        // Hubo un imprevisto que el encargado quiso avisar
+                                        com.quintaola.util.EmailService.enviarEntregaConNota(
+                                                solicitante.getEmail(),
+                                                solicitante.getName(),
+                                                txId,
+                                                notasEntrega
+                                        );
+                                    } else {
+                                        // Entrega normal, sin novedades
+                                        com.quintaola.util.EmailService.enviarEntrega(
+                                                solicitante.getEmail(),
+                                                solicitante.getName(),
+                                                txId
+                                        );
+                                    }
                                 }
                             } catch (Exception emailEx) {
                                 System.err.println("[DepositServlet] No se pudo enviar email de entrega: " + emailEx.getMessage());

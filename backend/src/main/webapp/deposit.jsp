@@ -58,7 +58,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Depósito | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=21" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -262,13 +262,45 @@
             transform: translateY(-50%); /* Centrado vertical perfecto respecto al botón */
             background: var(--white);
             border: 1px solid var(--purple); /* Borde con la paleta de Quinta Ola */
-            padding: 0.5rem 0.8rem;
+            padding: 0.85rem 0.9rem;
             border-radius: var(--radius-md);
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             z-index: 100;
-            width: 210px;
+            width: 270px;
             text-align: center;
         }
+        .confirm-notes-label {
+            display: block;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 0.5rem 0 0.3rem;
+        }
+        .confirm-notes-input {
+            width: 100%;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 0.6rem;
+            font-size: 0.78rem;
+            font-family: inherit;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            resize: vertical;
+            min-height: 48px;
+            outline: none;
+            transition: all var(--transition);
+            box-sizing: border-box;
+            margin-bottom: 0.6rem;
+        }
+        .confirm-notes-input:focus {
+            border-color: var(--purple);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(91,31,168,0.1);
+        }
+        .confirm-notes-input::placeholder { color: var(--gray-400); }
         /* Pequeña flecha estética apuntando al botón */
         .confirm-popover::after {
             content: "";
@@ -477,14 +509,22 @@
 
                                         <div class="confirm-popover">
                                             <p class="confirm-text">¿Confirmas la entrega física?</p>
-                                            <div class="confirm-buttons">
-                                                <form action="<%= ctx %>/DepositServlet" method="POST" style="margin:0;">
-                                                    <input type="hidden" name="action" value="entregar"/>
-                                                    <input type="hidden" name="id" value="<%= tx.getId() %>"/>
-                                                    <button type="submit" class="btn-confirm-yes">Sí</button>
-                                                </form>
-                                                <label for="confirm-toggle-<%= tx.getId() %>" class="btn-confirm-no" style="cursor: pointer;">No</label>
-                                            </div>
+
+                                            <form action="<%= ctx %>/DepositServlet" method="POST" style="margin:0;">
+                                                <input type="hidden" name="action" value="entregar"/>
+                                                <input type="hidden" name="id" value="<%= tx.getId() %>"/>
+
+                                                <label class="confirm-notes-label" for="notas-<%= tx.getId() %>">
+                                                    ¿Algún imprevisto? (opcional)
+                                                </label>
+                                                <textarea id="notas-<%= tx.getId() %>" name="notas" class="confirm-notes-input"
+                                                          placeholder="Ej: retraso de 2 días, llegó de otro color..."></textarea>
+
+                                                <div class="confirm-buttons">
+                                                    <button type="submit" class="btn-confirm-yes">Sí, entregar</button>
+                                                    <label for="confirm-toggle-<%= tx.getId() %>" class="btn-confirm-no" style="cursor: pointer;">Cancelar</label>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
 

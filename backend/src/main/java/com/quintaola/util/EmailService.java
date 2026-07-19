@@ -282,6 +282,22 @@ public class EmailService {
                 + "</div>";
     }
 
+    /**
+     * Escapa caracteres especiales de HTML. Se usa en cualquier texto que
+     * venga de un usuario (ej. notas de entrega) antes de insertarlo en el
+     * cuerpo del correo, para que no rompa el HTML ni permita inyectar código.
+     */
+    private static String escapeHtml(String texto) {
+        if (texto == null) return "";
+        return texto
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;")
+                .replace("\n", "<br/>");
+    }
+
     // ════════════════════════════════════════════════════════════════
     // PLANTILLAS POR EVENTO
     // ════════════════════════════════════════════════════════════════
@@ -423,5 +439,35 @@ public class EmailService {
         );
 
         return enviar(destinatario, "Materiales entregados — Solicitud #" + requestId, html);
+    }
+
+    /**
+     * Igual que enviarEntrega(), pero además incluye un aviso del encargado
+     * de depósito sobre algún imprevisto en la entrega (retraso, cambio de
+     * color, material sustituto, etc.). Se usa cuando el encargado escribe
+     * algo en el campo de notas al marcar la solicitud como entregada.
+     */
+    public static boolean enviarEntregaConNota(String destinatario, String solicitante, int requestId, String nota) {
+        String notaSegura = escapeHtml(nota);
+
+        String notaBox =
+                "<div style='background:#FEF3C7;border-left:4px solid #F59E0B;padding:14px 18px;border-radius:8px;margin:20px 0;text-align:left;'>"
+                        + "  <p style='color:#92400E;font-size:12px;margin:0 0 6px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;'>&#9888; Aviso del encargado de depósito</p>"
+                        + "  <p style='color:#78350F;font-size:14px;margin:0;line-height:1.55;font-weight:500;'>" + notaSegura + "</p>"
+                        + "</div>";
+
+        String html = construirCorreo(
+                "<span style='color:" + C_BLUE + ";font-size:36px;'>&#128230;</span>",  // 📦
+                "#DBEAFE",
+                "¡Materiales entregados!",
+                "Hola <strong style='color:" + C_PURPLE + "'>" + solicitante + "</strong>,",
+                "Los materiales de tu solicitud <strong style='color:" + C_PURPLE + "'>#" + requestId + "</strong> "
+                        + "han sido entregados por el encargado de depósito. Antes de que revises todo, queremos que sepas lo siguiente:",
+                notaBox,
+                "Ver historial", APP_URL + "/HistoryServlet",
+                "Si tienes dudas sobre este aviso, contacta directamente con el encargado de depósito o el coordinador del proyecto."
+        );
+
+        return enviar(destinatario, "Materiales entregados (con aviso) — Solicitud #" + requestId, html);
     }
 }
