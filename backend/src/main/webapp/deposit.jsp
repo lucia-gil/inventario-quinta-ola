@@ -248,120 +248,38 @@
         }
         .download-label i { width: 13px; height: 13px; color: var(--purple); }
 
-        /* ═════ Confirmación Flotante 100% CSS Puro ═════ */
-        .confirm-container {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-        }
-        .confirm-popover {
-            display: none;
-            position: absolute;
-            right: 105%; /* Se despliega inmediatamente a la izquierda del botón */
-            top: 50%;
-            transform: translateY(-50%); /* Centrado vertical perfecto respecto al botón */
-            background: var(--white);
-            border: 1px solid var(--purple); /* Borde con la paleta de Quinta Ola */
-            padding: 0.85rem 0.9rem;
-            border-radius: var(--radius-md);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            z-index: 100;
-            width: 270px;
-            text-align: center;
-        }
-        .confirm-notes-label {
+        /* ═════ Campo de notas dentro del modal de entrega ═════ */
+        .modal-notes-label {
             display: block;
             text-align: left;
-            font-size: 0.68rem;
+            font-size: 0.7rem;
             font-weight: 700;
             color: var(--gray-500);
             text-transform: uppercase;
             letter-spacing: 0.4px;
-            margin: 0.5rem 0 0.3rem;
+            margin: 0.9rem 0 0.4rem;
         }
-        .confirm-notes-input {
+        .modal-notes-input {
             width: 100%;
             border: 1.5px solid var(--gray-200);
             border-radius: var(--radius-sm);
-            padding: 0.5rem 0.6rem;
-            font-size: 0.78rem;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.85rem;
             font-family: inherit;
             color: var(--gray-800);
             background: var(--gray-50);
             resize: vertical;
-            min-height: 48px;
+            min-height: 64px;
             outline: none;
             transition: all var(--transition);
             box-sizing: border-box;
-            margin-bottom: 0.6rem;
         }
-        .confirm-notes-input:focus {
+        .modal-notes-input:focus {
             border-color: var(--purple);
             background: var(--white);
             box-shadow: 0 0 0 3px rgba(91,31,168,0.1);
         }
-        .confirm-notes-input::placeholder { color: var(--gray-400); }
-        /* Pequeña flecha estética apuntando al botón */
-        .confirm-popover::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 100%;
-            transform: translateY(-50%);
-            border-width: 6px;
-            border-style: solid;
-            border-color: transparent transparent transparent var(--white);
-        }
-        .confirm-popover::before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 100%;
-            transform: translateY(-50%);
-            border-width: 7px;
-            border-style: solid;
-            border-color: transparent transparent transparent var(--purple);
-            z-index: -1;
-        }
-        .confirm-checkbox:checked ~ .confirm-popover {
-            display: block;
-            animation: slideLeftConfirm 0.15s ease-out;
-        }
-        .confirm-text {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--gray-700);
-            margin-bottom: 0.4rem;
-            white-space: nowrap;
-        }
-        .confirm-buttons {
-            display: flex;
-            gap: 0.4rem;
-            justify-content: center;
-            align-items: center;
-        }
-        .btn-confirm-yes, .btn-confirm-no {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: var(--radius-full);
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-align: center;
-            border: none;
-        }
-        .btn-confirm-yes {
-            background: #10b981;
-            color: var(--white);
-            cursor: pointer;
-        }
-        .btn-confirm-no {
-            background: var(--gray-100);
-            color: var(--gray-600);
-        }
-        @keyframes slideLeftConfirm {
-            from { opacity: 0; transform: translateY(-50%) translateX(10px); }
-            to   { opacity: 1; transform: translateY(-50%) translateX(0); }
-        }
+        .modal-notes-input::placeholder { color: var(--gray-400); }
     </style>
 </head>
 
@@ -376,6 +294,8 @@
         <jsp:include page="includes/topbar.jsp"/>
 
         <main class="page-main">
+
+            <a id="modal-cerrar" style="display:block;height:0;overflow:hidden;"></a>
 
             <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
                 <div>
@@ -498,35 +418,10 @@
                             <td class="td-center">
                                 <div class="row-actions">
 
-                                    <%-- 💎 Confirmación 100% CSS Puro (Sin una sola línea de JS) --%>
-                                    <div class="confirm-container">
-                                        <input type="checkbox" id="confirm-toggle-<%= tx.getId() %>" class="confirm-checkbox" style="display: none;">
-
-                                        <label for="confirm-toggle-<%= tx.getId() %>" class="btn-deliver" style="cursor: pointer;">
-                                            <i data-lucide="package-check"></i>
-                                            Marcar Entregada
-                                        </label>
-
-                                        <div class="confirm-popover">
-                                            <p class="confirm-text">¿Confirmas la entrega física?</p>
-
-                                            <form action="<%= ctx %>/DepositServlet" method="POST" style="margin:0;">
-                                                <input type="hidden" name="action" value="entregar"/>
-                                                <input type="hidden" name="id" value="<%= tx.getId() %>"/>
-
-                                                <label class="confirm-notes-label" for="notas-<%= tx.getId() %>">
-                                                    ¿Algún imprevisto? (opcional)
-                                                </label>
-                                                <textarea id="notas-<%= tx.getId() %>" name="notas" class="confirm-notes-input"
-                                                          placeholder="Ej: retraso de 2 días, llegó de otro color..."></textarea>
-
-                                                <div class="confirm-buttons">
-                                                    <button type="submit" class="btn-confirm-yes">Sí, entregar</button>
-                                                    <label for="confirm-toggle-<%= tx.getId() %>" class="btn-confirm-no" style="cursor: pointer;">Cancelar</label>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
+                                    <a href="#modal-entregar-<%= tx.getId() %>" class="btn-deliver">
+                                        <i data-lucide="package-check"></i>
+                                        Marcar Entregada
+                                    </a>
 
                                     <a href="<%= ctx %>/TransactionServlet?action=detalle&id=<%= tx.getId() %>&origen=despacho"
                                        class="detail-link">
@@ -567,7 +462,42 @@
 
                 <% } %>
 
+            </div><%-- /table-panel --%>
+
+            <%-- ═══════ MODALES — Confirmación de entrega ═══════ --%>
+            <% if (solicitudesPagina != null) {
+                for (Transaction mTx : solicitudesPagina) {
+            %>
+            <div id="modal-entregar-<%= mTx.getId() %>" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-icon modal-icon--purple"><i data-lucide="package-check"></i></div>
+                    <h3 class="modal-title">¿Confirmas la entrega física?</h3>
+                    <p class="modal-desc">
+                        "<strong class="modal-name"><%= mTx.getItemName() %></strong>" para
+                        <strong class="modal-name"><%= mTx.getRequesterName() %></strong> —
+                        <%= mTx.getQuantity() %> <%= mTx.getItemUnit() %>
+                    </p>
+
+                    <form action="<%= ctx %>/DepositServlet" method="POST">
+                        <input type="hidden" name="action" value="entregar"/>
+                        <input type="hidden" name="id" value="<%= mTx.getId() %>"/>
+
+                        <label class="modal-notes-label" for="notas-<%= mTx.getId() %>">
+                            ¿Algún imprevisto? (opcional)
+                        </label>
+                        <textarea id="notas-<%= mTx.getId() %>" name="notas" class="modal-notes-input"
+                                  placeholder="Ej: retraso de 2 días, llegó de otro color..."></textarea>
+
+                        <div class="modal-btns" style="margin-top: 1.1rem;">
+                            <a href="#modal-cerrar" class="btn-modal-cancel">Cancelar</a>
+                            <button type="submit" class="btn-modal-ok btn-modal-ok--purple">
+                                <i data-lucide="package-check"></i>Sí, entregar
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
+            <% } } %>
 
         </main>
 

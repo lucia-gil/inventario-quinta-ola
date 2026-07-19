@@ -504,6 +504,39 @@
         .alert-error   { background: var(--red-bg);   color: var(--red-dark);   border-color: #FECACA; }
         .alert-success { background: var(--green-bg); color: var(--green-dark); border-color: #BBF7D0; }
         .alert i { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* ═════ Campo de notas dentro del modal de entrega ═════ */
+        .modal-notes-label {
+            display: block;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 0.9rem 0 0.4rem;
+        }
+        .modal-notes-input {
+            width: 100%;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 0.75rem;
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            resize: vertical;
+            min-height: 64px;
+            outline: none;
+            transition: all var(--transition);
+            box-sizing: border-box;
+        }
+        .modal-notes-input:focus {
+            border-color: var(--purple);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(91,31,168,0.1);
+        }
+        .modal-notes-input::placeholder { color: var(--gray-400); }
     </style>
 </head>
 <body class="page-body">
@@ -516,6 +549,8 @@
         <jsp:include page="includes/topbar.jsp"/>
 
         <main class="page-main">
+
+            <a id="modal-cerrar" style="display:block;height:0;overflow:hidden;"></a>
 
             <%-- Header --%>
             <div class="page-header">
@@ -805,6 +840,20 @@
 
                         <% } %>
 
+                        <%-- Acción de entrega — solo Depósito, Admin o SuperAdmin, y solo si está APROBADA --%>
+                        <% if ("APPROVED".equals(tx.getStatus()) && (rol == 2 || rol == 4 || rol == 5)) { %>
+                        <div class="actions-section">
+                            <h3>¿Ya se entregó el material?</h3>
+                            <div class="actions-row">
+                                <a href="#modal-entregar-detalle" class="btn-approve-big"
+                                   onclick="return abrirModalSinHistorial(this);">
+                                    <i data-lucide="package-check"></i>
+                                    Marcar como Entregada
+                                </a>
+                            </div>
+                        </div>
+                        <% } %>
+
                     </div>
                 </div>
 
@@ -964,6 +1013,40 @@
 
             </div>
 
+            <%-- ═══════ MODAL — Confirmación de entrega ═══════ --%>
+            <% if ("APPROVED".equals(tx.getStatus()) && (rol == 2 || rol == 4 || rol == 5)) { %>
+            <div id="modal-entregar-detalle" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-icon modal-icon--purple"><i data-lucide="package-check"></i></div>
+                    <h3 class="modal-title">¿Confirmas la entrega física?</h3>
+                    <p class="modal-desc">
+                        "<strong class="modal-name"><%= tx.getItemName() %></strong>" para
+                        <strong class="modal-name"><%= tx.getRequesterName() %></strong> —
+                        <%= tx.getQuantity() %> <%= tx.getItemUnit() %>
+                    </p>
+
+                    <form action="<%= ctx %>/DepositServlet" method="POST">
+                        <input type="hidden" name="action" value="entregar"/>
+                        <input type="hidden" name="id" value="<%= tx.getId() %>"/>
+
+                        <label class="modal-notes-label" for="notas-detalle">
+                            ¿Algún imprevisto? (opcional)
+                        </label>
+                        <textarea id="notas-detalle" name="notas" class="modal-notes-input"
+                                  placeholder="Ej: retraso de 2 días, llegó de otro color..."></textarea>
+
+                        <div class="modal-btns" style="margin-top: 1.1rem;">
+                            <a href="#modal-cerrar" class="btn-modal-cancel"
+                               onclick="return abrirModalSinHistorial(this);">Cancelar</a>
+                            <button type="submit" class="btn-modal-ok btn-modal-ok--purple">
+                                <i data-lucide="package-check"></i>Sí, entregar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <% } %>
+
             <% } %>
 
         </main>
@@ -977,6 +1060,17 @@
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
+
+    /**
+     * Abre/cierra el modal (anclas #modal-X) sin dejar una entrada nueva
+     * en el historial del navegador. Así "Volver" (que usa history.back())
+     * no se queda atrapado entre los estados abierto/cerrado del modal —
+     * simplemente lo ignora y va a la página anterior real.
+     */
+    function abrirModalSinHistorial(link) {
+        history.replaceState(null, '', link.getAttribute('href'));
+        return false;
+    }
 </script>
 
 </body>
