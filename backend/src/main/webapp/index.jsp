@@ -16,7 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quinta Ola | Sistema Inteligente de Inventario</title>
 
-    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=24" rel="stylesheet" />
 
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -36,6 +36,78 @@
         .transform-style-3d { transform-style: preserve-3d; }
         .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
+
+        /* ═════ Animaciones de entrada (sin JS, sin scroll real) ═════ */
+        @keyframes landingFadeInUp {
+            from { opacity: 0; transform: translateY(22px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes landingFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .public-navbar {
+            animation: landingFadeIn 0.5s ease both;
+        }
+
+        .hero-content > * {
+            opacity: 0;
+            animation: landingFadeInUp 0.7s cubic-bezier(.22,.9,.32,1) both;
+        }
+        .hero-content .hero-badge      { animation-delay: 0.05s; }
+        .hero-content .hero-title      { animation-delay: 0.18s; }
+        .hero-content .hero-description{ animation-delay: 0.34s; }
+        .hero-content .hero-cta-group  { animation-delay: 0.5s; }
+
+        .hero-photo-wrap {
+            opacity: 0;
+            animation: landingFadeInUp 0.8s cubic-bezier(.22,.9,.32,1) both;
+            animation-delay: 0.4s;
+        }
+
+        .features-tag,
+        .features-title,
+        .features-subtitle {
+            opacity: 0;
+            animation: landingFadeInUp 0.65s cubic-bezier(.22,.9,.32,1) both;
+        }
+        .features-tag      { animation-delay: 0.05s; }
+        .features-title    { animation-delay: 0.15s; }
+        .features-subtitle { animation-delay: 0.25s; }
+
+        .feature-card-wrap {
+            opacity: 0;
+            animation: landingFadeInUp 0.65s cubic-bezier(.22,.9,.32,1) both;
+            height: 480px;
+            perspective: 1000px;
+        }
+        .feature-card-wrap:nth-child(1) { animation-delay: 0.35s; }
+        .feature-card-wrap:nth-child(2) { animation-delay: 0.48s; }
+        .feature-card-wrap:nth-child(3) { animation-delay: 0.61s; }
+
+        .cta-title,
+        .cta-desc,
+        .cta-buttons {
+            opacity: 0;
+            animation: landingFadeInUp 0.65s cubic-bezier(.22,.9,.32,1) both;
+        }
+        .cta-title   { animation-delay: 0.05s; }
+        .cta-desc    { animation-delay: 0.18s; }
+        .cta-buttons { animation-delay: 0.31s; }
+
+        /* Respeta accesibilidad: sin movimiento si el usuario lo prefiere así */
+        @media (prefers-reduced-motion: reduce) {
+            .public-navbar,
+            .hero-content > *,
+            .hero-photo-wrap,
+            .features-tag, .features-title, .features-subtitle,
+            .feature-card-wrap,
+            .cta-title, .cta-desc, .cta-buttons {
+                animation: none;
+                opacity: 1;
+            }
+        }
 
         /* ─── Navbar público ─── */
         .public-navbar {
@@ -96,77 +168,146 @@
         .hero-section {
             position: relative;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            min-height: 80vh;
-            padding: 1.5rem;
+            min-height: 88vh;
+            padding: 3.5rem 2rem;
             margin-top: 80px;
+            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
             overflow: hidden;
         }
-        .hero-bg-image {
+
+        /* Círculo decorativo rosa, mismo recurso del sitio institucional */
+        .hero-section::before {
+            content: "";
             position: absolute;
-            inset: 0;
+            top: -80px;
+            left: -80px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: var(--pink);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Burbuja decorativa extra, esquina opuesta */
+        .hero-section::after {
+            content: "";
+            position: absolute;
+            bottom: 40px;
+            right: 6%;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: var(--yellow);
+            opacity: 0.14;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 84rem;
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            align-items: center;
         }
-        .hero-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(91, 31, 168, 0.85) 0%, rgba(74, 22, 144, 0.92) 100%);
+
+        @media (min-width: 1024px) {
+            .hero-inner {
+                grid-template-columns: 1fr 1.15fr;
+                gap: 4rem;
+            }
         }
+
         .hero-content {
             position: relative;
-            z-index: 10;
-            max-width: 56rem;
-            width: 100%;
-            margin-top: 2.5rem;
+            z-index: 2;
+            text-align: center;
+            max-width: 40rem;
+            margin: 0 auto;
         }
+
+        @media (min-width: 1024px) {
+            .hero-content {
+                text-align: left;
+                margin: 0;
+            }
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: var(--white);
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 0.5rem 1.1rem;
+            border-radius: var(--radius-full);
+            margin-bottom: 1.5rem;
+        }
+        .hero-badge i { width: 14px; height: 14px; color: var(--yellow); }
+
         .hero-title {
-            font-size: 2.25rem;
+            font-size: 2.5rem;
             font-weight: 900;
-            line-height: 1.1;
+            line-height: 1.08;
             color: var(--white);
             margin-bottom: 1.5rem;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.8px;
         }
         .hero-title-accent {
             color: var(--pink-light);
         }
         .hero-subtitle {
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1.35rem;
+            font-weight: 700;
             color: var(--yellow);
             display: block;
-            margin-top: 0.75rem;
+            margin-top: 0.85rem;
         }
         .hero-description {
-            font-size: 1rem;
+            font-size: 1.05rem;
             color: rgba(255,255,255,0.92);
             max-width: 42rem;
-            margin: 0 auto 2rem;
-            line-height: 1.6;
+            margin: 0 auto 2.25rem;
+            line-height: 1.7;
         }
+        @media (min-width: 1024px) {
+            .hero-description { margin: 0 0 2.25rem; }
+        }
+
         .hero-cta-group {
             display: flex;
             flex-direction: column;
             gap: 1rem;
             justify-content: center;
-            max-width: 42rem;
-            margin: 1.5rem auto 0;
+            max-width: 30rem;
+            margin: 0 auto;
         }
+        @media (min-width: 1024px) {
+            .hero-cta-group { justify-content: flex-start; margin: 0; }
+        }
+
         .hero-btn-primary,
         .hero-btn-secondary {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            padding: 0.875rem 2rem;
+            padding: 1rem 2.25rem;
             border-radius: var(--radius-full);
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 1rem;
             transition: all var(--transition);
             text-align: center;
         }
@@ -190,20 +331,80 @@
             transform: translateY(-2px);
         }
 
-        @media (min-width: 768px) {
-            .hero-title { font-size: 3.5rem; }
-            .hero-subtitle { font-size: 1.5rem; }
-            .hero-description { font-size: 1.125rem; }
-            .hero-cta-group { flex-direction: row; }
+        /* ─── Foto del equipo, estilo del sitio institucional: marco amarillo detrás ─── */
+        .hero-photo-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 46rem;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .hero-photo-frame {
+            position: absolute;
+            top: 1.75rem;
+            right: -1.75rem;
+            bottom: -1.75rem;
+            left: 1.75rem;
+            background: var(--yellow);
+            border-radius: var(--radius-lg);
+            z-index: 1;
+        }
+        .hero-photo-wrap img {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 48px rgba(0,0,0,0.35);
+        }
+
+        @media (max-width: 1023px) {
+            .hero-photo-wrap { max-width: 30rem; }
+            .hero-photo-frame { top: 1.1rem; right: -1.1rem; bottom: -1.1rem; left: 1.1rem; }
         }
 
         /* ─── SECCIÓN FEATURES ─── */
         .features-section {
+            position: relative;
             padding: 5rem 1.5rem;
             background: var(--gray-50);
             border-top: 1px solid var(--gray-200);
         }
+
+        /* Burbujas decorativas — colocadas DENTRO del área visible
+           (sin offsets negativos) para que no queden recortadas por el
+           overflow-x:clip global del body. */
+        .features-section::before {
+            content: "";
+            position: absolute;
+            top: 30px;
+            right: 4%;
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            background: var(--pink);
+            opacity: 0.16;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .features-section::after {
+            content: "";
+            position: absolute;
+            bottom: 50px;
+            left: 3%;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: var(--yellow);
+            opacity: 0.20;
+            pointer-events: none;
+            z-index: 1;
+        }
+
         .features-inner {
+            position: relative;
+            z-index: 2;
             max-width: 72rem;
             margin: 0 auto;
             text-align: center;
@@ -248,10 +449,6 @@
         }
 
         /* Tarjetas 3D feature */
-        .feature-card-wrap {
-            height: 460px;
-            perspective: 1000px;
-        }
         .feature-card {
             position: relative;
             width: 100%;
@@ -278,31 +475,45 @@
         }
         .feature-card-img {
             position: relative;
-            height: 12rem;
+            height: 17rem;
             overflow: hidden;
+            background: var(--gray-100);
         }
         .feature-card-img img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
-        .feature-card-img-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(91, 31, 168, 0.85), rgba(91, 31, 168, 0.2), transparent);
-        }
+
+        /* Ajuste fino de encuadre por tarjeta — cada ilustración tiene su
+           propia composición original, así que se calibra individualmente
+           para que las 3 se vean con el mismo "peso" visual. */
+        #card-1 .feature-card-img img { object-position: center 22%; }
+        #card-2 .feature-card-img img { object-position: center 15%; }
+        #card-3 .feature-card-img img { object-position: center 30%; }
+
         .feature-card-icon-corner {
             position: absolute;
-            bottom: 1rem;
-            left: 1rem;
-            color: var(--white);
+            bottom: 0.85rem;
+            left: 0.85rem;
+            color: var(--purple);
+            background: rgba(255,255,255,0.85);
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
         }
-        .feature-card-icon-corner i { width: 28px; height: 28px; }
+        .feature-card-icon-corner i { width: 18px; height: 18px; }
         .feature-card-body {
             padding: 1.5rem;
             display: flex;
             flex-direction: column;
             flex-grow: 1;
+            min-height: 0;
         }
         .feature-card-title {
             font-size: 1.25rem;
@@ -409,6 +620,21 @@
             filter: blur(100px);
             opacity: 0.6;
         }
+
+        /* Burbuja decorativa adicional, borde suave */
+        .cta-section::after {
+            content: "";
+            position: absolute;
+            top: 15%;
+            left: 6%;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.25);
+            pointer-events: none;
+            z-index: 1;
+        }
+
         .cta-inner {
             position: relative;
             z-index: 10;
@@ -587,9 +813,8 @@
         <img src="<%= ctx %>/img/QuintaOlaLogo.png" alt="Quinta Ola" class="public-navbar-logo"/>
     </div>
     <div class="public-navbar-actions">
-        <a href="<%= ctx %>/CatalogServlet" class="public-nav-link">Nuestros productos</a>
-
         <% if (estaLogueado) { %>
+
         <a href="<%= ctx %>/HomeServlet" class="public-nav-btn">
             <i data-lucide="layout-dashboard"></i> Ir al Panel
         </a>
@@ -603,39 +828,45 @@
 
 <%-- ═════ HERO ═════ --%>
 <section id="top" class="hero-section">
-    <img id="heroImage"
-         src="https://img.freepik.com/foto-gratis/grupo-personas-arrojando-dinero-oficina_1303-15891.jpg"
-         class="hero-bg-image"
-         alt="Hero Background"/>
-    <div class="hero-overlay"></div>
 
-    <div class="hero-content">
-        <h1 class="hero-title">
-            Bienvenido a <span class="hero-title-accent">Quinta Ola</span>
-            <span class="hero-subtitle">Sistema inteligente de inventario</span>
-        </h1>
+    <div class="hero-inner">
 
-        <p class="hero-description">
-            Gestiona materiales, visualiza productos y optimiza procesos
-            con una plataforma moderna, rápida y eficiente.
-        </p>
+        <div class="hero-content">
+            <span class="hero-badge">
+                <i data-lucide="sparkles"></i>
+                Sistema de gestión de inventario
+            </span>
 
-        <div class="hero-cta-group">
-            <a href="<%= ctx %>/CatalogServlet" class="hero-btn-primary">
-                <i data-lucide="package"></i> Ver Productos
-            </a>
+            <h1 class="hero-title">
+                Bienvenido a <span class="hero-title-accent">Quinta Ola</span>
+                <span class="hero-subtitle">Sistema inteligente de inventario</span>
+            </h1>
 
-            <% if (estaLogueado) { %>
-            <a href="<%= ctx %>/HomeServlet" class="hero-btn-secondary">
-                <i data-lucide="layout-dashboard"></i> Ir al Panel
-            </a>
-            <% } else { %>
-            <a href="<%= ctx %>/AuthServlet?action=formLogin" class="hero-btn-secondary">
-                <i data-lucide="log-in"></i> Acceder al sistema
-            </a>
-            <% } %>
+            <p class="hero-description">
+                Gestiona materiales, visualiza productos y optimiza procesos
+                con una plataforma moderna, rápida y eficiente.
+            </p>
+
+            <div class="hero-cta-group">
+                <% if (estaLogueado) { %>
+                <a href="<%= ctx %>/HomeServlet" class="hero-btn-primary">
+                    <i data-lucide="layout-dashboard"></i> Ir al Panel
+                </a>
+                <% } else { %>
+                <a href="<%= ctx %>/AuthServlet?action=formLogin" class="hero-btn-primary">
+                    <i data-lucide="log-in"></i> Acceder al sistema
+                </a>
+                <% } %>
+            </div>
         </div>
+
+        <div class="hero-photo-wrap">
+            <div class="hero-photo-frame"></div>
+            <img src="<%= ctx %>/img/equipo-quintaola.png" alt="Equipo Quinta Ola"/>
+        </div>
+
     </div>
+
 </section>
 
 <%-- ═════ FEATURES ═════ --%>
@@ -656,8 +887,7 @@
                 <div id="card-1" class="feature-card">
                     <div class="feature-card-face feature-card-front">
                         <div class="feature-card-img">
-                            <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d" alt="Gestión de Inventario"/>
-                            <div class="feature-card-img-overlay"></div>
+                            <img src="<%= ctx %>/img/inventario.png" alt="Gestión de Inventario"/>
                             <div class="feature-card-icon-corner">
                                 <i data-lucide="package"></i>
                             </div>
@@ -694,8 +924,7 @@
                 <div id="card-2" class="feature-card">
                     <div class="feature-card-face feature-card-front">
                         <div class="feature-card-img">
-                            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71" alt="Análisis de Datos"/>
-                            <div class="feature-card-img-overlay"></div>
+                            <img src="<%= ctx %>/img/analisis_y_resportes.png" alt="Análisis de Datos"/>
                             <div class="feature-card-icon-corner">
                                 <i data-lucide="bar-chart-3"></i>
                             </div>
@@ -732,8 +961,7 @@
                 <div id="card-3" class="feature-card">
                     <div class="feature-card-face feature-card-front">
                         <div class="feature-card-img">
-                            <img src="https://images.unsplash.com/photo-1556740749-887f6717d7e4" alt="Solicitudes Internas"/>
-                            <div class="feature-card-img-overlay"></div>
+                            <img src="<%= ctx %>/img/solicitudes_rapidas.png" alt="Solicitudes Internas"/>
                             <div class="feature-card-icon-corner">
                                 <i data-lucide="zap"></i>
                             </div>
@@ -835,7 +1063,6 @@
             <h4>Plataforma</h4>
             <ul>
                 <li><a href="#top">Inicio</a></li>
-                <li><a href="<%= ctx %>/CatalogServlet">Nuestros productos</a></li>
                 <li><a href="<%= ctx %>/AuthServlet?action=formLogin">Iniciar sesión</a></li>
             </ul>
         </div>
