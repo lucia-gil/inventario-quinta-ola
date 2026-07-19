@@ -363,8 +363,8 @@ public class EmailService {
                         + "      <td style='color:" + C_GRAY_TEXT + ";font-size:14px;font-weight:700;text-align:right;'>" + solicitante + "</td>"
                         + "    </tr>"
                         + "    <tr>"
-                        + "      <td style='color:" + C_GRAY_SOFT + ";font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;'>ID de solicitud</td>"
-                        + "      <td style='color:" + C_PURPLE + ";font-size:15px;font-weight:800;text-align:right;'>#" + requestId + "</td>"
+                        + "      <td style='color:" + C_GRAY_SOFT + ";font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;'>N.º de solicitud</td>"
+                        + "      <td style='color:" + C_PURPLE + ";font-size:15px;font-weight:800;text-align:right;'>N.º " + requestId + "</td>"
                         + "    </tr>"
                         + "  </table>"
                         + "</div>";
@@ -381,7 +381,7 @@ public class EmailService {
                 null
         );
 
-        return enviar(destinatario, "Nueva solicitud #" + requestId + " — Quinta Ola", html);
+        return enviar(destinatario, "Nueva solicitud N.º " + requestId + " — Quinta Ola", html);
     }
 
     public static boolean enviarSolicitudAprobada(String destinatario, String solicitante, int requestId) {
@@ -390,7 +390,7 @@ public class EmailService {
                 "#DCFCE7",
                 "Solicitud aprobada",
                 "Hola <strong style='color:" + C_PURPLE + "'>" + solicitante + "</strong>,",
-                "Tu solicitud <strong style='color:" + C_PURPLE + "'>#" + requestId + "</strong> "
+                "Tu solicitud <strong style='color:" + C_PURPLE + "'>N.º " + requestId + "</strong> "
                         + "ha sido <strong style='color:" + C_GREEN + "'>aprobada</strong>. "
                         + "El encargado de depósito te entregará los materiales pronto.",
                 construirCajaEstado("success", "&#10003; Tu solicitud avanzó al siguiente paso"),
@@ -398,7 +398,7 @@ public class EmailService {
                 "Te avisaremos por correo cuando los materiales sean entregados."
         );
 
-        return enviar(destinatario, "Solicitud #" + requestId + " aprobada — Quinta Ola", html);
+        return enviar(destinatario, "Solicitud N.º " + requestId + " aprobada — Quinta Ola", html);
     }
 
     public static boolean enviarSolicitudRechazada(String destinatario, String solicitante, int requestId, String motivo) {
@@ -415,30 +415,23 @@ public class EmailService {
                 "#FEE2E2",
                 "Tu solicitud fue rechazada",
                 "Hola <strong style='color:" + C_PURPLE + "'>" + solicitante + "</strong>,",
-                "Tu solicitud <strong>#" + requestId + "</strong> no pudo ser aprobada. "
+                "Tu solicitud <strong>N.º " + requestId + "</strong> no pudo ser aprobada. "
                         + "Revisa el motivo a continuación:",
                 motivoBox,
                 "Ver detalles", APP_URL + "/HistoryServlet",
                 "Si necesitas más información, contacta al aprobador o al coordinador del proyecto."
         );
 
-        return enviar(destinatario, "Solicitud #" + requestId + " rechazada — Quinta Ola", html);
+        return enviar(destinatario, "Solicitud N.º " + requestId + " rechazada — Quinta Ola", html);
     }
 
-    public static boolean enviarEntrega(String destinatario, String solicitante, int requestId) {
-        String html = construirCorreo(
-                "<span style='color:" + C_BLUE + ";font-size:36px;'>&#128230;</span>",  // 📦
-                "#DBEAFE",
-                "¡Materiales entregados!",
-                "Hola <strong style='color:" + C_PURPLE + "'>" + solicitante + "</strong>,",
-                "Los materiales de tu solicitud <strong style='color:" + C_PURPLE + "'>#" + requestId + "</strong> "
-                        + "han sido entregados por el encargado de depósito.",
-                construirCajaEstado("info", "&#128230; Solicitud cerrada exitosamente"),
-                "Ver historial", APP_URL + "/HistoryServlet",
-                "Gracias por usar el Sistema de Inventario Quinta Ola. ¡Sigue gestionando!"
-        );
+    // ════════════════════════════════════════════════════════════════
+    // ENTREGA — formato de comprobante/boleta
+    // ════════════════════════════════════════════════════════════════
 
-        return enviar(destinatario, "Materiales entregados — Solicitud #" + requestId, html);
+    public static boolean enviarEntrega(String destinatario, String solicitante, int requestId,
+                                        String itemName, int quantity, String unit, String fechaEntrega) {
+        return enviarEntregaBase(destinatario, solicitante, requestId, itemName, quantity, unit, fechaEntrega, null);
     }
 
     /**
@@ -447,28 +440,117 @@ public class EmailService {
      * color, material sustituto, etc.). Se usa cuando el encargado escribe
      * algo en el campo de notas al marcar la solicitud como entregada.
      */
-    public static boolean enviarEntregaConNota(String destinatario, String solicitante, int requestId, String nota) {
-        String notaSegura = escapeHtml(nota);
+    public static boolean enviarEntregaConNota(String destinatario, String solicitante, int requestId,
+                                               String itemName, int quantity, String unit, String fechaEntrega,
+                                               String nota) {
+        return enviarEntregaBase(destinatario, solicitante, requestId, itemName, quantity, unit, fechaEntrega, nota);
+    }
 
-        String notaBox =
-                "<div style='background:#FEF3C7;border-left:4px solid #F59E0B;padding:14px 18px;border-radius:8px;margin:20px 0;text-align:left;'>"
-                        + "  <p style='color:#92400E;font-size:12px;margin:0 0 6px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;'>&#9888; Aviso del encargado de depósito</p>"
-                        + "  <p style='color:#78350F;font-size:14px;margin:0;line-height:1.55;font-weight:500;'>" + notaSegura + "</p>"
-                        + "</div>";
+    /**
+     * Construye el correo de entrega con formato de boleta/recibo:
+     * encabezado con folio, tabla de detalle, línea punteada tipo
+     * ticket, y aviso del encargado (si lo hay).
+     */
+    private static boolean enviarEntregaBase(String destinatario, String solicitante, int requestId,
+                                             String itemName, int quantity, String unit,
+                                             String fechaEntrega, String nota) {
+
+        String folio = "QO-" + String.format("%05d", requestId);
+        String itemSeguro = escapeHtml(itemName);
+        String solicitanteSeguro = escapeHtml(solicitante);
+
+        StringBuilder receipt = new StringBuilder();
+
+        // ─── Encabezado de la boleta ───
+        receipt.append("<table width='100%' cellpadding='0' cellspacing='0' style='border:1.5px dashed ").append(C_PURPLE).append("40; border-radius:12px; overflow:hidden; margin:22px 0;'>")
+
+                .append("<tr><td style='background:").append(C_PURPLE).append("; padding:16px 22px;'>")
+                .append("<table width='100%' cellpadding='0' cellspacing='0'><tr>")
+                .append("<td style='color:#ffffff; font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase;'>Comprobante de entrega</td>")
+                .append("<td align='right' style='color:#ffffff; font-size:11px; font-weight:800; letter-spacing:0.5px;'>N.º ").append(folio).append("</td>")
+                .append("</tr></table>")
+                .append("</td></tr>")
+
+                // ─── Cuerpo del detalle ───
+                .append("<tr><td style='background:#ffffff; padding:20px 22px;'>")
+                .append("<table width='100%' cellpadding='0' cellspacing='0'>")
+
+                .append("<tr>")
+                .append("<td style='padding:8px 0; border-bottom:1px solid ").append(C_GRAY_LINE).append(";'>")
+                .append("<span style='color:").append(C_GRAY_SOFT).append("; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;'>Entregado a</span><br/>")
+                .append("<span style='color:").append(C_GRAY_TEXT).append("; font-size:14.5px; font-weight:700;'>").append(solicitanteSeguro).append("</span>")
+                .append("</td>")
+                .append("</tr>")
+
+                .append("<tr>")
+                .append("<td style='padding:8px 0; border-bottom:1px solid ").append(C_GRAY_LINE).append(";'>")
+                .append("<span style='color:").append(C_GRAY_SOFT).append("; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;'>Material</span><br/>")
+                .append("<span style='color:").append(C_GRAY_TEXT).append("; font-size:14.5px; font-weight:700;'>").append(itemSeguro).append("</span>")
+                .append("</td>")
+                .append("</tr>")
+
+                .append("<tr>")
+                .append("<td style='padding:8px 0; border-bottom:1px solid ").append(C_GRAY_LINE).append(";'>")
+                .append("<table width='100%' cellpadding='0' cellspacing='0'><tr>")
+                .append("<td width='50%'>")
+                .append("<span style='color:").append(C_GRAY_SOFT).append("; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;'>Cantidad</span><br/>")
+                .append("<span style='color:").append(C_PURPLE).append("; font-size:16px; font-weight:800;'>").append(quantity).append(" ").append(unit != null ? escapeHtml(unit) : "").append("</span>")
+                .append("</td>")
+                .append("<td width='50%'>")
+                .append("<span style='color:").append(C_GRAY_SOFT).append("; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;'>Fecha de entrega</span><br/>")
+                .append("<span style='color:").append(C_GRAY_TEXT).append("; font-size:14.5px; font-weight:700;'>").append(fechaEntrega != null ? fechaEntrega : "—").append("</span>")
+                .append("</td>")
+                .append("</tr></table>")
+                .append("</td>")
+                .append("</tr>")
+
+                .append("</table>")
+                .append("</td></tr>")
+
+                // ─── Línea punteada tipo "corte de ticket" ───
+                .append("<tr><td style='padding:0 22px;'>")
+                .append("<div style='border-top:2px dashed ").append(C_GRAY_LINE).append(";'></div>")
+                .append("</td></tr>")
+
+                // ─── Pie de la boleta: folio + estado ───
+                .append("<tr><td style='background:#ffffff; padding:14px 22px 18px;'>")
+                .append("<table width='100%' cellpadding='0' cellspacing='0'><tr>")
+                .append("<td style='color:").append(C_GRAY_SOFT).append("; font-size:11px; font-family:\"Courier New\",monospace;'>N.º ").append(folio).append("</td>")
+                .append("<td align='right'>")
+                .append("<span style='display:inline-block; background:").append(C_GREEN).append("1A; color:").append(C_GREEN_DARK).append("; font-size:11px; font-weight:800; padding:4px 12px; border-radius:20px;'>&#10003; ENTREGADO</span>")
+                .append("</td>")
+                .append("</tr></table>")
+                .append("</td></tr>")
+
+                .append("</table>");
+
+        String statusBox = receipt.toString();
+
+        // Si hay nota del encargado, se agrega como bloque adicional debajo de la boleta
+        String notaBox = null;
+        if (nota != null && !nota.trim().isEmpty()) {
+            String notaSegura = escapeHtml(nota);
+            notaBox = "<div style='background:#FEF3C7;border-left:4px solid #F59E0B;padding:14px 18px;border-radius:8px;margin-top:16px;text-align:left;'>"
+                    + "  <p style='color:#92400E;font-size:12px;margin:0 0 6px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;'>&#9888; Aviso del encargado de depósito</p>"
+                    + "  <p style='color:#78350F;font-size:14px;margin:0;line-height:1.55;font-weight:500;'>" + notaSegura + "</p>"
+                    + "</div>";
+        }
+
+        String cuerpoCompleto = statusBox + (notaBox != null ? notaBox : "");
 
         String html = construirCorreo(
-                "<span style='color:" + C_BLUE + ";font-size:36px;'>&#128230;</span>",  // 📦
+                "<span style='color:" + C_BLUE + ";font-size:36px;'>&#128230;</span>",
                 "#DBEAFE",
                 "¡Materiales entregados!",
-                "Hola <strong style='color:" + C_PURPLE + "'>" + solicitante + "</strong>,",
-                "Los materiales de tu solicitud <strong style='color:" + C_PURPLE + "'>#" + requestId + "</strong> "
-                        + "han sido entregados por el encargado de depósito. Antes de que revises todo, queremos que sepas lo siguiente:",
-                notaBox,
+                "Hola <strong style='color:" + C_PURPLE + "'>" + solicitanteSeguro + "</strong>,",
+                "Aquí tienes tu comprobante de entrega. Guárdalo como referencia de tu solicitud.",
+                cuerpoCompleto,
                 "Ver historial", APP_URL + "/HistoryServlet",
-                "Si tienes dudas sobre este aviso, contacta directamente con el encargado de depósito o el coordinador del proyecto."
+                "Gracias por usar el Sistema de Inventario Quinta Ola. ¡Sigue gestionando!"
         );
 
-        return enviar(destinatario, "Materiales entregados (con aviso) — Solicitud #" + requestId, html);
+        String asunto = "Materiales entregados — Solicitud " + folio;
+        return enviar(destinatario, asunto, html);
     }
 
     public static boolean enviarCredenciales(String destinatario, String nombre, String passwordTemporal) {

@@ -116,7 +116,7 @@ input, select, textarea { font-family: inherit; }
 }
 
 /* ════════════════════════════════════════════════════════════
-   SIDEBAR — Identidad Quinta Ola: morado vibrante + acentos
+   SIDEBAR — Identidad Quinta Ola: morado vibrante, limpio
    ════════════════════════════════════════════════════════════ */
 
 .sidebar {
@@ -133,41 +133,9 @@ input, select, textarea { font-family: inherit; }
     z-index: 50;
     box-shadow: 2px 0 10px rgba(0,0,0,0.08);
     overflow: hidden;
-    position: fixed;
-}
-
-/* Círculo decorativo rosa — mismo recurso visual que el sitio institucional */
-.sidebar::before {
-    content: "";
-    position: absolute;
-    top: -60px;
-    left: -60px;
-    width: 160px;
-    height: 160px;
-    border-radius: 50%;
-    background: var(--pink);
-    opacity: 0.35;
-    pointer-events: none;
-}
-
-/* Bloque decorativo amarillo, más discreto, esquina inferior */
-.sidebar::after {
-    content: "";
-    position: absolute;
-    bottom: 90px;
-    right: -40px;
-    width: 110px;
-    height: 110px;
-    border-radius: 24px;
-    background: var(--yellow);
-    opacity: 0.10;
-    transform: rotate(18deg);
-    pointer-events: none;
 }
 
 .sidebar-header {
-    position: relative;
-    z-index: 1;
     padding: 0.5rem 1rem 1.5rem;
     text-align: center;
     border-bottom: 1px solid rgba(255,255,255,0.14);
@@ -196,8 +164,6 @@ input, select, textarea { font-family: inherit; }
 }
 
 .sidebar-menu {
-    position: relative;
-    z-index: 1;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -243,13 +209,18 @@ input, select, textarea { font-family: inherit; }
     transform: translateX(2px);
 }
 
-/* Estado activo: píldora rosa sólida — mismo lenguaje visual que el
-   botón "Continuar leyendo" del sitio institucional. */
+/* Estado activo: píldora amarilla — máximo contraste sobre el morado,
+   mismo acento de marca del sitio institucional. Texto en morado
+   oscuro para asegurar legibilidad. */
 .sidebar-link-active {
-    background: var(--pink);
-    color: var(--white);
+    background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow-light) 100%);
+    color: var(--purple-dark);
     font-weight: 800;
-    box-shadow: 0 4px 14px rgba(233, 30, 140, 0.4);
+    box-shadow: 0 4px 14px rgba(255, 193, 7, 0.45);
+}
+
+.sidebar-link-active i[data-lucide] {
+    color: var(--purple-dark);
 }
 
 /* Iconos del sidebar */
@@ -265,8 +236,6 @@ input, select, textarea { font-family: inherit; }
 
 /* Footer del sidebar */
 .sidebar-footer {
-    position: relative;
-    z-index: 1;
     border-top: 1px solid rgba(255,255,255,0.14);
     padding-top: 1rem;
     margin-top: 1rem;
@@ -329,9 +298,9 @@ input, select, textarea { font-family: inherit; }
 }
 
 .sidebar-logout:hover {
-    background: var(--yellow);
-    border-color: var(--yellow);
-    color: var(--purple-dark);
+    background: var(--pink);
+    border-color: var(--pink);
+    color: var(--white);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -1060,87 +1029,27 @@ input, select, textarea { font-family: inherit; }
 }
 
 /* ════════════════════════════════════════════════════════════
-   FOOTER
+   FOOTER — línea simple, discreta
    ════════════════════════════════════════════════════════════ */
 
 .footer {
-    background: var(--gray-900);
-    color: var(--gray-400);
-    padding: 3rem 2rem 1.5rem;
+    background: var(--white);
+    border-top: 1px solid var(--gray-100);
+    padding: 1.1rem 2rem;
     margin-top: auto;
-}
-
-.footer-inner {
-    max-width: 1200px;
-    margin: 0 auto 2rem;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-}
-
-@media (min-width: 560px) {
-    .footer-inner { grid-template-columns: repeat(2, 1fr); }
-    .footer-brand { grid-column: 1 / -1; }
-}
-
-@media (min-width: 800px) {
-    .footer-inner { grid-template-columns: 2fr 1fr 1fr; }
-    .footer-brand { grid-column: auto; }
-}
-
-.footer-brand {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.footer-brand img {
-    filter: brightness(0) invert(1);
-    height: 50px;
-    width: auto;
-}
-
-.footer-desc {
-    font-size: 0.875rem;
-    line-height: 1.5;
-    max-width: 320px;
-}
-
-.footer-col-title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--white);
-    margin-bottom: 1rem;
-}
-
-.footer-link {
-    display: block;
-    font-size: 0.875rem;
-    color: var(--gray-400);
-    text-decoration: none;
-    padding: 0.4rem 0;
-    transition: color var(--transition);
-}
-
-.footer-link:hover {
-    color: var(--pink-light);
-}
-
-.footer-bottom {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--gray-800);
-    font-size: 0.78rem;
     text-align: center;
 }
 
-@media (max-width: 640px) {
-    .footer { padding: 2.5rem 1.25rem 1.5rem; }
+.footer-bottom-text {
+    font-size: 0.78rem;
+    color: var(--gray-400);
+    font-weight: 500;
+    margin: 0;
 }
 
+@media (max-width: 640px) {
+    .footer { padding: 1rem 1.25rem; }
+}
 
 /* ════════════════════════════════════════════════════════════
    HOME HERO — Banner de bienvenida en "Inicio" (home.jsp)
@@ -1566,15 +1475,6 @@ input, select, textarea { font-family: inherit; }
     margin-bottom: 1.5rem;
     position: relative;
     overflow: hidden;
-}
-
-/* Franja de marca en el borde superior — misma cresta que el resto de la app */
-.filter-bar::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 50%, var(--yellow) 100%);
 }
 
 .filter-search {

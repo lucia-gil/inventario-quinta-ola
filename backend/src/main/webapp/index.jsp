@@ -622,7 +622,7 @@
 
         <div class="hero-cta-group">
             <a href="<%= ctx %>/CatalogServlet" class="hero-btn-primary">
-                <i data-lucide="package"></i> Ver Catálogo
+                <i data-lucide="package"></i> Ver Productos
             </a>
 
             <% if (estaLogueado) { %>

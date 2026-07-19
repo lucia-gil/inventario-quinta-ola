@@ -8,6 +8,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -136,18 +138,29 @@ public class DepositServlet extends HttpServlet {
                     boolean ok = txDao.deliver(txId, notasEntrega);
 
                     if (ok) {
-                        // ─── Notificar al solicitante por email ───
+                        // ─── Notificar al solicitante por email (comprobante tipo boleta) ───
                         if (txEntregar != null) {
                             try {
                                 com.quintaola.dao.UserDAO userDao = new com.quintaola.dao.UserDAO();
                                 com.quintaola.model.User solicitante = userDao.getById(txEntregar.getRequesterId());
                                 if (solicitante != null && solicitante.getEmail() != null) {
+
+                                    String itemName = txEntregar.getItemName();
+                                    int    cantidad = txEntregar.getQuantity();
+                                    String unidad    = txEntregar.getItemUnit();
+                                    String fechaHoy   = LocalDate.now()
+                                            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
                                     if (notasEntrega != null && !notasEntrega.isEmpty()) {
                                         // Hubo un imprevisto que el encargado quiso avisar
                                         com.quintaola.util.EmailService.enviarEntregaConNota(
                                                 solicitante.getEmail(),
                                                 solicitante.getName(),
                                                 txId,
+                                                itemName,
+                                                cantidad,
+                                                unidad,
+                                                fechaHoy,
                                                 notasEntrega
                                         );
                                     } else {
@@ -155,7 +168,11 @@ public class DepositServlet extends HttpServlet {
                                         com.quintaola.util.EmailService.enviarEntrega(
                                                 solicitante.getEmail(),
                                                 solicitante.getName(),
-                                                txId
+                                                txId,
+                                                itemName,
+                                                cantidad,
+                                                unidad,
+                                                fechaHoy
                                         );
                                     }
                                 }
