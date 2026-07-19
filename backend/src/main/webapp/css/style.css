@@ -116,7 +116,7 @@ input, select, textarea { font-family: inherit; }
 }
 
 /* ════════════════════════════════════════════════════════════
-   SIDEBAR — Estilo profesional morado oscuro
+   SIDEBAR — Identidad Quinta Ola: morado vibrante + acentos
    ════════════════════════════════════════════════════════════ */
 
 .sidebar {
@@ -126,31 +126,64 @@ input, select, textarea { font-family: inherit; }
     bottom: 0;
     width: 240px;
     height: 100vh;
-    background: linear-gradient(180deg, var(--purple) 0%, var(--purple-dark) 100%);
+    background: var(--purple);
     display: flex;
     flex-direction: column;
     padding: 1.5rem 0.75rem;
     z-index: 50;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-    overflow: hidden; /* ← FIJO, sin scroll */
+    box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: fixed;
 }
 
+/* Círculo decorativo rosa — mismo recurso visual que el sitio institucional */
+.sidebar::before {
+    content: "";
+    position: absolute;
+    top: -60px;
+    left: -60px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: var(--pink);
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+/* Bloque decorativo amarillo, más discreto, esquina inferior */
+.sidebar::after {
+    content: "";
+    position: absolute;
+    bottom: 90px;
+    right: -40px;
+    width: 110px;
+    height: 110px;
+    border-radius: 24px;
+    background: var(--yellow);
+    opacity: 0.10;
+    transform: rotate(18deg);
+    pointer-events: none;
+}
 
 .sidebar-header {
+    position: relative;
+    z-index: 1;
     padding: 0.5rem 1rem 1.5rem;
     text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
+    border-bottom: 1px solid rgba(255,255,255,0.14);
     margin-bottom: 1rem;
 }
 
 .sidebar-logo {
     max-width: 140px;
+    max-height: 44px;
+    width: auto;
     height: auto;
     margin: 0 auto;
     filter: brightness(0) invert(1);
+    object-fit: contain;
 }
 
-/* Logo completo (ícono + texto) en desktop; solo ícono en mobile — sin JS, toggle por CSS */
 .sidebar-logo-icon { display: none; }
 
 @media (max-width: 900px) {
@@ -163,21 +196,23 @@ input, select, textarea { font-family: inherit; }
 }
 
 .sidebar-menu {
+    position: relative;
+    z-index: 1;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    overflow: hidden; /* ← sin scroll */
+    overflow: hidden;
 }
 
 /* Títulos de categoría en el sidebar */
 .sidebar-section-title {
     font-size: 0.65rem;
-    font-weight: 700;
-    color: rgba(255,255,255,0.45);
+    font-weight: 800;
+    color: rgba(255,255,255,0.55);
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    padding: 1rem 1rem 0.5rem;
+    letter-spacing: 1.8px;
+    padding: 1.1rem 1rem 0.5rem;
 }
 
 .sidebar-section-title:first-child {
@@ -190,29 +225,31 @@ input, select, textarea { font-family: inherit; }
     display: flex !important;
     align-items: center !important;
     padding: 0.65rem 1rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-full);
     text-decoration: none;
     font-size: 0.85rem;
-    font-weight: 600;
-    transition: all var(--transition);
-    margin-bottom: 0.2rem;
+    font-weight: 700;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    margin-bottom: 0.25rem;
 }
 
 .sidebar-link {
-    color: rgba(255,255,255,0.78);
+    color: rgba(255,255,255,0.82);
 }
 
 .sidebar-link:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.12);
     color: var(--white);
     transform: translateX(2px);
 }
 
+/* Estado activo: píldora rosa sólida — mismo lenguaje visual que el
+   botón "Continuar leyendo" del sitio institucional. */
 .sidebar-link-active {
-    background: var(--yellow);
-    color: var(--purple);
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    background: var(--pink);
+    color: var(--white);
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(233, 30, 140, 0.4);
 }
 
 /* Iconos del sidebar */
@@ -221,14 +258,16 @@ input, select, textarea { font-family: inherit; }
 .sidebar .sidebar-link-active i[data-lucide] {
     width: 18px !important;
     height: 18px !important;
-    stroke-width: 2;
+    stroke-width: 2.2;
     margin-right: 0.7rem;
     flex-shrink: 0;
 }
 
 /* Footer del sidebar */
 .sidebar-footer {
-    border-top: 1px solid rgba(255,255,255,0.12);
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(255,255,255,0.14);
     padding-top: 1rem;
     margin-top: 1rem;
 }
@@ -237,16 +276,16 @@ input, select, textarea { font-family: inherit; }
     display: flex !important;
     align-items: center;
     justify-content: center;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.10);
     border-radius: var(--radius-sm);
     padding: 0.5rem;
     margin-bottom: 0.75rem;
-    transition: all var(--transition);
+    transition: background 0.18s ease;
     text-decoration: none;
 }
 
 .sidebar-bell:hover {
-    background: rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.18);
 }
 
 .sidebar-bell i[data-lucide] {
@@ -265,32 +304,34 @@ input, select, textarea { font-family: inherit; }
 .sidebar-profile,
 .sidebar-logout {
     display: block;
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-full);
     text-align: center;
     font-weight: 700;
     text-decoration: none;
-    transition: all var(--transition);
+    transition: all 0.18s ease;
     font-size: 0.78rem;
 }
 
 .sidebar-profile {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.14);
     color: var(--white);
 }
 
 .sidebar-profile:hover {
-    background: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.24);
 }
 
 .sidebar-logout {
-    background: rgba(255, 87, 87, 0.15);
-    color: #FFB4B4;
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.30);
+    color: rgba(255,255,255,0.85);
 }
 
 .sidebar-logout:hover {
-    background: var(--red);
-    color: var(--white);
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--purple-dark);
 }
 
 /* ════════════════════════════════════════════════════════════
