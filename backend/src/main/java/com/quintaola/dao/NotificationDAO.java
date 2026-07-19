@@ -65,4 +65,33 @@ public class NotificationDAO {
         }
         return 0;
     }
+
+    // 4. Obtener las N notificaciones más recientes (para el dropdown de la campanita)
+    public List<Notification> getRecent(int userId, int limit) throws SQLException {
+        List<Notification> list = new ArrayList<>();
+        String sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Notification n = new Notification();
+                    n.setId(rs.getInt("id"));
+                    n.setUserId(rs.getInt("user_id"));
+                    n.setType(rs.getString("type"));
+                    n.setTitle(rs.getString("title"));
+                    n.setMessage(rs.getString("message"));
+                    n.setRelatedId(rs.getInt("related_id"));
+                    n.setIsRead(rs.getInt("is_read"));
+                    n.setCreatedAt(rs.getString("created_at"));
+                    list.add(n);
+                }
+            }
+        }
+        return list;
+    }
 }

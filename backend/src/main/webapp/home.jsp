@@ -77,7 +77,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Inicio | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=21" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="page-body">
