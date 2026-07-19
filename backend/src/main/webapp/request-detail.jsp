@@ -93,7 +93,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Detalle de Solicitud | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=16" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=21" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -879,7 +879,13 @@
                                             out.print("La solicitud está pendiente de aprobación por un coordinador o administrador.");
                                         }
                                     } else if ("APPROVED".equals(tx.getStatus())) {
-                                        out.print("La solicitud fue aprobada y el stock ya fue reservado. El encargado de depósito procesará la entrega en los próximos días.");
+                                        if (esMia) {
+                                            out.print("¡Tu solicitud fue aprobada! El material ya está reservado y el encargado de depósito lo entregará en los próximos días.");
+                                        } else if (rol == 2) {
+                                            out.print("Esta solicitud está aprobada y lista para entregar. Puedes marcarla como entregada desde Despacho.");
+                                        } else {
+                                            out.print("La solicitud fue aprobada y el stock ya fue reservado. El encargado de depósito procesará la entrega en los próximos días.");
+                                        }
                                     } else if ("REJECTED".equals(tx.getStatus())) {
                                         if (esMia) {
                                             out.print("Tu solicitud fue rechazada. Revisa el motivo y, si lo consideras, puedes crear una nueva solicitud con los ajustes necesarios.");
@@ -887,7 +893,13 @@
                                             out.print("Esta solicitud fue rechazada y no procederá. El solicitante puede crear una nueva si lo desea.");
                                         }
                                     } else if ("COMPLETED".equals(tx.getStatus())) {
-                                        out.print("¡Solicitud completada! El material fue entregado al solicitante y el stock fue actualizado en el sistema.");
+                                        if (esMia) {
+                                            out.print("¡Recibiste tu material! La entrega fue completada y ya puedes usarlo.");
+                                        } else if (rol == 2) {
+                                            out.print("Entregaste este material correctamente. El stock ya quedó actualizado en el sistema.");
+                                        } else {
+                                            out.print("Solicitud completada: el material fue entregado al solicitante y el stock fue actualizado en el sistema.");
+                                        }
                                     } else {
                                         out.print("Estado actual: " + traducirStatus(tx.getStatus()));
                                     }

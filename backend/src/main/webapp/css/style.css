@@ -1102,6 +1102,283 @@ input, select, textarea { font-family: inherit; }
 
 
 /* ════════════════════════════════════════════════════════════
+   HOME HERO — Banner de bienvenida en "Inicio" (home.jsp)
+   ════════════════════════════════════════════════════════════ */
+
+.home-hero {
+    position: relative;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 55%, var(--pink) 130%);
+    border-radius: var(--radius-lg);
+    padding: 2rem 2.25rem 2.25rem;
+    color: var(--white);
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.75rem;
+    box-shadow: 0 10px 30px rgba(91,31,168,0.22);
+}
+
+/* Franja ondulada de marca en el borde inferior */
+.home-hero::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='8' viewBox='0 0 28 8'%3E%3Cpath d='M0 4 Q7 0 14 4 T28 4' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: repeat-x; background-size: 28px 8px; opacity: 0.35;
+}
+
+/* Ondas decorativas de fondo, muy sutiles */
+.home-hero::before {
+    content: "";
+    position: absolute;
+    top: -40%; right: -10%;
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.home-hero-main { position: relative; z-index: 1; flex: 1; min-width: 260px; }
+
+.home-hero-title {
+    display: flex; align-items: center; gap: 0.65rem;
+    font-size: 1.55rem; font-weight: 800; color: var(--white);
+    margin-bottom: 0.4rem;
+}
+
+.home-hero-icon-badge {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,0.18); flex-shrink: 0;
+    animation: hero-icon-float 2.8s ease-in-out infinite;
+}
+.home-hero-icon-badge i { width: 20px; height: 20px; color: var(--white); }
+
+@keyframes hero-icon-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-3px) rotate(-6deg); }
+}
+
+.home-hero-sub {
+    font-size: 0.92rem; color: rgba(255,255,255,0.88); max-width: 40rem; line-height: 1.5;
+}
+.home-hero-sub strong { color: var(--white); font-weight: 700; }
+
+.home-hero-actions {
+    position: relative; z-index: 1;
+    display: flex; flex-wrap: wrap; gap: 0.75rem;
+}
+.home-hero-actions .btn-ghost {
+    background: rgba(255,255,255,0.12); color: var(--white); border-color: rgba(255,255,255,0.35);
+}
+.home-hero-actions .btn-ghost:hover { background: rgba(255,255,255,0.22); }
+.home-hero-actions .btn-page-primary {
+    background: var(--white); color: var(--purple);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}
+.home-hero-actions .btn-page-primary:hover { background: var(--gray-50); }
+
+/* ─── Buscador rápido dentro del hero ─── */
+.home-hero-search {
+    position: relative; z-index: 1;
+    width: 100%; margin-top: 1.4rem;
+}
+.home-hero-search form {
+    display: flex; align-items: center; gap: 0.6rem;
+    background: rgba(255,255,255,0.14);
+    border: 1.5px solid rgba(255,255,255,0.28);
+    border-radius: var(--radius-full);
+    padding: 0.4rem 0.4rem 0.4rem 1.1rem;
+    backdrop-filter: blur(4px);
+    transition: all var(--transition);
+    max-width: 480px;
+}
+.home-hero-search form:focus-within {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.55);
+}
+.home-hero-search i[data-lucide="search"] { width: 16px; height: 16px; color: rgba(255,255,255,0.85); flex-shrink: 0; }
+.home-hero-search input {
+    flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+    color: var(--white); font-size: 0.85rem; font-family: inherit;
+}
+.home-hero-search input::placeholder { color: rgba(255,255,255,0.65); }
+.home-hero-search button {
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 50%; border: none; flex-shrink: 0;
+    background: var(--white); color: var(--purple); cursor: pointer;
+    transition: all var(--transition);
+}
+.home-hero-search button:hover { transform: scale(1.06); }
+.home-hero-search button i { width: 15px; height: 15px; }
+
+/* ════════════════════════════════════════════════════════════
+   HOME — Divisor ondulado entre secciones
+   ════════════════════════════════════════════════════════════ */
+.home-wave-divider {
+    height: 22px; margin: 0.25rem 0 0.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='16' viewBox='0 0 40 16'%3E%3Cpath d='M0 8 Q10 0 20 8 T40 8' fill='none' stroke='url(%23hwd)' stroke-width='2' stroke-linecap='round'/%3E%3Cdefs%3E%3ClinearGradient id='hwd' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%235B1FA8' stop-opacity='0.25'/%3E%3Cstop offset='1' stop-color='%23E91E8C' stop-opacity='0.25'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E");
+    background-repeat: repeat-x; background-position: center; background-size: 40px 16px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DELIVERY TIMELINE — Widget "Próximas entregas" (Inicio)
+   ════════════════════════════════════════════════════════════ */
+
+.delivery-timeline {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-100);
+    box-shadow: var(--shadow-sm);
+    padding: 1.5rem 1.5rem 1.25rem;
+    margin-top: 1.75rem;
+}
+
+.delivery-timeline-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.25rem;
+}
+.delivery-timeline-title {
+    display: flex; align-items: center; gap: 0.55rem;
+    font-size: 1.02rem; font-weight: 800; color: var(--gray-800);
+}
+.delivery-timeline-title i { width: 20px; height: 20px; color: var(--pink); }
+.delivery-timeline-badge {
+    font-size: 0.7rem; font-weight: 700; color: var(--purple);
+    background: var(--purple-bg); padding: 0.28rem 0.7rem;
+    border-radius: var(--radius-full);
+}
+
+/* ─── Franja de 7 días ─── */
+.delivery-days-strip {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem; margin-bottom: 1.4rem;
+}
+.delivery-day-chip {
+    display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+    padding: 0.65rem 0.3rem 0.55rem;
+    border-radius: var(--radius-md);
+    background: var(--gray-50);
+    border: 1.5px solid transparent;
+    position: relative;
+    transition: all var(--transition);
+    /* reset de <button> nativo, ahora que los chips son clickeables */
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+}
+.delivery-day-chip:hover {
+    background: var(--purple-bg);
+    transform: translateY(-2px);
+}
+.delivery-day-chip.is-selected {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(91,31,168,0.15);
+}
+.delivery-filter-hint {
+    font-size: 0.76rem; color: var(--purple); font-weight: 600;
+    margin: 0 0 1rem; text-align: center;
+}
+.delivery-filter-hint a { color: var(--pink); text-decoration: underline; cursor: pointer; }
+.delivery-filter-empty {
+    text-align: center; font-size: 0.85rem; color: var(--gray-500);
+    padding: 1.5rem 1rem;
+}
+.delivery-day-dow { font-size: 0.62rem; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.4px; }
+.delivery-day-num { font-size: 1.1rem; font-weight: 800; color: var(--gray-700); }
+
+.delivery-day-chip.is-today {
+    border-color: var(--purple-light);
+    background: var(--purple-bg);
+}
+.delivery-day-chip.is-today .delivery-day-dow,
+.delivery-day-chip.is-today .delivery-day-num { color: var(--purple); }
+
+.delivery-day-chip.has-deliveries {
+    background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+    border-color: transparent;
+}
+.delivery-day-chip.has-deliveries .delivery-day-dow,
+.delivery-day-chip.has-deliveries .delivery-day-num { color: var(--white); }
+
+.delivery-day-dot-count {
+    position: absolute; top: -6px; right: -6px;
+    min-width: 18px; height: 18px; padding: 0 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.62rem; font-weight: 800; color: var(--white);
+    background: var(--orange-dark);
+    border-radius: 50%; border: 2px solid var(--white);
+    animation: dot-pulse 2s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.12); }
+}
+
+@media (max-width: 640px) {
+    .delivery-days-strip { grid-template-columns: repeat(7, minmax(34px, 1fr)); gap: 0.3rem; }
+    .delivery-day-chip { padding: 0.5rem 0.2rem 0.4rem; }
+    .delivery-day-num { font-size: 0.92rem; }
+}
+
+/* ─── Lista de entregas ─── */
+.delivery-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.delivery-item {
+    display: flex; align-items: center; gap: 0.85rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: var(--radius-md);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-100);
+    text-decoration: none;
+    transition: all var(--transition);
+}
+.delivery-item:hover {
+    background: var(--purple-bg);
+    border-color: var(--purple-light);
+    transform: translateX(3px);
+}
+.delivery-item-badge {
+    flex-shrink: 0;
+    font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px;
+    padding: 0.3rem 0.6rem; border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+.delivery-badge--today  { background: var(--red-bg);    color: var(--red-dark); }
+.delivery-badge--soon   { background: var(--orange-bg); color: var(--orange-dark); }
+.delivery-badge--later  { background: var(--green-bg);  color: var(--green-dark); }
+
+.delivery-item-main { flex: 1; min-width: 0; }
+.delivery-item-name { font-size: 0.87rem; font-weight: 700; color: var(--gray-800); }
+.delivery-item-sub  { font-size: 0.76rem; color: var(--gray-500); margin-top: 0.1rem; }
+.delivery-item > i[data-lucide] { width: 16px; height: 16px; color: var(--gray-300); flex-shrink: 0; }
+.delivery-item:hover > i[data-lucide] { color: var(--purple); }
+
+.delivery-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 2rem 1rem; text-align: center; gap: 0.6rem;
+}
+.delivery-empty i { width: 40px; height: 40px; color: var(--purple-light); opacity: 0.7; }
+.delivery-empty p { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
+
+/* ════════════════════════════════════════════════════════════
+   QUICK-CARD — Variantes de color por acción
+   ════════════════════════════════════════════════════════════ */
+.quick-icon-blue   { background: var(--blue-bg);   color: var(--blue); }
+.quick-icon-pink   { background: var(--pink-bg);   color: var(--pink); }
+.quick-icon-green  { background: var(--green-bg);  color: var(--green-dark); }
+.quick-icon-orange { background: var(--orange-bg); color: var(--orange-dark); }
+.quick-icon-purple { background: var(--purple-bg); color: var(--purple); }
+
+.quick-card:hover .quick-icon-blue   { background: var(--blue);       color: var(--white); }
+.quick-card:hover .quick-icon-pink   { background: var(--pink);       color: var(--white); }
+.quick-card:hover .quick-icon-green  { background: var(--green-dark); color: var(--white); }
+.quick-card:hover .quick-icon-orange { background: var(--orange-dark);color: var(--white); }
+.quick-card:hover .quick-icon-purple { background: var(--purple);     color: var(--white); }
+
+/* ════════════════════════════════════════════════════════════
    MODAL — Componente "Ola" (único, reutilizado en toda la app)
    Técnica CSS-only por ancla + :target — sin JavaScript.
    Mutuamente excluyente por diseño: solo un #fragmento puede

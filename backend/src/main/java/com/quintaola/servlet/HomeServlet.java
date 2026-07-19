@@ -1,7 +1,9 @@
 package com.quintaola.servlet;
 
+import com.quintaola.dao.DeliveryTimelineDAO;
 import com.quintaola.dao.ItemDAO;
 import com.quintaola.dao.TransactionDAO;
+import com.quintaola.model.DeliveryEntry;
 import com.quintaola.model.Item;
 import com.quintaola.model.Transaction;
 import jakarta.servlet.ServletException;
@@ -198,6 +200,19 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("label1", label1);
             request.setAttribute("label2", label2);
             request.setAttribute("label3", label3);
+
+            // ─── Widget "Próximas entregas" (franja de 7 días) ───
+            // Viewer (rol 1) solo ve SUS propias entregas; los demás roles
+            // ven las de todo el sistema (visibilidad operativa).
+            try {
+                DeliveryTimelineDAO deliveryDao = new DeliveryTimelineDAO();
+                Integer filtroSolicitante = (roleId == 1) ? userId : null;
+                List<DeliveryEntry> proximasEntregas = deliveryDao.getUpcomingDeliveries(filtroSolicitante, 7);
+                request.setAttribute("proximasEntregas", proximasEntregas);
+            } catch (Exception exEntregas) {
+                exEntregas.printStackTrace();
+                request.setAttribute("proximasEntregas", new java.util.ArrayList<DeliveryEntry>());
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
