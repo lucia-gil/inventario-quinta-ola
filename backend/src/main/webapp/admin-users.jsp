@@ -73,7 +73,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Administrar Miembros | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -89,54 +89,6 @@
         .alert-error   { background: var(--red-bg);   color: var(--red-dark);   border-color: #FECACA; }
         .alert i { width: 18px; height: 18px; flex-shrink: 0; }
 
-        /* ── Barra de búsqueda ────────────────────────────────────────────── */
-        .search-filter-bar {
-            display: flex; align-items: center; gap: 0.6rem;
-            padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--gray-100);
-            flex-wrap: wrap; background: var(--gray-50);
-        }
-        .search-form { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; width: 100%; }
-        .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
-        .search-icon-wrap {
-            position: absolute; left: 0.75rem; top: 50%;
-            transform: translateY(-50%);
-            display: flex; align-items: center; pointer-events: none; z-index: 2;
-        }
-        .search-icon-wrap svg { width: 14px; height: 14px; color: var(--gray-400); }
-        .search-input {
-            width: 100%; padding: 0.5rem 0.75rem 0.5rem 2.15rem;
-            border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
-            font-size: 0.83rem; color: var(--gray-700);
-            background: var(--white); font-family: inherit; outline: none;
-            transition: all var(--transition);
-        }
-        .search-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(91,31,168,0.1); }
-        .search-input::placeholder { color: var(--gray-400); }
-        .filter-role-select {
-            padding: 0.5rem 0.7rem; border: 1.5px solid var(--gray-200);
-            border-radius: var(--radius-sm); font-size: 0.83rem; color: var(--gray-700);
-            background: var(--white); font-family: inherit; outline: none; cursor: pointer;
-            transition: all var(--transition); min-width: 155px;
-        }
-        .filter-role-select:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(91,31,168,0.1); }
-        .btn-search {
-            display: inline-flex; align-items: center; gap: 0.3rem;
-            padding: 0.5rem 1rem; background: var(--purple); color: var(--white);
-            border: none; border-radius: var(--radius-sm);
-            font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
-            transition: all var(--transition); white-space: nowrap;
-        }
-        .btn-search:hover { background: var(--purple-light); transform: translateY(-1px); }
-        .btn-search i { width: 13px; height: 13px; }
-        .btn-clear-filter {
-            display: inline-flex; align-items: center; gap: 0.25rem;
-            padding: 0.5rem 0.8rem; background: var(--white); color: var(--gray-500);
-            border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
-            font-size: 0.8rem; font-weight: 600; text-decoration: none;
-            transition: all var(--transition); white-space: nowrap;
-        }
-        .btn-clear-filter:hover { border-color: #FECACA; color: var(--red-dark); }
-        .btn-clear-filter i { width: 12px; height: 12px; }
         .filter-active-chip {
             display: inline-flex; align-items: center; gap: 0.3rem;
             padding: 0.22rem 0.65rem; background: var(--purple-bg); color: var(--purple);
@@ -352,37 +304,44 @@
             <% if (errorAttr   != null) { %><div class="alert alert-error"  ><i data-lucide="alert-circle"></i><span><%= errorAttr %></span></div><% } %>
             <% if (errorParam  != null) { %><div class="alert alert-error"  ><i data-lucide="alert-circle"></i><span><%= errorParam %></span></div><% } %>
 
-            <div class="table-panel">
+            <%-- FILTROS --%>
+            <form method="GET" action="<%= ctx %>/UserServlet" class="filter-bar">
+                <input type="hidden" name="action" value="lista"/>
+                <input type="hidden" name="page"   value="1"/>
 
-                <div class="search-filter-bar">
-                    <form method="GET" action="<%= ctx %>/UserServlet" class="search-form">
-                        <input type="hidden" name="action" value="lista"/>
-                        <input type="hidden" name="page"   value="1"/>
-                        <div class="search-input-wrap">
-                            <span class="search-icon-wrap"><i data-lucide="search"></i></span>
-                            <input type="text" name="q" value="<%= _search %>"
-                                   placeholder="Buscar por nombre o apellido..."
-                                   class="search-input" autocomplete="off"/>
-                        </div>
-                        <select name="rol" class="filter-role-select">
-                            <option value="0" <%= _rolFilter==0?"selected":"" %>>Todos los roles</option>
-                            <option value="1" <%= _rolFilter==1?"selected":"" %>>Solicitante</option>
-                            <option value="2" <%= _rolFilter==2?"selected":"" %>>Enc. Depósito</option>
-                            <option value="3" <%= _rolFilter==3?"selected":"" %>>Aprobador(a)</option>
-                            <option value="4" <%= _rolFilter==4?"selected":"" %>>Administrador(a)</option>
-                            <option value="5" <%= _rolFilter==5?"selected":"" %>>Superadministrador(a)</option>
-                        </select>
-                        <button type="submit" class="btn-search"><i data-lucide="search"></i>Buscar</button>
-                        <% if (!_search.isEmpty() || _rolFilter > 0) { %>
-                        <a href="<%= ctx %>/UserServlet?action=lista" class="btn-clear-filter">
-                            <i data-lucide="x"></i>Limpiar
-                        </a>
-                        <% if (!_search.isEmpty()) { %>
-                        <span class="filter-active-chip"><i data-lucide="text-cursor-input"></i>"<%= _search %>"</span>
-                        <% } %>
-                        <% } %>
-                    </form>
+                <div class="filter-search">
+                    <i data-lucide="search"></i>
+                    <input type="text" name="q" value="<%= _search %>"
+                           placeholder="Buscar por nombre o apellido..." autocomplete="off"/>
                 </div>
+
+                <div class="filter-actions">
+                    <select name="rol" class="filter-select">
+                        <option value="0" <%= _rolFilter==0?"selected":"" %>>Todos los roles</option>
+                        <option value="1" <%= _rolFilter==1?"selected":"" %>>Solicitante</option>
+                        <option value="2" <%= _rolFilter==2?"selected":"" %>>Enc. Depósito</option>
+                        <option value="3" <%= _rolFilter==3?"selected":"" %>>Aprobador(a)</option>
+                        <option value="4" <%= _rolFilter==4?"selected":"" %>>Administrador(a)</option>
+                        <option value="5" <%= _rolFilter==5?"selected":"" %>>Superadministrador(a)</option>
+                    </select>
+
+                    <button type="submit" class="btn-page-primary btn-icon">
+                        <i data-lucide="filter"></i>
+                        Filtrar
+                    </button>
+
+                    <% if (!_search.isEmpty() || _rolFilter > 0) { %>
+                    <a href="<%= ctx %>/UserServlet?action=lista" class="btn-clear-filter">
+                        <i data-lucide="x"></i>Limpiar
+                    </a>
+                    <% if (!_search.isEmpty()) { %>
+                    <span class="filter-active-chip"><i data-lucide="text-cursor-input"></i>"<%= _search %>"</span>
+                    <% } %>
+                    <% } %>
+                </div>
+            </form>
+
+            <div class="table-panel">
 
                 <div class="table-wrapper">
                     <table class="table">

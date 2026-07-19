@@ -23,7 +23,10 @@
   Integer currentRoleId = (Integer) session.getAttribute("roleId");
   if (currentRoleId == null) currentRoleId = 0;
 
-  request.setAttribute("activeMenu", "members");
+  // El SuperAdmin no tiene "Miembros" en su sidebar, solo "Roles" —
+  // por eso el menú activo debe coincidir con la sección desde la que
+  // realmente se accede a este formulario.
+  request.setAttribute("activeMenu", currentRoleId == 5 ? "roles" : "members");
 %>
 <!doctype html>
 <html lang="es">
@@ -31,7 +34,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Crear Usuario | Quinta Ola</title>
-  <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
+  <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
@@ -39,32 +42,66 @@
       background: var(--white);
       border-radius: var(--radius-lg);
       border: 1px solid var(--gray-100);
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-md);
       max-width: 720px;
       margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Franja de marca en el borde superior de la tarjeta — misma
+       cresta que se usa en modales y el paginador. */
+    .form-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 50%, var(--yellow) 100%);
+      z-index: 2;
     }
 
     .form-card-header {
-      padding: 1.25rem 1.75rem;
-      background: linear-gradient(135deg, var(--purple-bg) 0%, var(--pink-bg) 100%);
-      border-bottom: 1px solid var(--gray-100);
+      position: relative;
+      padding: 1.5rem 1.75rem;
+      background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+      overflow: hidden;
+    }
+
+    /* Ondas decorativas sutiles en el header, igual que el hero de Inicio */
+    .form-card-header::after {
+      content: "";
+      position: absolute;
+      top: -60%; right: -8%;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(255,255,255,0.14) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
     }
 
     .form-card-header h2 {
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 800;
-      color: var(--purple);
+      color: var(--white);
       margin: 0;
     }
-    .form-card-header h2 i { width: 18px; height: 18px; color: var(--pink); }
+    .form-card-header h2 i {
+      width: 20px; height: 20px; color: var(--white);
+      background: rgba(255,255,255,0.18);
+      padding: 6px; border-radius: 50%;
+      box-sizing: content-box;
+    }
 
     .form-card-header p {
+      position: relative;
+      z-index: 1;
       font-size: 0.82rem;
-      color: var(--gray-600);
-      margin: 0.3rem 0 0 1.75rem;
+      color: rgba(255,255,255,0.92);
+      margin: 0.45rem 0 0 2.35rem;
       font-weight: 500;
     }
 
@@ -104,7 +141,7 @@
       left: 0.9rem;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--gray-400);
+      color: var(--purple-light);
       width: 18px !important;
       height: 18px !important;
       pointer-events: none;
@@ -113,7 +150,7 @@
     }
     .input-wrap:focus-within > i,
     .input-wrap:focus-within > svg {
-      color: var(--purple);
+      color: var(--pink);
     }
 
     .form-input, .form-select {
@@ -134,7 +171,7 @@
     .form-input:focus, .form-select:focus {
       border-color: var(--purple);
       background: var(--white);
-      box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+      box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.12);
     }
 
     .form-input:invalid:not(:placeholder-shown) {
@@ -151,14 +188,14 @@
     .form-hint strong { color: var(--purple); font-weight: 700; }
 
     .pass-policy {
-      background: var(--gray-50);
-      border: 1px solid var(--gray-100);
+      background: linear-gradient(135deg, var(--purple-bg) 0%, var(--pink-bg) 100%);
+      border: 1px solid var(--purple-bg);
       border-radius: var(--radius-sm);
-      padding: 0.7rem 0.9rem;
-      margin-top: 0.45rem;
+      padding: 0.75rem 0.95rem;
+      margin-top: 0.5rem;
       font-size: 0.74rem;
-      color: var(--gray-600);
-      line-height: 1.5;
+      color: var(--gray-700);
+      line-height: 1.55;
     }
     .pass-policy strong { color: var(--purple); font-weight: 700; }
 
@@ -424,14 +461,12 @@
     const reTieneLetra = /[A-Za-zÁÉÍÓÚáéíóúÑñÜü]/;
 
     if (name.length > 0) {
-      // Caracteres permitidos
       if (!reCaracteres.test(name)) {
         err.querySelector('span').textContent =
                 'Solo se permiten letras, espacios, guiones y apóstrofes.';
         err.classList.add('visible');
         return false;
       }
-      // Debe tener al menos una letra
       if (!reTieneLetra.test(name)) {
         err.querySelector('span').textContent =
                 'El nombre debe contener al menos una letra.';
@@ -449,7 +484,6 @@
     const pass = document.getElementById('f-pass').value;
     const role = document.getElementById('f-role').value;
 
-    // Validar nombre: caracteres permitidos + al menos 1 letra real
     const reNombre = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'\-]{2,100}$/;
     const reTieneLetra = /[A-Za-zÁÉÍÓÚáéíóúÑñÜü]/;
     if (!reNombre.test(name) || !reTieneLetra.test(name)) {
@@ -458,14 +492,12 @@
       return false;
     }
 
-    // Validar DNI
     if (!/^[0-9]{8}$/.test(dni)) {
       alert('El DNI debe tener exactamente 8 dígitos numéricos.');
       document.getElementById('f-dni').focus();
       return false;
     }
 
-    // Validar política de contraseñas
     const cumplePass = pass.length >= 8
             && /[A-Z]/.test(pass)
             && /[a-z]/.test(pass)
@@ -484,7 +516,6 @@
       return false;
     }
 
-    // Validar rol seleccionado
     if (!role) {
       alert('Debes seleccionar un rol para el usuario.');
       document.getElementById('f-role').focus();

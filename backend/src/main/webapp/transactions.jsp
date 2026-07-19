@@ -61,7 +61,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Bandeja de Aprobaciones | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -164,95 +164,6 @@
             color: var(--gray-500);
         }
 
-        /* Estilos del contenedor de filtros */
-        .search-container {
-            background: var(--white);
-            padding: 1.25rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--gray-200);
-            margin-bottom: 1.25rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .search-form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: flex-end;
-        }
-        .search-group {
-            flex: 1;
-            min-width: 260px;
-        }
-        .date-group {
-            min-width: 180px;
-        }
-        .filter-label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--gray-600);
-            margin-bottom: 0.4rem;
-        }
-        .filter-input {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--radius-sm);
-            font-size: 0.85rem;
-            color: var(--gray-800);
-            background-color: var(--white);
-            transition: border-color var(--transition);
-            height: 38px;
-            box-sizing: border-box;
-        }
-        .filter-input:focus {
-            outline: none;
-            border-color: var(--purple-light);
-        }
-        .search-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .btn-search {
-            height: 38px;
-            padding: 0 1.25rem;
-            font-size: 0.85rem;
-            font-weight: 700;
-            background: var(--purple);
-            color: var(--white);
-            border: none;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            transition: background var(--transition);
-        }
-        .btn-search:hover {
-            background: var(--purple-light);
-        }
-        .btn-clear {
-            height: 38px;
-            padding: 0 1rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--gray-600);
-            background: var(--white);
-            border: 1px solid var(--gray-300);
-            border-radius: var(--radius-sm);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            transition: all var(--transition);
-            box-sizing: border-box;
-        }
-        .btn-clear:hover {
-            border-color: var(--purple-light);
-            color: var(--purple);
-            background: var(--purple-bg);
-        }
-
         /* Paginación: ver componente global ".pager" en style.css */
 
         .alert {
@@ -348,37 +259,33 @@
             <% } %>
 
             <%-- Formulario / Caja de búsqueda Única y Filtro de Fecha --%>
-            <div class="search-container">
-                <form action="<%= ctx %>/TransactionServlet" method="GET" class="search-form">
-                    <input type="hidden" name="action" value="lista" />
+            <form action="<%= ctx %>/TransactionServlet" method="GET" class="filter-bar">
+                <input type="hidden" name="action" value="lista" />
 
-                    <div class="search-group">
-                        <label class="filter-label" for="search">Búsqueda rápida</label>
-                        <input type="text" id="search" name="search" class="filter-input"
-                               placeholder="ID solicitud, material o solicitante..."
-                               value="<%= searchParam != null ? searchParam : "" %>" />
-                    </div>
+                <div class="filter-search">
+                    <i data-lucide="search"></i>
+                    <input type="text" name="search"
+                           placeholder="ID solicitud, material o solicitante..."
+                           value="<%= searchParam != null ? searchParam : "" %>" />
+                </div>
 
-                    <div class="date-group">
-                        <label class="filter-label" for="fechaEntrega">Fecha de entrega</label>
-                        <input type="date" id="fechaEntrega" name="fechaEntrega" class="filter-input"
-                               value="<%= fechaParam != null ? fechaParam : "" %>" />
-                    </div>
+                <div class="filter-actions">
+                    <input type="date" name="fechaEntrega" class="filter-select"
+                           value="<%= fechaParam != null ? fechaParam : "" %>" />
 
-                    <div class="search-actions">
-                        <button type="submit" class="btn-search">
-                            <i data-lucide="search" style="width: 16px; height: 16px;"></i>
-                            Filtrar
-                        </button>
-                        <% if ((searchParam != null && !searchParam.trim().isEmpty()) || (fechaParam != null && !fechaParam.trim().isEmpty())) { %>
-                        <a href="<%= ctx %>/TransactionServlet?action=lista" class="btn-clear">
-                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                            Limpiar
-                        </a>
-                        <% } %>
-                    </div>
-                </form>
-            </div>
+                    <button type="submit" class="btn-page-primary btn-icon">
+                        <i data-lucide="filter"></i>
+                        Filtrar
+                    </button>
+
+                    <% if ((searchParam != null && !searchParam.trim().isEmpty()) || (fechaParam != null && !fechaParam.trim().isEmpty())) { %>
+                    <a href="<%= ctx %>/TransactionServlet?action=lista" class="btn-clear-filter">
+                        <i data-lucide="x"></i>
+                        Limpiar
+                    </a>
+                    <% } %>
+                </div>
+            </form>
 
             <%-- Tabla --%>
             <div class="table-panel">

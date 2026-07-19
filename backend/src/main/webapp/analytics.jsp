@@ -20,7 +20,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Análisis de Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -45,6 +45,15 @@
         }
         @media (min-width: 900px) {
             .analytics-report-cards { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* ── Paneles de gráficas: acento de marca sutil al pasar el mouse ── */
+        .analytics-main-grid > .panel {
+            transition: box-shadow 0.25s ease, transform 0.25s ease;
+        }
+        .analytics-main-grid > .panel:hover {
+            box-shadow: 0 8px 24px rgba(91, 31, 168, 0.10);
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -282,83 +291,220 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
 
-        Chart.defaults.font.family = "'Inter', sans-serif";
+        // ── Configuración global: tipografía y colores de marca Quinta Ola ──
+        Chart.defaults.font.family = "'Montserrat', sans-serif";
+        Chart.defaults.font.weight = '600';
         Chart.defaults.color = '#6b7280';
 
-        // GRÁFICA 00: Distribución (Doughnut)
+        // Tooltip compartido con estilo de marca (fondo morado oscuro, acento amarillo)
+        const tooltipBase = {
+            backgroundColor: '#2E1065',
+            titleColor: '#FFC107',
+            titleFont: { weight: '800', size: 12.5 },
+            bodyColor: '#ffffff',
+            bodyFont: { weight: '600', size: 12 },
+            padding: 12,
+            cornerRadius: 10,
+            boxPadding: 6,
+            displayColors: true,
+            usePointStyle: true
+        };
+
+        // ══════════════════════════════════════════════════════════════
+        // GRÁFICA 00: Distribución por categoría (Doughnut)
+        // ══════════════════════════════════════════════════════════════
         const ctx00 = document.getElementById('myChart00');
         if (ctx00) {
+            const paletaDona = ['#E91E8C', '#5B1FA8', '#FFC107', '#7C3AED', '#F472B6', '#9333EA', '#DB2777'];
+
             new Chart(ctx00, {
                 type: 'doughnut',
                 data: {
                     labels: ${item_name},
                     datasets: [{
                         data: ${cantidad},
-                        backgroundColor: ['#db2777','#3b82f6','#10b981','#8310b9','#f59e0b','#ef4444','#6366f1'],
-                        borderWidth: 0,
-                        hoverOffset: 4
+                        backgroundColor: paletaDona,
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                        hoverOffset: 10,
+                        hoverBorderWidth: 4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { animateScale: true, animateRotate: true, duration: 900, easing: 'easeOutQuart' },
                     plugins: {
-                        legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } }
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 18,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: { size: 11.5, weight: '700' },
+                                color: '#4b5563'
+                            }
+                        },
+                        tooltip: {
+                            ...tooltipBase,
+                            callbacks: {
+                                label: (item) => ' ' + item.label + ': ' + item.formattedValue + ' unid.'
+                            }
+                        }
                     },
-                    cutout: '70%'
+                    cutout: '72%'
                 }
             });
         }
 
-        // GRÁFICA 01: Entradas y Salidas (Barras)
+        // ══════════════════════════════════════════════════════════════
+        // GRÁFICA 01: Entradas y Salidas (Barras con degradado)
+        // ══════════════════════════════════════════════════════════════
         const ctx01 = document.getElementById('myChart01');
         if (ctx01) {
+            const c01 = ctx01.getContext('2d');
+
+            const gradEntradas = c01.createLinearGradient(0, 0, 0, 280);
+            gradEntradas.addColorStop(0, '#7C3AED');
+            gradEntradas.addColorStop(1, '#C4B5FD');
+
+            const gradSalidas = c01.createLinearGradient(0, 0, 0, 280);
+            gradSalidas.addColorStop(0, '#E91E8C');
+            gradSalidas.addColorStop(1, '#F9A8D4');
+
             new Chart(ctx01, {
                 type: 'bar',
                 data: {
-                    labels: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
                     datasets: [
-                        { label: 'Entradas (IN)',  data: ${in},  backgroundColor: '#10b981', borderRadius: 4 },
-                        { label: 'Salidas (OUT)',  data: ${out}, backgroundColor: '#db2777', borderRadius: 4 }
+                        {
+                            label: 'Entradas (IN)',
+                            data: ${in},
+                            backgroundColor: gradEntradas,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barPercentage: 0.62,
+                            categoryPercentage: 0.65
+                        },
+                        {
+                            label: 'Salidas (OUT)',
+                            data: ${out},
+                            backgroundColor: gradSalidas,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barPercentage: 0.62,
+                            categoryPercentage: 0.65
+                        }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
-                        x: { grid: { display: false } }
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f3f4f6', drawBorder: false },
+                            ticks: { font: { size: 11 }, color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11.5, weight: '700' }, color: '#6b7280' }
+                        }
                     },
                     plugins: {
-                        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8 } }
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, font: { size: 11.5, weight: '700' }, padding: 16 }
+                        },
+                        tooltip: tooltipBase
                     }
                 }
             });
         }
 
-        // GRÁFICA 02: Trámites por Estado (Línea)
+        // ══════════════════════════════════════════════════════════════
+        // GRÁFICA 02: Trámites por Estado (Línea con área)
+        // ══════════════════════════════════════════════════════════════
         const ctx02 = document.getElementById('myChart02');
         if (ctx02) {
+            const c02 = ctx02.getContext('2d');
+
+            const gradAprobados = c02.createLinearGradient(0, 0, 0, 260);
+            gradAprobados.addColorStop(0, 'rgba(34,197,94,0.28)');
+            gradAprobados.addColorStop(1, 'rgba(34,197,94,0)');
+
             new Chart(ctx02, {
                 type: 'line',
                 data: {
-                    labels: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
                     datasets: [
-                        { label: 'Aprobados',  data: ${completed}, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.4, fill: true },
-                        { label: 'Rechazados', data: ${rejected},  borderColor: '#ef4444', backgroundColor: 'transparent', tension: 0.4 },
-                        { label: 'Pendientes', data: ${pending},   borderColor: '#f59e0b', backgroundColor: 'transparent', tension: 0.4 }
+                        {
+                            label: 'Aprobados',
+                            data: ${completed},
+                            borderColor: '#16A34A',
+                            backgroundColor: gradAprobados,
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#16A34A',
+                            pointBorderWidth: 2.5,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Rechazados',
+                            data: ${rejected},
+                            borderColor: '#E91E8C',
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#E91E8C',
+                            pointBorderWidth: 2.5,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Pendientes',
+                            data: ${pending},
+                            borderColor: '#FFC107',
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            borderDash: [6, 4],
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#FFC107',
+                            pointBorderWidth: 2.5,
+                            pointHoverRadius: 6
+                        }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 900, easing: 'easeOutQuart' },
                     interaction: { mode: 'index', intersect: false },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
-                        x: { grid: { display: false } }
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f3f4f6', drawBorder: false },
+                            ticks: { font: { size: 11 }, color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11.5, weight: '700' }, color: '#6b7280' }
+                        }
                     },
                     plugins: {
-                        legend: { position: 'top', labels: { usePointStyle: true } }
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, font: { size: 11.5, weight: '700' }, padding: 16 }
+                        },
+                        tooltip: tooltipBase
                     }
                 }
             });

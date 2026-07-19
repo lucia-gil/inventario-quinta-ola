@@ -34,13 +34,8 @@
     int roleId = roleIdSession != null ? roleIdSession : 0;
 
     // ─── REGLAS DE VISIBILIDAD ───
-    // Solo Viewer (1) ve la vista catálogo con botones "Solicitar"
     boolean esCatalogo = (roleId == 1);
-
-    // Member (2), Admin (4), SA (5) pueden hacer CRUD de items
     boolean esAdmin = (roleId == 2 || roleId == 4 || roleId == 5);
-
-    // Botón "Añadir Material": Member, Admin, SA
     boolean puedeAgregarMaterial = (roleId == 2 || roleId == 4 || roleId == 5);
 
     String pageTitle, pageSubtitle;
@@ -104,7 +99,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Inventario | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=18" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -207,7 +202,6 @@
             justify-content: center;
             margin: 0 auto;
         }
-        /* Usa los colores de tu sistema, o añade fallbacks si no existen */
         .modal-icon-container.text-purple { background: var(--purple-bg, #f3e8ff); color: var(--purple, #5b1fa8); }
         .modal-icon-container.text-pink { background: var(--pink-bg, #fce7f3); color: var(--pink, #e91e8c); }
 
@@ -215,80 +209,6 @@
         @keyframes fadeInModal {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
-        }
-        .filter-bar {
-            display: flex;
-            gap: 0.75rem;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: 1rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--gray-100);
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        .filter-search {
-            position: relative;
-            flex-grow: 1;
-            min-width: 250px;
-            flex-direction: row;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .filter-search > i {
-            position: absolute;
-            left: 0.95rem; top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray-400);
-            width: 16px; height: 16px;
-            pointer-events: none;
-            z-index: 2;
-        }
-        .filter-search input {
-            width: 100%;
-            border: 1.5px solid var(--gray-200);
-            border-radius: var(--radius-full);
-            padding: 0.6rem 1rem 0.6rem 2.65rem;
-            font-size: 0.875rem;
-            outline: none;
-            transition: all var(--transition);
-            background: var(--gray-50);
-            font-family: inherit;
-        }
-        .filter-search input:focus {
-            border-color: var(--purple);
-            background: var(--white);
-            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
-        }
-
-        .filter-select {
-            border: 1.5px solid var(--gray-200);
-            border-radius: var(--radius-sm);
-            padding: 0.6rem 0.9rem;
-            font-size: 0.85rem;
-            background: var(--gray-50);
-            color: var(--gray-700);
-            font-family: inherit;
-            cursor: pointer;
-            outline: none;
-            transition: all var(--transition);
-            min-width: 170px;
-        }
-        .filter-select:focus {
-            border-color: var(--purple);
-            background: var(--white);
-            box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
-        }
-
-        .filter-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-
-        @media (max-width: 640px) {
-            .filter-search { min-width: 100%; }
-            .filter-actions { width: 100%; }
-            .filter-select { flex: 1 1 140px; min-width: 0; }
-            .filter-actions .btn-page-primary { flex: 1 1 100%; justify-content: center; }
         }
 
         .catalog-grid {
@@ -507,6 +427,13 @@
                         <i data-lucide="filter"></i>
                         Filtrar
                     </button>
+
+                    <% if (!filtroTexto.isEmpty() || !filtroTag.isEmpty() || !filtroStock.isEmpty()) { %>
+                    <a href="<%= ctx %>/InventoryServlet?action=lista" class="btn-clear-filter">
+                        <i data-lucide="x"></i>
+                        Limpiar
+                    </a>
+                    <% } %>
                 </div>
             </form>
 
@@ -560,7 +487,7 @@
                             Stock: <strong style="color: var(--gray-700);"><%= item.getCachedQuantity() %></strong>&nbsp;<%= item.getUnit() %>
                         </div>
 
-                        <<% if ("UNAVAILABLE".equals(s)) { %>
+                        <% if ("UNAVAILABLE".equals(s)) { %>
                         <span class="catalog-card-btn" style="background: var(--gray-300); cursor: not-allowed; pointer-events: none;">
                             <i data-lucide="x-circle"></i>
                             No disponible

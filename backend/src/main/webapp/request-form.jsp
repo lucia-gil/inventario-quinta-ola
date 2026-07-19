@@ -68,7 +68,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Nueva Solicitud | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet" />
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>

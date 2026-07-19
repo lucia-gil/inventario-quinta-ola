@@ -10,7 +10,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Restablecer Contraseña | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="page-body" style="display:flex; align-items:center; justify-content:center; min-height:100vh; background: linear-gradient(135deg, #5B1FA8 0%, #4A1690 55%, #E91E8C 130%);">

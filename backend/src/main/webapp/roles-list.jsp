@@ -52,6 +52,13 @@
     String _baseUrl = ctx + "/RoleServlet?" + _qEncoded
             + (_rolFilter > 0 ? "&rol=" + _rolFilter : "");
 
+    // Query string para las pestañas (preserva la búsqueda por texto)
+    String _searchQS = "";
+    try {
+        if (!_searchQ.isEmpty())
+            _searchQS = "q=" + java.net.URLEncoder.encode(_searchQ, "UTF-8") + "&";
+    } catch (Exception ignored) {}
+
     request.setAttribute("activeMenu", "roles");
 %>
 <!doctype html>
@@ -60,7 +67,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Gestión de Roles | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -84,58 +91,56 @@
         .info-banner-text   { font-size: 0.82rem; color: var(--gray-700); line-height: 1.55; }
         .info-banner-text strong { color: var(--purple); }
 
-        /* ── Barra de búsqueda ────────────────────────────────────────── */
-        .search-filter-bar {
-            display: flex; align-items: center; gap: 0.6rem;
-            padding: 0.9rem 1.25rem;
-            background: var(--gray-50);
-            border: 1px solid var(--gray-100);
-            border-radius: var(--radius-md);
+        /* ── Pestañas de rol ──────────────────────────────────────────── */
+        .role-tabs {
+            display: flex;
+            gap: 0.5rem;
             flex-wrap: wrap;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
-        .search-form { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; width: 100%; }
-        .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
-        .search-input-wrap .search-icon {
-            position: absolute; left: 0.72rem; top: 50%;
-            transform: translateY(-50%);
-            width: 14px; height: 14px; color: var(--gray-400); pointer-events: none;
-        }
-        .search-input {
-            width: 100%; padding: 0.5rem 0.75rem 0.5rem 2.15rem;
-            border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
-            font-size: 0.83rem; color: var(--gray-700);
-            background: var(--white); font-family: inherit; outline: none;
+        .role-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.6rem 1.1rem;
+            border-radius: var(--radius-full);
+            font-size: 0.83rem;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1.5px solid var(--gray-200);
+            background: var(--white);
+            color: var(--gray-600);
             transition: all var(--transition);
+            white-space: nowrap;
         }
-        .search-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(91,31,168,0.1); }
-        .search-input::placeholder { color: var(--gray-400); }
-        .filter-role-select {
-            padding: 0.5rem 0.7rem;
-            border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
-            font-size: 0.83rem; color: var(--gray-700);
-            background: var(--white); font-family: inherit; outline: none; cursor: pointer;
-            transition: all var(--transition); min-width: 165px;
+        .role-tab i { width: 15px; height: 15px; }
+        .role-tab:hover {
+            border-color: var(--purple-light);
+            color: var(--purple);
+            background: var(--purple-bg);
+            transform: translateY(-1px);
         }
-        .filter-role-select:focus { border-color: var(--purple); }
-        .btn-search {
-            display: inline-flex; align-items: center; gap: 0.3rem;
-            padding: 0.5rem 1rem; background: var(--purple); color: var(--white);
-            border: none; border-radius: var(--radius-sm);
-            font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
-            transition: all var(--transition); white-space: nowrap;
+        .role-tab--active {
+            background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+            color: var(--white);
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(91,31,168,0.28);
         }
-        .btn-search:hover { background: var(--purple-light); transform: translateY(-1px); }
-        .btn-search i { width: 13px; height: 13px; }
-        .btn-clear-filter {
-            display: inline-flex; align-items: center; gap: 0.25rem;
-            padding: 0.5rem 0.8rem; background: var(--white); color: var(--gray-500);
-            border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
-            font-size: 0.8rem; font-weight: 600; text-decoration: none;
-            transition: all var(--transition); white-space: nowrap;
+        .role-tab--active:hover {
+            background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+            color: var(--white);
+            transform: translateY(-1px);
         }
-        .btn-clear-filter:hover { border-color: #FECACA; color: var(--red-dark); }
-        .btn-clear-filter i { width: 12px; height: 12px; }
+        .role-tab-count {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 18px; height: 18px; padding: 0 5px;
+            border-radius: var(--radius-full);
+            font-size: 0.68rem; font-weight: 800;
+            background: rgba(0,0,0,0.08);
+        }
+        .role-tab--active .role-tab-count { background: rgba(255,255,255,0.25); }
+
+        /* ── Barra de búsqueda ────────────────────────────────────────── */
         .filter-active-chip {
             display: inline-flex; align-items: center; gap: 0.3rem;
             padding: 0.22rem 0.65rem; background: var(--purple-bg); color: var(--purple);
@@ -460,33 +465,54 @@
                 </div>
             </div>
 
-            <%-- ── Barra de búsqueda y filtro ────────────────────────────────── --%>
-            <div class="search-filter-bar">
-                <form method="GET" action="<%= ctx %>/RoleServlet" class="search-form">
-                    <input type="hidden" name="page_1" value="1"/>
-                    <input type="hidden" name="page_2" value="1"/>
-                    <input type="hidden" name="page_3" value="1"/>
-                    <input type="hidden" name="page_4" value="1"/>
-                    <input type="hidden" name="page_5" value="1"/>
+            <%-- ── Pestañas de rol ──────────────────────────────────────────── --%>
+            <div class="role-tabs">
+                <a href="<%= ctx %>/RoleServlet?<%= _searchQS %>"
+                   class="role-tab <%= _rolFilter == 0 ? "role-tab--active" : "" %>">
+                    <i data-lucide="layout-grid"></i>
+                    Todos
+                </a>
+                <% if (roles != null) {
+                    for (Role rolTab : roles) {
+                        String tabIcon = "circle";
+                        switch (rolTab.getId()) {
+                            case 1: tabIcon = "user";         break;
+                            case 2: tabIcon = "truck";        break;
+                            case 3: tabIcon = "check-square"; break;
+                            case 4: tabIcon = "shield";       break;
+                            case 5: tabIcon = "shield-check"; break;
+                        }
+                %>
+                <a href="<%= ctx %>/RoleServlet?<%= _searchQS %>rol=<%= rolTab.getId() %>"
+                   class="role-tab <%= _rolFilter == rolTab.getId() ? "role-tab--active" : "" %>">
+                    <i data-lucide="<%= tabIcon %>"></i>
+                    <%= rolTab.getName() %>
+                    <span class="role-tab-count"><%= rolTab.getUserCount() %></span>
+                </a>
+                <% } } %>
+            </div>
 
-                    <div class="search-input-wrap">
-                        <i data-lucide="search" class="search-icon"></i>
-                        <input type="text" name="q" value="<%= _searchQ %>"
-                               placeholder="Buscar por nombre, apellido o DNI..."
-                               class="search-input" autocomplete="off"/>
-                    </div>
+            <%-- ── Barra de búsqueda ────────────────────────────────────────── --%>
+            <form method="GET" action="<%= ctx %>/RoleServlet" class="filter-bar">
+                <input type="hidden" name="page_1" value="1"/>
+                <input type="hidden" name="page_2" value="1"/>
+                <input type="hidden" name="page_3" value="1"/>
+                <input type="hidden" name="page_4" value="1"/>
+                <input type="hidden" name="page_5" value="1"/>
+                <% if (_rolFilter > 0) { %>
+                <input type="hidden" name="rol" value="<%= _rolFilter %>"/>
+                <% } %>
 
-                    <select name="rol" class="filter-role-select">
-                        <option value="0" <%= _rolFilter==0?"selected":"" %>>Todos los roles</option>
-                        <option value="1" <%= _rolFilter==1?"selected":"" %>>Viewer (Solicitante)</option>
-                        <option value="2" <%= _rolFilter==2?"selected":"" %>>Member (Enc. Depósito)</option>
-                        <option value="3" <%= _rolFilter==3?"selected":"" %>>Manager (Aprobador)</option>
-                        <option value="4" <%= _rolFilter==4?"selected":"" %>>Administrador</option>
-                        <option value="5" <%= _rolFilter==5?"selected":"" %>>SuperAdmin</option>
-                    </select>
+                <div class="filter-search">
+                    <i data-lucide="search"></i>
+                    <input type="text" name="q" value="<%= _searchQ %>"
+                           placeholder="Buscar por nombre, apellido o DNI..." autocomplete="off"/>
+                </div>
 
-                    <button type="submit" class="btn-search">
-                        <i data-lucide="search"></i>Buscar
+                <div class="filter-actions">
+                    <button type="submit" class="btn-page-primary btn-icon">
+                        <i data-lucide="filter"></i>
+                        Buscar
                     </button>
 
                     <% if (!_searchQ.isEmpty() || _rolFilter > 0) { %>
@@ -497,14 +523,14 @@
                     <span class="filter-active-chip">"<%= _searchQ %>"</span>
                     <% } %>
                     <% } %>
-                </form>
-            </div>
+                </div>
+            </form>
 
             <%-- ── Cards de roles ─────────────────────────────────────────────── --%>
             <% if (roles != null) {
                 for (Role rol : roles) {
 
-                    // Si hay filtro de rol, saltamos los que no coinciden
+                    // Si hay filtro de rol (por pestaña), saltamos los que no coinciden
                     if (_rolFilter > 0 && rol.getId() != _rolFilter) continue;
 
                     List<User> usuariosDelRol = pagedUsuariosPorRol != null
@@ -519,14 +545,12 @@
                     int _winE       = Math.min(_totalPages, _page + 2);
 
                     // URL de paginación para ESTE rol (preserva q, rol, y páginas de otros roles)
-                    // Construimos preservando los page_X de los demás roles también
                     StringBuilder _pUrlSB = new StringBuilder(ctx + "/RoleServlet?");
                     if (!_searchQ.isEmpty()) {
                         _pUrlSB.append("q=").append(java.net.URLEncoder.encode(_searchQ, "UTF-8")).append("&");
                     }
                     if (_rolFilter > 0) _pUrlSB.append("rol=").append(_rolFilter).append("&");
                     String _pUrlBase = _pUrlSB.toString();
-                    // Para cada page_X de otros roles, preservamos su valor actual
                     if (pagesByRole != null) {
                         for (Map.Entry<Integer, Integer> e : pagesByRole.entrySet()) {
                             if (e.getKey() != rol.getId()) {
@@ -534,7 +558,6 @@
                             }
                         }
                     }
-                    // El page de ESTE rol se añade en cada link
 
                     int colorId = rol.getId();
                     String iconName = "circle";

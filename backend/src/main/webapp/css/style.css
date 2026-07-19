@@ -1515,68 +1515,120 @@ input, select, textarea { font-family: inherit; }
 .filter-bar {
     display: flex;
     gap: 0.75rem;
-    background: var(--white);
+    background: linear-gradient(135deg, var(--white) 0%, var(--purple-bg) 140%);
     border-radius: var(--radius-lg);
     padding: 1rem;
     box-shadow: var(--shadow-sm);
-    border: 1px solid var(--gray-100);
+    border: 1.5px solid var(--purple-bg);
     flex-wrap: wrap;
     align-items: center;
     margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Franja de marca en el borde superior — misma cresta que el resto de la app */
+.filter-bar::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 50%, var(--yellow) 100%);
 }
 
 .filter-search {
     position: relative;
     flex-grow: 1;
     min-width: 250px;
-    flex-direction: row;
     display: flex;
     align-items: center;
-    gap: 10px;
 }
-.filter-search > i {
-    position: absolute;
-    left: 0.95rem; top: 50%;
+
+/* Selector robusto: cubre tanto el <i> original como el <svg> que
+   Lucide inyecta al reemplazarlo — antes solo apuntaba a "i", por
+   eso el ícono se salía de la caja tras cargar los íconos. */
+.filter-search > i,
+.filter-search > svg {
+    position: absolute !important;
+    left: 1rem;
+    top: 50%;
     transform: translateY(-50%);
-    color: var(--gray-400);
-    width: 16px; height: 16px;
+    color: var(--purple);
+    width: 17px !important;
+    height: 17px !important;
     pointer-events: none;
     z-index: 2;
+    transition: color var(--transition);
 }
+
 .filter-search input {
     width: 100%;
     border: 1.5px solid var(--gray-200);
     border-radius: var(--radius-full);
-    padding: 0.6rem 1rem 0.6rem 2.65rem;
+    padding: 0.65rem 1rem 0.65rem 2.75rem;
     font-size: 0.875rem;
     outline: none;
     transition: all var(--transition);
-    background: var(--gray-50);
+    background: var(--white);
     font-family: inherit;
+    color: var(--gray-800);
+    box-shadow: inset 0 1px 2px rgba(91,31,168,0.04);
 }
+
+.filter-search input::placeholder { color: var(--gray-400); }
+
 .filter-search input:focus {
     border-color: var(--purple);
     background: var(--white);
-    box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+    box-shadow: 0 0 0 4px rgba(233, 30, 140, 0.12);
+}
+
+.filter-search input:focus ~ i,
+.filter-search input:focus ~ svg {
+    color: var(--pink);
 }
 
 .filter-select {
     border: 1.5px solid var(--gray-200);
-    border-radius: var(--radius-sm);
-    padding: 0.6rem 0.9rem;
+    border-radius: var(--radius-full);
+    padding: 0.6rem 1.1rem;
     font-size: 0.85rem;
-    background: var(--gray-50);
+    background: var(--white);
     color: var(--gray-700);
     font-family: inherit;
     cursor: pointer;
     outline: none;
     transition: all var(--transition);
     min-width: 170px;
+    font-weight: 600;
+}
+.filter-select:hover {
+    border-color: var(--purple-light);
 }
 .filter-select:focus {
     border-color: var(--purple);
     background: var(--white);
-    box-shadow: 0 0 0 3px rgba(91, 31, 168, 0.1);
+    box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.1);
+}
+
+/* Input date dentro de filter-actions, mismo tratamiento visual que filter-select */
+.filter-actions input[type="date"] {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-full);
+    padding: 0.6rem 1.1rem;
+    font-size: 0.85rem;
+    background: var(--white);
+    color: var(--gray-700);
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: all var(--transition);
+    font-weight: 600;
+}
+.filter-actions input[type="date"]:hover { border-color: var(--purple-light); }
+.filter-actions input[type="date"]:focus {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.1);
 }
 
 .filter-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
@@ -1599,10 +1651,18 @@ input, select, textarea { font-family: inherit; }
 .btn-clear-filter:hover { border-color: #FECACA; color: var(--red-dark); background: var(--red-bg); }
 .btn-clear-filter i { width: 13px; height: 13px; }
 
+.filter-active-chip {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.28rem 0.75rem; background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+    color: var(--white); border-radius: var(--radius-full); font-size: 0.73rem; font-weight: 700;
+}
+.filter-active-chip i { width: 11px; height: 11px; }
+
 @media (max-width: 640px) {
     .filter-search { min-width: 100%; }
     .filter-actions { width: 100%; }
     .filter-select { flex: 1 1 140px; min-width: 0; }
+    .filter-actions input[type="date"] { flex: 1 1 140px; }
     .filter-actions .btn-page-primary { flex: 1 1 100%; justify-content: center; }
     .filter-actions .btn-clear-filter { flex: 1 1 100%; justify-content: center; }
 }

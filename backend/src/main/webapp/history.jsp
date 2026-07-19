@@ -98,57 +98,10 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Historial | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* ═════ Filtros ═════ */
-        .filter-bar {
-            display: flex;
-            gap: 0.75rem;
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            padding: 1rem;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--gray-100);
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .filter-search { position: relative; flex-grow: 1; min-width: 250px; display: flex; align-items: center; }
-        .filter-search svg, .filter-search i {
-            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
-            color: var(--gray-400); width: 18px !important; height: 18px !important;
-            pointer-events: none; z-index: 2;
-        }
-        .filter-search input {
-            width: 100%; border: 1.5px solid var(--gray-200); border-radius: var(--radius-full);
-            padding: 0.65rem 1rem 0.65rem 2.85rem; font-size: 0.875rem; outline: none;
-            transition: all var(--transition); background: var(--gray-50); font-family: inherit;
-            color: var(--gray-800); height: 42px; box-sizing: border-box;
-        }
-        .filter-search input::placeholder { color: var(--gray-400); font-weight: 500; }
-        .filter-search input:focus { border-color: var(--purple); background: var(--white); box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08); }
-
-        .filter-select {
-            border: 1.5px solid var(--gray-200); border-radius: var(--radius-full);
-            padding: 0.65rem 1.25rem; font-size: 0.875rem; background: var(--gray-50);
-            color: var(--gray-700); font-family: inherit; cursor: pointer; outline: none;
-            transition: all var(--transition); min-width: 180px; height: 42px; box-sizing: border-box;
-        }
-        .filter-select:hover { border-color: var(--purple); background: var(--white); }
-        .filter-select:focus { border-color: var(--purple); background: var(--white); box-shadow: 0 0 0 4px rgba(91, 31, 168, 0.08); }
-        .filter-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-
-        @media (max-width: 640px) {
-            .filter-search { min-width: 100%; }
-            .filter-actions { width: 100%; }
-            .filter-select { flex: 1 1 140px; min-width: 0; }
-            .filter-actions .btn-page-primary,
-            .filter-actions button[type="submit"] { flex: 1 1 100%; justify-content: center; }
-        }
-
         /* ═════ Badges de Tipo ═════ */
         .type-badge {
             display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.65rem;
@@ -243,6 +196,12 @@
                         <i data-lucide="filter"></i>
                         Filtrar
                     </button>
+                    <% if (!filtroTexto.isEmpty() || !filtroStatus.isEmpty()) { %>
+                    <a href="<%= ctx %>/HistoryServlet?action=lista" class="btn-clear-filter">
+                        <i data-lucide="x"></i>
+                        Limpiar
+                    </a>
+                    <% } %>
                 </div>
             </form>
 
@@ -311,7 +270,6 @@
 
                 <%-- Footer con paginación --%>
                 <%
-                    // Cálculos de variables para el snippet exacto
                     int _page = currentPage;
                     int _total = totalPages;
                     int _count = totalTx;
@@ -319,7 +277,6 @@
                     int _to = Math.min(_page * 15, _count);
                     String _pUrl = baseUrlPaginacion;
 
-                    // Lógica para la ventana (win) de botones visibles (máximo 5)
                     int _winS = Math.max(1, _page - 2);
                     int _winE = Math.min(_total, _winS + 4);
                     if (_winE - _winS < 4) {

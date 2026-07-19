@@ -50,7 +50,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Dashboard | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=22" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -107,7 +107,11 @@
             flex: 1; height: 8px; background: var(--gray-100);
             border-radius: var(--radius-full); overflow: hidden;
         }
-        .status-row-bar { height: 100%; border-radius: var(--radius-full); transition: width 0.6s ease; }
+        .status-row-bar {
+            height: 100%; border-radius: var(--radius-full);
+            width: 0%; /* arranca en 0 — el JS anima hasta el valor real */
+            transition: width 1s cubic-bezier(.22,.9,.32,1);
+        }
         .status-row-count {
             min-width: 80px; text-align: right;
             font-size: 0.85rem; font-weight: 700; color: var(--gray-800);
@@ -197,6 +201,42 @@
         }
         .view-all-link:hover { color: var(--purple); gap: 0.5rem; }
         .view-all-link i { width: 14px; height: 14px; }
+
+        /* ═══════════════════════════════════════════════════════════
+           ANIMACIÓN DE ENTRADA — tarjetas aparecen con fade + slide,
+           escalonadas, igual que en Inicio.
+           ═══════════════════════════════════════════════════════════ */
+        @keyframes dashFadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-card,
+        .kpi-grid .stat-card,
+        .dashboard-grid .dash-card,
+        .dash-card-recent {
+            animation: dashFadeInUp 0.55s cubic-bezier(.22,.9,.32,1) both;
+        }
+
+        .alert-card { animation-delay: 0s; }
+
+        .kpi-grid .stat-card:nth-child(1) { animation-delay: .05s; }
+        .kpi-grid .stat-card:nth-child(2) { animation-delay: .12s; }
+        .kpi-grid .stat-card:nth-child(3) { animation-delay: .19s; }
+        .kpi-grid .stat-card:nth-child(4) { animation-delay: .26s; }
+
+        .dashboard-grid .dash-card:nth-child(1) { animation-delay: .22s; }
+        .dashboard-grid .dash-card:nth-child(2) { animation-delay: .30s; }
+
+        .dash-card-recent { animation-delay: .38s; }
+
+        /* Respeta accesibilidad: si el usuario prefiere menos movimiento */
+        @media (prefers-reduced-motion: reduce) {
+            .alert-card, .kpi-grid .stat-card, .dashboard-grid .dash-card, .dash-card-recent {
+                animation: none;
+            }
+            .status-row-bar { transition: none; }
+        }
     </style>
 </head>
 
@@ -249,7 +289,7 @@
                 <div class="stat-card">
                     <div>
                         <p class="stat-card-label">Total Materiales</p>
-                        <p class="stat-card-value"><%= totalItems %></p>
+                        <p class="stat-card-value" data-count-target="<%= totalItems %>">0</p>
                     </div>
                     <div class="stat-card-icon stat-icon-blue">
                         <i data-lucide="package"></i>
@@ -261,7 +301,7 @@
                 <div class="stat-card">
                     <div>
                         <p class="stat-card-label">Bajo Stock</p>
-                        <p class="stat-card-value"><%= totalLowStock %></p>
+                        <p class="stat-card-value" data-count-target="<%= totalLowStock %>">0</p>
                     </div>
                     <div class="stat-card-icon stat-icon-orange">
                         <i data-lucide="alert-triangle"></i>
@@ -272,7 +312,7 @@
                 <div class="stat-card">
                     <div>
                         <p class="stat-card-label">Pendientes</p>
-                        <p class="stat-card-value"><%= totalPendientes %></p>
+                        <p class="stat-card-value" data-count-target="<%= totalPendientes %>">0</p>
                     </div>
                     <div class="stat-card-icon stat-icon-yellow">
                         <i data-lucide="clock"></i>
@@ -282,7 +322,7 @@
                 <div class="stat-card">
                     <div>
                         <p class="stat-card-label">Aprobadas</p>
-                        <p class="stat-card-value"><%= totalAprobadas %></p>
+                        <p class="stat-card-value" data-count-target="<%= totalAprobadas %>">0</p>
                     </div>
                     <div class="stat-card-icon stat-icon-green">
                         <i data-lucide="check-circle"></i>
@@ -319,10 +359,10 @@
                                 Pendientes
                             </div>
                             <div class="status-row-bar-wrap">
-                                <div class="status-row-bar bar-pending" style="width: <%= pctPendientes %>%;"></div>
+                                <div class="status-row-bar bar-pending" data-target-width="<%= pctPendientes %>"></div>
                             </div>
                             <div class="status-row-count">
-                                <%= totalPendientes %><small><%= pctPendientes %>%</small>
+                                <span data-count-target="<%= totalPendientes %>">0</span><small><%= pctPendientes %>%</small>
                             </div>
                         </div>
 
@@ -332,10 +372,10 @@
                                 Aprobadas
                             </div>
                             <div class="status-row-bar-wrap">
-                                <div class="status-row-bar bar-approved" style="width: <%= pctAprobadas %>%;"></div>
+                                <div class="status-row-bar bar-approved" data-target-width="<%= pctAprobadas %>"></div>
                             </div>
                             <div class="status-row-count">
-                                <%= totalAprobadas %><small><%= pctAprobadas %>%</small>
+                                <span data-count-target="<%= totalAprobadas %>">0</span><small><%= pctAprobadas %>%</small>
                             </div>
                         </div>
 
@@ -345,10 +385,10 @@
                                 Rechazadas
                             </div>
                             <div class="status-row-bar-wrap">
-                                <div class="status-row-bar bar-rejected" style="width: <%= pctRechazadas %>%;"></div>
+                                <div class="status-row-bar bar-rejected" data-target-width="<%= pctRechazadas %>"></div>
                             </div>
                             <div class="status-row-count">
-                                <%= totalRechazadas %><small><%= pctRechazadas %>%</small>
+                                <span data-count-target="<%= totalRechazadas %>">0</span><small><%= pctRechazadas %>%</small>
                             </div>
                         </div>
 
@@ -358,10 +398,10 @@
                                 Entregadas
                             </div>
                             <div class="status-row-bar-wrap">
-                                <div class="status-row-bar bar-delivered" style="width: <%= pctEntregadas %>%;"></div>
+                                <div class="status-row-bar bar-delivered" data-target-width="<%= pctEntregadas %>"></div>
                             </div>
                             <div class="status-row-count">
-                                <%= totalEntregadas %><small><%= pctEntregadas %>%</small>
+                                <span data-count-target="<%= totalEntregadas %>">0</span><small><%= pctEntregadas %>%</small>
                             </div>
                         </div>
 
@@ -385,7 +425,7 @@
                                 <i data-lucide="layers"></i>
                                 Total de solicitudes
                             </div>
-                            <div class="mini-metric-value"><%= totalSolicitudes %></div>
+                            <div class="mini-metric-value" data-count-target="<%= totalSolicitudes %>">0</div>
                         </div>
 
                         <div class="mini-metric">
@@ -405,7 +445,7 @@
                                 <i data-lucide="box"></i>
                                 Items en sistema
                             </div>
-                            <div class="mini-metric-value"><%= totalItems %></div>
+                            <div class="mini-metric-value" data-count-target="<%= totalItems %>">0</div>
                         </div>
 
                         <%-- "Requieren reposición" SOLO para roles operativos --%>
@@ -415,9 +455,7 @@
                                 <i data-lucide="alert-octagon"></i>
                                 Requieren reposición
                             </div>
-                            <div class="mini-metric-value <%= totalLowStock > 0 ? "accent" : "" %>">
-                                <%= totalLowStock %>
-                            </div>
+                            <div class="mini-metric-value <%= totalLowStock > 0 ? "accent" : "" %>" data-count-target="<%= totalLowStock %>">0</div>
                         </div>
                         <% } %>
 
@@ -427,7 +465,7 @@
             </div>
 
             <%-- Últimos movimientos --%>
-            <div class="dash-card">
+            <div class="dash-card dash-card-recent">
                 <div class="dash-card-header">
                     <div class="dash-card-title">
                         <i data-lucide="history"></i>
@@ -491,6 +529,39 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // ─── Animación de conteo en KPIs y métricas del dashboard ───
+        // Sube cada número desde 0 hasta su valor real al cargar la página
+        // (mismo efecto que en Inicio).
+        var valores = document.querySelectorAll('[data-count-target]');
+        valores.forEach(function (el) {
+            var target = parseInt(el.getAttribute('data-count-target'), 10) || 0;
+            var duracion = 900; // ms
+            var inicio = null;
+
+            function paso(timestamp) {
+                if (!inicio) inicio = timestamp;
+                var progreso = Math.min((timestamp - inicio) / duracion, 1);
+                // easeOutQuad — arranca rápido, desacelera al final
+                var facil = 1 - (1 - progreso) * (1 - progreso);
+                el.textContent = Math.floor(facil * target);
+                if (progreso < 1) {
+                    requestAnimationFrame(paso);
+                } else {
+                    el.textContent = target;
+                }
+            }
+            requestAnimationFrame(paso);
+        });
+
+        // ─── Animación de crecimiento de las barras de "Distribución de solicitudes" ───
+        // Arrancan en 0% y crecen hasta su porcentaje real, escalonadas.
+        var barras = document.querySelectorAll('.status-row-bar[data-target-width]');
+        barras.forEach(function (bar, idx) {
+            setTimeout(function () {
+                bar.style.width = bar.getAttribute('data-target-width') + '%';
+            }, 200 + idx * 130);
+        });
     });
 </script>
 
