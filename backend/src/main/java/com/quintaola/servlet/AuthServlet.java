@@ -1,5 +1,6 @@
 package com.quintaola.servlet;
 
+import com.quintaola.dao.PasswordResetDAO;
 import com.quintaola.dao.UserDAO;
 import com.quintaola.model.User;
 import jakarta.servlet.RequestDispatcher;
@@ -12,17 +13,22 @@ import java.io.IOException;
 /**
  * AuthServlet — patrón MVC del curso (Clase 7.2 y 7.3).
  *
- * Maneja login, logout, registro y cambio de contraseña obligatorio
- * (cuando el Superadmin crea una cuenta con contraseña temporal).
+ * Maneja login, logout, registro, cambio de contraseña obligatorio
+ * (contraseña temporal creada por el Superadmin) y recuperación de
+ * contraseña vía correo ("Olvidé mi contraseña").
  *
  * URLs:
  * GET  /AuthServlet?action=formLogin           → muestra login.jsp
  * GET  /AuthServlet?action=formSignup          → muestra signup.jsp
  * GET  /AuthServlet?action=formChangePassword  → muestra change-password.jsp
+ * GET  /AuthServlet?action=formForgotPassword  → muestra forgot-password.jsp
+ * GET  /AuthServlet?action=formResetPassword   → valida token y muestra reset-password.jsp
  * GET  /AuthServlet?action=logout              → cierra sesión y redirige a login
  * POST /AuthServlet  (action=login)             → procesa credenciales
  * POST /AuthServlet  (action=signup)            → registra nuevo usuario
- * POST /AuthServlet  (action=changePassword)    → guarda la nueva contraseña
+ * POST /AuthServlet  (action=changePassword)    → guarda la nueva contraseña (usuario logueado)
+ * POST /AuthServlet  (action=forgotPassword)    → genera token y envía correo de reseteo
+ * POST /AuthServlet  (action=resetPassword)     → valida token y guarda la nueva contraseña
  */
 @WebServlet(name = "AuthServlet", value = "/AuthServlet")
 public class AuthServlet extends HttpServlet {
@@ -74,6 +80,36 @@ public class AuthServlet extends HttpServlet {
                 }
                 view = request.getRequestDispatcher("/change-password.jsp");
                 view.forward(request, response);
+                break;
+
+            case "formForgotPassword":
+                view = request.getRequestDispatcher("/forgot-password.jsp");
+                view.forward(request, response);
+                break;
+
+            case "formResetPassword":
+                String tokenGet = request.getParameter("token");
+                if (tokenGet == null || tokenGet.trim().isEmpty()) {
+                    response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+                    return;
+                }
+                try {
+                    PasswordResetDAO resetDaoGet = new PasswordResetDAO();
+                    int uidGet = resetDaoGet.validarToken(tokenGet);
+                    if (uidGet == 0) {
+                        request.setAttribute("error", "El enlace es inválido o ya expiró. Solicita uno nuevo.");
+                        view = request.getRequestDispatcher("/forgot-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+                    request.setAttribute("token", tokenGet);
+                    view = request.getRequestDispatcher("/reset-password.jsp");
+                    view.forward(request, response);
+                } catch (Exception e) {
+                    request.setAttribute("error", "Ocurrió un error al validar el enlace.");
+                    view = request.getRequestDispatcher("/forgot-password.jsp");
+                    view.forward(request, response);
+                }
                 break;
 
             case "logout":
@@ -304,6 +340,86 @@ public class AuthServlet extends HttpServlet {
                 } catch (Exception e) {
                     request.setAttribute("error", "Error interno al cambiar la contraseña.");
                     view = request.getRequestDispatcher("/change-password.jsp");
+                    view.forward(request, response);
+                }
+                break;
+
+            case "forgotPassword":
+                try {
+                    String emailForgot = request.getParameter("email");
+                    if (emailForgot == null || emailForgot.trim().isEmpty()) {
+                        request.setAttribute("error", "Ingresa un correo válido.");
+                        view = request.getRequestDispatcher("/forgot-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+                    emailForgot = emailForgot.trim().toLowerCase();
+                    User userForgot = userDao.getByEmail(emailForgot);
+
+                    // Por seguridad, siempre mostramos el mismo mensaje exista o no
+                    // la cuenta (evita que el form se use para adivinar correos registrados).
+                    if (userForgot != null && userForgot.getActivo() == 1) {
+                        PasswordResetDAO resetDao = new PasswordResetDAO();
+                        String token = resetDao.generarToken(userForgot.getId());
+                        try {
+                            com.quintaola.util.EmailService.enviarResetPassword(
+                                    userForgot.getEmail(), userForgot.getName(), token);
+                        } catch (Exception emailEx) {
+                            System.err.println("[AuthServlet] Email reset: " + emailEx.getMessage());
+                        }
+                    }
+
+                    request.setAttribute("success",
+                            "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.");
+                    view = request.getRequestDispatcher("/forgot-password.jsp");
+                    view.forward(request, response);
+                } catch (Exception e) {
+                    request.setAttribute("error", "Ocurrió un error. Intenta de nuevo.");
+                    view = request.getRequestDispatcher("/forgot-password.jsp");
+                    view.forward(request, response);
+                }
+                break;
+
+            case "resetPassword":
+                try {
+                    String tokenPost = request.getParameter("token");
+                    String newPass = request.getParameter("newPassword");
+                    String confirmPass = request.getParameter("confirmPassword");
+
+                    PasswordResetDAO resetDao = new PasswordResetDAO();
+                    int uid = resetDao.validarToken(tokenPost);
+
+                    if (uid == 0) {
+                        request.setAttribute("error", "El enlace es inválido o ya expiró. Solicita uno nuevo.");
+                        view = request.getRequestDispatcher("/forgot-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+
+                    String rpError = com.quintaola.util.PasswordValidator.getErrorMessage(newPass);
+                    if (rpError != null) {
+                        request.setAttribute("error", rpError);
+                        request.setAttribute("token", tokenPost);
+                        view = request.getRequestDispatcher("/reset-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+                    if (newPass == null || !newPass.equals(confirmPass)) {
+                        request.setAttribute("error", "Las contraseñas no coinciden.");
+                        request.setAttribute("token", tokenPost);
+                        view = request.getRequestDispatcher("/reset-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+
+                    userDao.updatePassword(uid, newPass);
+                    resetDao.marcarUsado(tokenPost);
+
+                    response.sendRedirect(request.getContextPath()
+                            + "/AuthServlet?action=formLogin&success=Contraseña+actualizada.+Ya+puedes+iniciar+sesion");
+                } catch (Exception e) {
+                    request.setAttribute("error", "Ocurrió un error al restablecer la contraseña.");
+                    view = request.getRequestDispatcher("/forgot-password.jsp");
                     view.forward(request, response);
                 }
                 break;

@@ -49,6 +49,26 @@ public class UserDAO {
         return null;
     }
 
+    // ─── getByEmail: busca un usuario por correo, SIN validar contraseña ───
+    //     Usado en el flujo de "Olvidé mi contraseña" para verificar si
+    //     la cuenta existe antes de generar el token de reseteo.
+    public User getByEmail(String email) throws SQLException {
+        String sql = """
+            SELECT u.*, r.name AS role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.email = ?
+            """;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapRow(rs);
+            }
+        }
+        return null;
+    }
+
     // ─── getAll: todos los usuarios sin filtros (uso interno / otras vistas) ──
     public List<User> getAll() throws SQLException {
         List<User> users = new ArrayList<>();
@@ -247,7 +267,7 @@ public class UserDAO {
         }
     }
 
-    // ─── createWithRole: ahora marca require_password_change=1 y devuelve el ID generado ───
+    // ─── createWithRole: marca require_password_change=1 y devuelve el ID generado ───
     public int createWithRole(User user, int roleId) throws SQLException {
         String sql = """
             INSERT INTO users (email, dni, name, password_hash, role_id, activo, require_password_change)
@@ -292,7 +312,7 @@ public class UserDAO {
         }
     }
 
-    // ─── updatePassword: ahora también apaga require_password_change ───
+    // ─── updatePassword: también apaga require_password_change ───
     public boolean updatePassword(int userId, String newPassword) throws SQLException {
         String sql = "UPDATE users SET password_hash = ?, require_password_change = 0 WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();

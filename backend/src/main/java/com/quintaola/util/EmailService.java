@@ -495,4 +495,23 @@ public class EmailService {
         return enviar(destinatario, "Tus credenciales de acceso — Quinta Ola", html);
     }
 
+    public static boolean enviarResetPassword(String destinatario, String nombre, String token) {
+        String link = APP_URL + "/AuthServlet?action=formResetPassword&token=" + token;
+
+        String html = construirCorreo(
+                "&#128272;", // 🔒
+                "#EDE9FE",
+                "Restablece tu contraseña",
+                "Hola <strong style='color:" + C_PURPLE + "'>" + nombre + "</strong>,",
+                "Recibimos una solicitud para restablecer la contraseña de tu cuenta en Quinta Ola. "
+                        + "Si fuiste tú, haz clic en el botón de abajo para crear una nueva contraseña. "
+                        + "Este enlace expira en <strong>30 minutos</strong>.",
+                construirCajaEstado("warning", "&#9888; Si no solicitaste esto, ignora este correo. Tu contraseña actual seguirá funcionando."),
+                "Restablecer contraseña", link,
+                "Por tu seguridad, nunca compartas este enlace con nadie."
+        );
+
+        return enviar(destinatario, "Restablece tu contraseña — Quinta Ola", html);
+    }
+
 }
