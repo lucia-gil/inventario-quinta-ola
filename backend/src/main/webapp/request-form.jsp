@@ -51,6 +51,16 @@
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "");
     }
+
+    // NUEVO: Escapa caracteres especiales de HTML para prevenir ataques XSS
+    private String htmlEsc(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;");
+    }
 %>
 <!doctype html>
 <html lang="es">
@@ -302,7 +312,7 @@
             <% if (error != null) { %>
             <div class="alert alert-error">
                 <i data-lucide="alert-circle"></i>
-                <span><%= error %></span>
+                <span><%= htmlEsc(error) %></span>
             </div>
             <% } %>
 
@@ -322,6 +332,8 @@
                     <form action="<%= ctx %>/TransactionServlet" method="POST" novalidate id="requestForm">
 
                         <input type="hidden" name="action" value="crear" />
+                        <%-- NUEVO: Token CSRF para evitar falsificación de peticiones --%>
+                        <input type="hidden" name="csrfToken" value="<%= session.getAttribute("csrfToken") != null ? session.getAttribute("csrfToken") : "" %>" />
 
                         <%-- ═══ PASO 1: Material ═══ --%>
                         <div class="req-step">
@@ -381,7 +393,7 @@
                                                 <i data-lucide="minus"></i>
                                             </button>
                                             <input type="number" id="cantidad" name="cantidad" min="1" step="1"
-                                                   value="<%= cantidadValue %>"
+                                                   value="<%= htmlEsc(cantidadValue) %>"
                                                    onkeypress="return event.charCode >= 48 && event.charCode <= 57"
                                                    onpaste="return false;"
                                                    oninput="validarCantidadContraStock()" required>
@@ -394,7 +406,7 @@
 
                                     <div class="field-group" style="margin-bottom: 0;">
                                         <label for="needed-by" class="field-label">¿Para cuándo lo necesitas?</label>
-                                        <input type="date" id="needed-by" name="neededBy" value="<%= fechaPrevia != null ? fechaPrevia : "" %>" class="field-input">
+                                        <input type="date" id="needed-by" name="neededBy" value="<%= htmlEsc(fechaPrevia != null ? fechaPrevia : "") %>" class="field-input">
                                         <p class="qty-help">Opcional. Esta fecha ayuda a priorizar.</p>
                                     </div>
                                 </div>
@@ -411,7 +423,7 @@
                                     <label for="proposito" class="field-label">Propósito / Uso del material *</label>
                                     <textarea id="proposito" name="notas" rows="4" class="field-input" style="resize: vertical;"
                                               placeholder="Describe detalladamente para qué necesitas este material..."
-                                              required><%= notasPrevias != null ? notasPrevias : "" %></textarea>
+                                              required><%= htmlEsc(notasPrevias != null ? notasPrevias : "") %></textarea>
                                 </div>
 
                                 <div class="verified-card">
@@ -419,7 +431,7 @@
                                     <div>
                                         <p class="verified-text-title">Solicitante de la orden</p>
                                         <p class="verified-text-sub">
-                                            Sesión activa en el sistema como: <strong><%= userName != null ? userName : "Usuario Actual" %></strong>
+                                            Sesión activa en el sistema como: <strong><%= htmlEsc(userName != null ? userName : "Usuario Actual") %></strong>
                                         </p>
                                     </div>
                                 </div>
