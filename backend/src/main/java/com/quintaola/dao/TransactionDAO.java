@@ -488,7 +488,10 @@ public class TransactionDAO {
     // DELIVER — Marca como ENTREGADO sin tocar stock
     // ============================================================
     // El stock YA se descontó al aprobar. Solo cambiamos status.
-    public boolean deliver(int id) throws SQLException {
+    // Ahora también acepta una nota opcional del encargado de depósito
+    // sobre algún imprevisto en la entrega (retraso, color distinto, etc.)
+    // que queda guardada permanentemente en delivery_notes.
+    public boolean deliver(int id, String deliveryNotes) throws SQLException {
 
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -516,17 +519,23 @@ public class TransactionDAO {
                     );
                 }
 
-                // 2. Cambiar a COMPLETED (sin tocar stock)
+                // 2. Cambiar a COMPLETED (sin tocar stock), guardando la nota si la hay
                 String sqlComplete = """
                     UPDATE transactions
                     SET status = 'COMPLETED',
                         delivered_at = CURRENT_TIMESTAMP,
-                        updated_at = CURRENT_TIMESTAMP
+                        updated_at = CURRENT_TIMESTAMP,
+                        delivery_notes = ?
                     WHERE id = ? AND status = 'APPROVED'
                     """;
                 boolean ok;
                 try (PreparedStatement ps = conn.prepareStatement(sqlComplete)) {
-                    ps.setInt(1, id);
+                    if (deliveryNotes != null && !deliveryNotes.trim().isEmpty()) {
+                        ps.setString(1, deliveryNotes.trim());
+                    } else {
+                        ps.setNull(1, java.sql.Types.VARCHAR);
+                    }
+                    ps.setInt(2, id);
                     ok = ps.executeUpdate() > 0;
                 }
 
@@ -575,6 +584,7 @@ public class TransactionDAO {
         try { t.setUpdatedAt   (rs.getString("updated_at"));   } catch (Exception ignored) {}
         try { t.setProcessedAt (rs.getString("processed_at")); } catch (Exception ignored) {}
         try { t.setDeliveredAt (rs.getString("delivered_at")); } catch (Exception ignored) {}
+        try { t.setDeliveryNotes(rs.getString("delivery_notes")); } catch (Exception ignored) {}
 
         // Fecha estimada (en algunos SELECT se devuelve como DATE, otros como string)
         try { t.setEstimatedDelivery(rs.getString("estimated_delivery")); } catch (Exception ignored) {}

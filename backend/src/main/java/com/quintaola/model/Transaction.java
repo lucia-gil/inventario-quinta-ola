@@ -14,6 +14,7 @@ public class Transaction {
     private String updatedAt;
     private String processedAt;
     private String deliveredAt;
+    private String deliveryNotes;  // Nota del encargado de depósito al momento de entregar (imprevistos)
 
     // Campos extra para el frontend (JOINs)
     private String itemName;
@@ -61,6 +62,10 @@ public class Transaction {
     // ⬅️ NUEVO: getter/setter de deliveredAt
     public String getDeliveredAt()                  { return deliveredAt; }
     public void setDeliveredAt(String deliveredAt)  { this.deliveredAt = deliveredAt; }
+
+    // ⬅️ NUEVO: getter/setter de deliveryNotes
+    public String getDeliveryNotes()                    { return deliveryNotes; }
+    public void setDeliveryNotes(String deliveryNotes)  { this.deliveryNotes = deliveryNotes; }
 
     public String getItemName()                 { return itemName; }
     public void setItemName(String itemName)    { this.itemName = itemName; }

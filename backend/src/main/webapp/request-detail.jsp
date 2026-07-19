@@ -233,6 +233,45 @@
             line-height: 1.6;
         }
 
+        /* ═════ Caja de nota de entrega (imprevistos, ámbar) ═════ */
+        .delivery-notes-box {
+            background: var(--yellow-bg);
+            border: 1px solid #FDE68A;
+            border-left: 4px solid var(--orange);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 0.85rem;
+            align-items: flex-start;
+        }
+        .delivery-notes-box-icon {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--orange);
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .delivery-notes-box-icon i { width: 18px; height: 18px; }
+        .delivery-notes-box-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--orange-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.3rem;
+        }
+        .delivery-notes-box-text {
+            font-size: 0.9rem;
+            color: var(--gray-800);
+            line-height: 1.55;
+            font-weight: 500;
+        }
+
         /* ═════ Bloque acciones aprobar/rechazar ═════ */
         .actions-section {
             border-top: 1px solid var(--gray-100);
@@ -557,6 +596,19 @@
                             <div>
                                 <div class="reject-box-title">Motivo del rechazo</div>
                                 <div class="reject-box-text"><%= motivoRechazo %></div>
+                            </div>
+                        </div>
+                        <% } %>
+
+                        <%-- Si el depósito dejó una nota de imprevisto al entregar, mostrarla destacada --%>
+                        <% if ("COMPLETED".equals(tx.getStatus()) && tx.getDeliveryNotes() != null && !tx.getDeliveryNotes().trim().isEmpty()) { %>
+                        <div class="delivery-notes-box">
+                            <div class="delivery-notes-box-icon">
+                                <i data-lucide="alert-triangle"></i>
+                            </div>
+                            <div>
+                                <div class="delivery-notes-box-title">Aviso del encargado de depósito</div>
+                                <div class="delivery-notes-box-text"><%= tx.getDeliveryNotes() %></div>
                             </div>
                         </div>
                         <% } %>

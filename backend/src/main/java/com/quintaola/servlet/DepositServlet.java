@@ -92,7 +92,8 @@ public class DepositServlet extends HttpServlet {
                     // 1. Cambiar estado a COMPLETED
                     // 2. Descontar del stock del item
                     // 3. Actualizar el status del item (OK/LOW/UNAVAILABLE) segun stock
-                    boolean ok = txDao.deliver(txId);
+                    // 4. Guardar la nota de entrega (si la hay) en delivery_notes
+                    boolean ok = txDao.deliver(txId, notasEntrega);
 
                     if (ok) {
                         // ─── Notificar al solicitante por email ───
