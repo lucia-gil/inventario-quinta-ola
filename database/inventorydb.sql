@@ -179,3 +179,5 @@ CREATE INDEX idx_userperms_user          ON user_permissions(user_id);
 -- ============================================================
 ALTER TABLE transactions
     ADD COLUMN delivery_notes TEXT NULL AFTER estimated_delivery;
+ALTER TABLE users 
+ADD COLUMN require_password_change INT DEFAULT 0;
