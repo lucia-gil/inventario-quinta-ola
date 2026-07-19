@@ -130,6 +130,25 @@ public class TransactionServlet extends HttpServlet {
                     int id = Integer.parseInt(request.getParameter("id"));
                     Transaction tx = txDao.getById(id);
                     if (tx != null) {
+
+                        // ─── CONTROL DE ACCESO (evita IDOR) ─────────────────────────
+                        // Un Solicitante (rol 1) solo puede ver SUS PROPIAS solicitudes.
+                        // Depósito, Manager y Admin (roles 2, 3, 4) requieren visibilidad
+                        // operativa de cualquier solicitud (entregar, aprobar, gestionar).
+                        // SuperAdmin (5) nunca llega aquí: ya se redirige arriba.
+                        Integer userIdSession = (Integer) session.getAttribute("userId");
+                        int currentUserId = userIdSession != null ? userIdSession : 0;
+
+                        boolean esMia = (tx.getRequesterId() == currentUserId);
+                        boolean tienePermisoOperativo = (roleGuard == 2 || roleGuard == 3 || roleGuard == 4);
+
+                        if (!esMia && !tienePermisoOperativo) {
+                            response.sendRedirect(request.getContextPath()
+                                    + "/TransactionServlet?action=lista&error=No+tienes+permiso+para+ver+esta+solicitud");
+                            return;
+                        }
+                        // ─────────────────────────────────────────────────────────────
+
                         request.setAttribute("tx", tx);
                         String origen = request.getParameter("origen");
                         if ("historial".equals(origen)) {
