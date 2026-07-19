@@ -809,10 +809,25 @@
                 y escalables para organizaciones que miran hacia el futuro.
             </p>
             <div class="public-footer-social">
-                <a href="#" title="Instagram"><i data-lucide="instagram"></i></a>
-                <a href="#" title="WhatsApp"><i data-lucide="message-circle"></i></a>
-                <a href="#" title="Facebook"><i data-lucide="facebook"></i></a>
-                <a href="#" title="LinkedIn"><i data-lucide="linkedin"></i></a>
+                <!-- Instagram -->
+                <a href="https://www.instagram.com/quintaolaperu/" target="_blank" rel="noopener noreferrer" title="Instagram">
+                    <i data-lucide="instagram"></i>
+                </a>
+
+                <!-- Correo Electrónico -->
+                <a href="mailto:comunicaciones@quintaola.org" title="Enviar correo">
+                    <i data-lucide="mail"></i>
+                </a>
+
+                <!-- Facebook -->
+                <a href="https://www.facebook.com/QuintaOlaPeru" target="_blank" rel="noopener noreferrer" title="Facebook">
+                    <i data-lucide="facebook"></i>
+                </a>
+
+                <!-- LinkedIn -->
+                <a href="https://www.linkedin.com/company/quintaola/" target="_blank" rel="noopener noreferrer" title="LinkedIn">
+                    <i data-lucide="linkedin"></i>
+                </a>
             </div>
         </div>
 
@@ -842,6 +857,7 @@
     </div>
 </footer>
 
+<script src="https://unpkg.com/lucide@0.400.0/dist/umd/lucide.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof lucide !== 'undefined') lucide.createIcons();
