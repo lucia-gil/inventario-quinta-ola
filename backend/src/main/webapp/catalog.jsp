@@ -666,7 +666,8 @@
         const winE = Math.min(totalPages, currentPage + 2);
         const dots = `<span class="pager-dots"><span></span><span></span><span></span></span>`;
 
-        let nav = `<button class="pager-btn ${currentPage === 1 ? 'pager-btn--disabled' : ''}" onclick="cambiarPagina(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+        // NOTA: Se agregó la barra invertida (\) antes de cada $ para que JSP los ignore
+        let nav = `<button class="pager-btn \${currentPage === 1 ? 'pager-btn--disabled' : ''}" onclick="cambiarPagina(\${currentPage - 1})" \${currentPage === 1 ? 'disabled' : ''}>
                         <i data-lucide="chevron-left"></i>
                     </button>`;
 
@@ -677,26 +678,26 @@
 
         for (let i = winS; i <= winE; i++) {
             nav += i === currentPage
-                ? `<span class="pager-btn pager-btn--active">${i}</span>`
-                : `<button class="pager-btn" onclick="cambiarPagina(${i})">${i}</button>`;
+                ? `<span class="pager-btn pager-btn--active">\${i}</span>`
+                : `<button class="pager-btn" onclick="cambiarPagina(\${i})">\${i}</button>`;
         }
 
         if (winE < totalPages) {
             if (winE < totalPages - 1) nav += dots;
-            nav += `<button class="pager-btn" onclick="cambiarPagina(${totalPages})">${totalPages}</button>`;
+            nav += `<button class="pager-btn" onclick="cambiarPagina(\${totalPages})">\${totalPages}</button>`;
         }
 
-        nav += `<button class="pager-btn ${currentPage === totalPages ? 'pager-btn--disabled' : ''}" onclick="cambiarPagina(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+        nav += `<button class="pager-btn \${currentPage === totalPages ? 'pager-btn--disabled' : ''}" onclick="cambiarPagina(\${currentPage + 1})" \${currentPage === totalPages ? 'disabled' : ''}>
                     <i data-lucide="chevron-right"></i>
                  </button>`;
 
         container.innerHTML = `
             <div class="pager">
                 <div class="pager-info">
-                    <span>Mostrando <strong>${start}–${end}</strong> de <strong>${filteredCards.length}</strong> materiales</span>
-                    <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ ${ITEMS_PER_PAGE} por ola</span>
+                    <span>Mostrando <strong>\${start}–\${end}</strong> de <strong>\${filteredCards.length}</strong> materiales</span>
+                    <span class="pager-info-badge"><i data-lucide="waves"></i> ≈ \${ITEMS_PER_PAGE} por ola</span>
                 </div>
-                <div class="pager-nav">${nav}</div>
+                <div class="pager-nav">\${nav}</div>
             </div>`;
 
         if (typeof lucide !== 'undefined') lucide.createIcons();

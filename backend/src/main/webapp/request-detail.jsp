@@ -32,6 +32,28 @@
         session.setAttribute("activeMenu", activeMenu);
     }
 
+    // ─── URL de "Volver" calculada en el SERVIDOR (sin JavaScript) ───
+    // Usa el mismo parámetro "origen" que ya viaja en la URL para saber
+    // de dónde vino el usuario. Si no hay origen reconocible, cae a un
+    // destino seguro según el rol (cada rol tiene garantizado el acceso
+    // a su propio fallback, así nunca aterriza en un 403).
+    String volverUrl;
+    if ("despacho".equals(origenParam)) {
+        volverUrl = ctx + "/DepositServlet";
+    } else if ("historial".equals(origenParam)) {
+        volverUrl = ctx + "/HistoryServlet";
+    } else if ("home".equals(origenParam)) {
+        volverUrl = ctx + "/HomeServlet";
+    } else if ("lista".equals(origenParam)) {
+        volverUrl = ctx + "/TransactionServlet?action=lista";
+    } else if (rol == 2) {
+        volverUrl = ctx + "/DepositServlet";        // Depósito no puede ver TransactionServlet
+    } else if (rol == 1) {
+        volverUrl = ctx + "/HistoryServlet";        // Solicitante: su historial
+    } else {
+        volverUrl = ctx + "/TransactionServlet?action=lista"; // Manager/Admin
+    }
+
     // Manager (3) y Administrador (4) aprueban, PERO no sus propias solicitudes.
     // SuperAdmin (5) no aprueba nada.
     boolean puedeAprobar = false;
@@ -561,14 +583,10 @@
                     </h1>
                     <p class="page-subtitle">Información completa y trazabilidad del pedido</p>
                 </div>
-                <%-- "Volver" usa el historial real del navegador — así respeta
-                     de dónde vino el usuario sin asumir un destino fijo que
-                     podría no tener permiso (ej: TransactionServlet es solo
-                     para Manager/Administrador, pero cualquier rol puede
-                     terminar en esta página). El href es solo un respaldo
-                     por si no hay historial (ej: entró por link directo). --%>
-                <a href="<%= ctx %>/HomeServlet" class="btn-ghost btn-icon"
-                   onclick="if (document.referrer && document.referrer.indexOf(window.location.host) !== -1) { history.back(); return false; }">
+                <%-- "Volver" apunta al origen real del usuario, calculado en el
+                     servidor a partir del parámetro "origen" (con fallback seguro
+                     por rol). Sin JavaScript. --%>
+                <a href="<%= volverUrl %>" class="btn-ghost btn-icon">
                     <i data-lucide="arrow-left"></i>
                     Volver
                 </a>
@@ -845,8 +863,7 @@
                         <div class="actions-section">
                             <h3>¿Ya se entregó el material?</h3>
                             <div class="actions-row">
-                                <a href="#modal-entregar-detalle" class="btn-approve-big"
-                                   onclick="return abrirModalSinHistorial(this);">
+                                <a href="#modal-entregar-detalle" class="btn-approve-big">
                                     <i data-lucide="package-check"></i>
                                     Marcar como Entregada
                                 </a>
@@ -1036,8 +1053,7 @@
                                   placeholder="Ej: retraso de 2 días, llegó de otro color..."></textarea>
 
                         <div class="modal-btns" style="margin-top: 1.1rem;">
-                            <a href="#modal-cerrar" class="btn-modal-cancel"
-                               onclick="return abrirModalSinHistorial(this);">Cancelar</a>
+                            <a href="#modal-cerrar" class="btn-modal-cancel">Cancelar</a>
                             <button type="submit" class="btn-modal-ok btn-modal-ok--purple">
                                 <i data-lucide="package-check"></i>Sí, entregar
                             </button>
@@ -1061,16 +1077,6 @@
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
 
-    /**
-     * Abre/cierra el modal (anclas #modal-X) sin dejar una entrada nueva
-     * en el historial del navegador. Así "Volver" (que usa history.back())
-     * no se queda atrapado entre los estados abierto/cerrado del modal —
-     * simplemente lo ignora y va a la página anterior real.
-     */
-    function abrirModalSinHistorial(link) {
-        history.replaceState(null, '', link.getAttribute('href'));
-        return false;
-    }
 </script>
 
 </body>
