@@ -171,3 +171,11 @@ CREATE INDEX idx_audit_actor             ON audit_log(actor_id);
 CREATE INDEX idx_audit_entity            ON audit_log(entity, entity_id);
 CREATE INDEX idx_audit_created           ON audit_log(created_at);
 CREATE INDEX idx_userperms_user          ON user_permissions(user_id);
+
+-- ============================================================
+-- DELIVERY_NOTES — Nota del encargado de depósito al entregar
+-- (distinta de "notes", que ya se usa para el propósito original
+--  de la solicitud escrito por el solicitante al crearla)
+-- ============================================================
+ALTER TABLE transactions
+    ADD COLUMN delivery_notes TEXT NULL AFTER estimated_delivery;
