@@ -499,7 +499,7 @@
                         <input type="checkbox" name="remember"/>
                         <span>Recordarme</span>
                     </label>
-                    <a href="#" class="login-forgot">¿Olvidaste tu contraseña?</a>
+                    <a href="<%= ctx %>/AuthServlet?action=formForgotPassword" class="login-forgot">¿Olvidaste tu contraseña?</a>
                 </div>
 
                 <%-- Botón submit --%>

@@ -12,14 +12,17 @@ import java.io.IOException;
 /**
  * AuthServlet — patrón MVC del curso (Clase 7.2 y 7.3).
  *
- * Maneja login, logout y registro mediante un parámetro `action`.
+ * Maneja login, logout, registro y cambio de contraseña obligatorio
+ * (cuando el Superadmin crea una cuenta con contraseña temporal).
  *
  * URLs:
- * GET  /AuthServlet?action=formLogin    → muestra login.jsp
- * GET  /AuthServlet?action=formSignup   → muestra signup.jsp
- * GET  /AuthServlet?action=logout       → cierra sesión y redirige a login
- * POST /AuthServlet  (action=login)     → procesa credenciales
- * POST /AuthServlet  (action=signup)    → registra nuevo usuario
+ * GET  /AuthServlet?action=formLogin           → muestra login.jsp
+ * GET  /AuthServlet?action=formSignup          → muestra signup.jsp
+ * GET  /AuthServlet?action=formChangePassword  → muestra change-password.jsp
+ * GET  /AuthServlet?action=logout              → cierra sesión y redirige a login
+ * POST /AuthServlet  (action=login)             → procesa credenciales
+ * POST /AuthServlet  (action=signup)            → registra nuevo usuario
+ * POST /AuthServlet  (action=changePassword)    → guarda la nueva contraseña
  */
 @WebServlet(name = "AuthServlet", value = "/AuthServlet")
 public class AuthServlet extends HttpServlet {
@@ -58,6 +61,18 @@ public class AuthServlet extends HttpServlet {
                 } else {
                     view = request.getRequestDispatcher("/signup.jsp");
                 }
+                view.forward(request, response);
+                break;
+
+            case "formChangePassword":
+                // Solo accesible si hay una sesión activa (usuario ya logueado
+                // con contraseña temporal pendiente de actualizar)
+                HttpSession cpSession = request.getSession(false);
+                if (cpSession == null || cpSession.getAttribute("userId") == null) {
+                    response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+                    return;
+                }
+                view = request.getRequestDispatcher("/change-password.jsp");
                 view.forward(request, response);
                 break;
 
@@ -122,6 +137,12 @@ public class AuthServlet extends HttpServlet {
                         sess.setAttribute("roleId", user.getRoleId());
                         sess.setAttribute("roleName", user.getRoleName());
                         sess.setAttribute("avatarUrl", user.getAvatarUrl());
+
+                        // ─── Forzar cambio de contraseña si es temporal ───
+                        if (user.getRequirePasswordChange() == 1) {
+                            response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formChangePassword");
+                            return;
+                        }
 
                         // Redirigir según rol — todos van a HomeServlet excepto SuperAdmin
                         // (SuperAdmin no tiene Home porque su perfil es exclusivo de auditoría)
@@ -241,6 +262,48 @@ public class AuthServlet extends HttpServlet {
                     }
                     request.setAttribute("error", msg);
                     view = request.getRequestDispatcher("/signup.jsp");
+                    view.forward(request, response);
+                }
+                break;
+
+            case "changePassword":
+                HttpSession cpSess = request.getSession(false);
+                if (cpSess == null || cpSess.getAttribute("userId") == null) {
+                    response.sendRedirect(request.getContextPath() + "/AuthServlet?action=formLogin");
+                    return;
+                }
+                try {
+                    int cpUserId = (Integer) cpSess.getAttribute("userId");
+                    String newPass = request.getParameter("newPassword");
+                    String confirmPass = request.getParameter("confirmPassword");
+
+                    String cpError = com.quintaola.util.PasswordValidator.getErrorMessage(newPass);
+                    if (cpError != null) {
+                        request.setAttribute("error", cpError);
+                        view = request.getRequestDispatcher("/change-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+                    if (newPass == null || !newPass.equals(confirmPass)) {
+                        request.setAttribute("error", "Las contraseñas no coinciden.");
+                        view = request.getRequestDispatcher("/change-password.jsp");
+                        view.forward(request, response);
+                        return;
+                    }
+
+                    boolean ok = userDao.updatePassword(cpUserId, newPass);
+                    if (ok) {
+                        String roleNameCp = (String) cpSess.getAttribute("roleName");
+                        String redirect = "SuperAdmin".equals(roleNameCp) ? "/RoleServlet" : "/HomeServlet";
+                        response.sendRedirect(request.getContextPath() + redirect);
+                    } else {
+                        request.setAttribute("error", "No se pudo actualizar la contraseña.");
+                        view = request.getRequestDispatcher("/change-password.jsp");
+                        view.forward(request, response);
+                    }
+                } catch (Exception e) {
+                    request.setAttribute("error", "Error interno al cambiar la contraseña.");
+                    view = request.getRequestDispatcher("/change-password.jsp");
                     view.forward(request, response);
                 }
                 break;

@@ -216,6 +216,7 @@ public class UserDAO {
         user.setActivo      (rs.getInt   ("activo"));
         user.setCreatedAt   (rs.getString("created_at"));
         try { user.setAvatarUrl(rs.getString("avatar_url")); } catch (Exception ignored) {}
+        try { user.setRequirePasswordChange(rs.getInt("require_password_change")); } catch (Exception ignored) {}
         return user;
     }
 
@@ -246,19 +247,24 @@ public class UserDAO {
         }
     }
 
-    public boolean createWithRole(User user, int roleId) throws SQLException {
+    // ─── createWithRole: ahora marca require_password_change=1 y devuelve el ID generado ───
+    public int createWithRole(User user, int roleId) throws SQLException {
         String sql = """
-            INSERT INTO users (email, dni, name, password_hash, role_id, activo)
-            VALUES (?, ?, ?, ?, ?, 1)
+            INSERT INTO users (email, dni, name, password_hash, role_id, activo, require_password_change)
+            VALUES (?, ?, ?, ?, ?, 1, 1)
             """;
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getEmail());
             ps.setString(2, user.getDni());
             ps.setString(3, user.getName());
             ps.setString(4, user.getPasswordHash());
             ps.setInt   (5, roleId);
-            return ps.executeUpdate() > 0;
+            int filas = ps.executeUpdate();
+            if (filas == 0) return 0;
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
         }
     }
 
@@ -286,8 +292,9 @@ public class UserDAO {
         }
     }
 
+    // ─── updatePassword: ahora también apaga require_password_change ───
     public boolean updatePassword(int userId, String newPassword) throws SQLException {
-        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+        String sql = "UPDATE users SET password_hash = ?, require_password_change = 0 WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, BCrypt.hashpw(newPassword, BCrypt.gensalt()));

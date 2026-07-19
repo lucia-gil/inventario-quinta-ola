@@ -3,8 +3,10 @@ package com.quintaola.servlet;
 import com.quintaola.dao.AuditDAO;
 import com.quintaola.dao.RoleDAO;
 import com.quintaola.dao.UserDAO;
+import com.quintaola.dao.NotificationDAO;
 import com.quintaola.model.Role;
 import com.quintaola.model.User;
+import com.quintaola.model.Notification;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -291,8 +293,8 @@ public class UserServlet extends HttpServlet {
                     nuevo.setDni         (dni.trim());
                     nuevo.setPasswordHash(BCrypt.hashpw(password, BCrypt.gensalt(10)));
 
-                    boolean ok = userDao.createWithRole(nuevo, roleId);
-                    if (ok) {
+                    int nuevoId = userDao.createWithRole(nuevo, roleId);
+                    if (nuevoId > 0) {
                         try {
                             RoleDAO rdao = new RoleDAO();
                             Role rolAsignado = rdao.getById(roleId);
@@ -301,6 +303,28 @@ public class UserServlet extends HttpServlet {
                                             actorRole, nuevo.getName(), nuevo.getEmail(), nuevo.getDni(),
                                             rolAsignado != null ? rolAsignado.getName() : "roleId=" + roleId));
                         } catch (Exception ignored) {}
+
+                        // ─── Enviar credenciales por correo al nuevo usuario ───
+                        try {
+                            com.quintaola.util.EmailService.enviarCredenciales(nuevo.getEmail(), nuevo.getName(), password);
+                        } catch (Exception emailEx) {
+                            System.err.println("[UserServlet] Email credenciales: " + emailEx.getMessage());
+                        }
+
+                        // ─── Notificación de seguridad para el nuevo usuario ───
+                        try {
+                            NotificationDAO notifDao = new NotificationDAO();
+                            Notification alerta = new Notification();
+                            alerta.setUserId(nuevoId);
+                            alerta.setType("request_rejected");
+                            alerta.setTitle("Actualización de seguridad obligatoria");
+                            alerta.setMessage("Tu cuenta fue creada con una contraseña temporal. Cámbiala en tu primer inicio de sesión.");
+                            alerta.setRelatedId(0);
+                            notifDao.crear(alerta);
+                        } catch (Exception notifEx) {
+                            System.err.println("[UserServlet] Notificación seguridad: " + notifEx.getMessage());
+                        }
+
                         String redirect = (actorRoleId != null && actorRoleId == 5)
                                 ? "/RoleServlet?success=Usuario+creado+correctamente"
                                 : "/UserServlet?success=Usuario+creado+correctamente";

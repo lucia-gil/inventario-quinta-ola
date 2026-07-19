@@ -12,6 +12,8 @@ public class User {
     private int activo; // <-- Cambiado a int para coincidir con el Servlet y la BD (0 o 1)
     private String createdAt;
     private String avatarUrl;
+    private int requirePasswordChange; // 1 = debe cambiar contraseña, 0 = ya la cambió
+
 
     public User() {}
 
@@ -45,4 +47,7 @@ public class User {
 
     public String getAvatarUrl()               { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+
+    public int getRequirePasswordChange()                       { return requirePasswordChange; }
+    public void setRequirePasswordChange(int requirePasswordChange) { this.requirePasswordChange = requirePasswordChange; }
 }

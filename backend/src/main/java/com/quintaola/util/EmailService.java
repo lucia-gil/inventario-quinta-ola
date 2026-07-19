@@ -470,4 +470,29 @@ public class EmailService {
 
         return enviar(destinatario, "Materiales entregados (con aviso) — Solicitud #" + requestId, html);
     }
+
+    public static boolean enviarCredenciales(String destinatario, String nombre, String passwordTemporal) {
+        String cajaCredenciales =
+                "<div style='background:#F9FAFB;border:1px solid " + C_GRAY_LINE + ";border-radius:10px;padding:18px 20px;margin:20px 0;text-align:left;font-family:monospace;'>"
+                        + "  <p style='color:" + C_GRAY_SOFT + ";font-size:12px;margin:0 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;'>Usuario</p>"
+                        + "  <p style='color:" + C_GRAY_TEXT + ";font-size:15px;margin:0 0 14px;font-weight:700;'>" + destinatario + "</p>"
+                        + "  <p style='color:" + C_GRAY_SOFT + ";font-size:12px;margin:0 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;'>Contraseña temporal</p>"
+                        + "  <p style='color:" + C_PINK + ";font-size:17px;margin:0;font-weight:800;'>" + passwordTemporal + "</p>"
+                        + "</div>";
+
+        String html = construirCorreo(
+                "&#128273;", // 🔑
+                "#EDE9FE",
+                "¡Bienvenido a Quinta Ola!",
+                "Hola <strong style='color:" + C_PURPLE + "'>" + nombre + "</strong>,",
+                "Un administrador ha creado tu cuenta en el Sistema de Inventario de Quinta Ola. "
+                        + "A continuación encontrarás tus credenciales temporales de acceso:",
+                cajaCredenciales,
+                "Iniciar sesión", APP_URL + "/AuthServlet?action=formLogin",
+                "Por tu seguridad, el sistema te pedirá cambiar esta contraseña en tu primer inicio de sesión."
+        );
+
+        return enviar(destinatario, "Tus credenciales de acceso — Quinta Ola", html);
+    }
+
 }

@@ -94,4 +94,18 @@ public class NotificationDAO {
         }
         return list;
     }
+
+    // 5. Crear una notificación individual (usada al crear cuentas nuevas, etc.)
+    public boolean crear(Notification n) throws SQLException {
+        String sql = "INSERT INTO notifications (user_id, type, title, message, related_id, is_read) VALUES (?, ?, ?, ?, ?, 0)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, n.getUserId());
+            ps.setString(2, n.getType());
+            ps.setString(3, n.getTitle());
+            ps.setString(4, n.getMessage());
+            ps.setInt(5, n.getRelatedId());
+            return ps.executeUpdate() > 0;
+        }
+    }
 }
