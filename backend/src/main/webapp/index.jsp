@@ -206,6 +206,50 @@
             z-index: 1;
         }
 
+        /* Burbujas adicionales del hero — contenedor extra porque un
+           elemento solo admite ::before y ::after (dos pseudo-elementos),
+           así que las 3 restantes van sobre .hero-inner. */
+        .hero-inner {
+            position: relative;
+        }
+        .hero-inner::before {
+            content: "";
+            position: absolute;
+            top: 8%;
+            left: 42%;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.25);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .hero-inner::after {
+            content: "";
+            position: absolute;
+            bottom: 12%;
+            left: -2%;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--pink);
+            opacity: 0.13;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .hero-photo-frame::before {
+            content: "";
+            position: absolute;
+            top: -35px;
+            right: 15%;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--white);
+            opacity: 0.18;
+            pointer-events: none;
+        }
+
         .hero-inner {
             position: relative;
             z-index: 2;
