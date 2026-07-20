@@ -211,11 +211,14 @@
         .modal-overlay {
             display: none;
             position: fixed; inset: 0;
-            background: rgba(17, 5, 35, 0.58);
+            background: rgba(17, 5, 35, 0.72);
             backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
             z-index: 9000;
             align-items: center; justify-content: center;
             padding: 1rem;
+            isolation: isolate;
+            transform: translateZ(0);
+            will-change: transform;
         }
         .modal-overlay:target { display: flex; }
         .modal-box {

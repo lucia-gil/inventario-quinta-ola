@@ -225,6 +225,12 @@
         .row-deactivated { opacity: 0.55; background: var(--gray-50); }
         .row-deactivated .user-cell-name { text-decoration: line-through; }
 
+        tr.row-deactivated:has(details[open]) {
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 9999 !important;
+        }
+
         .status-pill {
             display: inline-flex; align-items: center; gap: 0.3rem;
             padding: 0.28rem 0.65rem; border-radius: var(--radius-full);
@@ -331,8 +337,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(15, 12, 23, 0.72);
-            backdrop-filter: blur(4px);
+            background: rgba(10, 6, 20, 0.85);
             z-index: 99999;
             display: flex;
             align-items: center;
