@@ -858,8 +858,8 @@
 
                         <% } %>
 
-                        <%-- Acción de entrega — solo Depósito, Admin o SuperAdmin, y solo si está APROBADA --%>
-                        <% if ("APPROVED".equals(tx.getStatus()) && (rol == 2 || rol == 4 || rol == 5)) { %>
+                        <%-- Acción de entrega — solo Depósito--%>
+                        <% if ("APPROVED".equals(tx.getStatus()) && rol == 2 ) { %>
                         <div class="actions-section">
                             <h3>¿Ya se entregó el material?</h3>
                             <div class="actions-row">
