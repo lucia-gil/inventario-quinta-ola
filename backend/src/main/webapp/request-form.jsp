@@ -283,6 +283,26 @@
             display: flex; justify-content: flex-end; align-items: center; gap: 1rem;
             padding-top: 1.75rem; border-top: 1px solid var(--gray-100); margin-top: 2.1rem;
         }
+
+        /* ═════ Ajustes para pantallas angostas — evita el efecto "apretado" ═════ */
+        @media (max-width: 640px) {
+            .card-header { padding: 1.15rem 1.25rem 1.4rem; }
+            .card-body { padding: 1.5rem 1.25rem; }
+
+            .req-step { gap: 0.75rem; margin-bottom: 1.5rem; }
+            .req-step-num { width: 28px; height: 28px; font-size: 0.8rem; }
+            .req-step:not(:last-of-type) .req-step-num::after {
+                top: 32px; height: calc(100% + 1.5rem - 32px);
+            }
+            .req-step-title { font-size: 0.88rem; margin-bottom: 0.7rem; }
+
+            .field-input { padding: 0.65rem 0.85rem; font-size: 0.85rem; }
+            .qty-stepper-btn { width: 36px; }
+
+            .form-actions { flex-wrap: wrap; }
+            .form-actions .btn-ghost,
+            .form-actions .btn-save { flex: 1 1 auto; justify-content: center; }
+        }
     </style>
 </head>
 <body class="page-body">

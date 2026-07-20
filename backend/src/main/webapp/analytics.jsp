@@ -35,6 +35,16 @@
             .analytics-main-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
+        /* Fix: los paneles tienen grid-column:span 2/3 escrito en línea.
+           En mobile (1 sola columna definida) eso obligaba al navegador a
+           crear columnas invisibles extra, generando scroll horizontal y
+           dejando solo una gráfica visible. Forzamos ancho completo. */
+        @media (max-width: 1099px) {
+            .analytics-main-grid > .panel {
+                grid-column: 1 / -1 !important;
+            }
+        }
+
         .analytics-report-cards {
             display: grid;
             grid-template-columns: 1fr;

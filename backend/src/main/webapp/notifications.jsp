@@ -15,6 +15,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Notificaciones | Quinta Ola</title>
     <link href="<%= ctx %>/css/style.css?v=25" rel="stylesheet" />
 </head>
