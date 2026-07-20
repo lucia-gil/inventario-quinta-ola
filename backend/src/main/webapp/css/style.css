@@ -310,7 +310,8 @@ input, select, textarea { font-family: inherit; }
 .topbar {
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 60;
+    isolation: isolate;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2311,5 +2312,9 @@ input, select, textarea { font-family: inherit; }
 .notif-dropdown-footer i { width: 14px; height: 14px; }
 
 @media (max-width: 640px) {
-    .notif-dropdown { width: 92vw; right: -0.5rem; }
+    .notif-dropdown {
+        width: calc(100vw - 32px);
+        right: -12px;
+        left: auto;
+    }
 }

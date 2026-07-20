@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Iniciar Sesión | Quinta Ola</title>
 
-    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=25" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -475,7 +475,6 @@
                                name="email"
                                class="login-input"
                                placeholder="ejemplo@quintaola.com"
-                               value="admin.demo@quintaola.com"
                                required/>
                     </div>
                 </div>

@@ -67,7 +67,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Gestión de Roles | Quinta Ola</title>
-    <link href="<%= ctx %>/css/style.css?v=23" rel="stylesheet"/>
+    <link href="<%= ctx %>/css/style.css?v=25" rel="stylesheet"/>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -331,13 +331,16 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(15, 12, 23, 0.5);
+            background: rgba(15, 12, 23, 0.72);
             backdrop-filter: blur(4px);
             z-index: 99999;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: default;
+            isolation: isolate;
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         /* Tarjeta Blanca del Modal */
