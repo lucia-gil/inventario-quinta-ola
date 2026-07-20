@@ -150,3 +150,37 @@
     </div>
 
 </header>
+
+<%-- ── ESTILOS RESPONSIVOS PARA EL DROPDOWN EN CELULARES ── --%>
+<style>
+    @media (max-width: 576px) {
+        /* 1. Forzamos al contenedor principal a mantener su lugar */
+        .notif-drop-wrap {
+            position: relative !important;
+        }
+
+        /* 2. El truco maestro: Volvemos el dropdown fijo a la pantalla */
+        .notif-dropdown {
+            position: fixed !important;
+            top: 65px !important;       /* Ajusta este valor si queda muy arriba o muy abajo de tu topbar */
+            right: 16px !important;     /* Margen limpio a la derecha de la pantalla */
+            left: 16px !important;      /* Margen limpio a la izquierda de la pantalla */
+            width: auto !important;     /* Olvídate de los anchos fijos, ahora es fluido */
+            max-width: none !important; /* Rompe cualquier limitación previa */
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2) !important;
+            border-radius: 12px !important;
+            z-index: 99999 !important;  /* Lo posiciona por encima de todo */
+        }
+
+        /* 3. Aseguramos que el fondo invisible ocupe toda la pantalla para poder cerrar el menú */
+        .notif-drop-backdrop {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: transparent !important;
+            z-index: 99998 !important;
+        }
+    }
+</style>
