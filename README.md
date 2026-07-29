@@ -1,4 +1,6 @@
 # Inventario Quinta Ola 📦
+<img width="1917" height="892" alt="image" src="https://github.com/user-attachments/assets/5e694c85-c09e-462b-b5ea-aa2bf1524e99" />
+
 
 Sistema de gestión de inventario para **Quinta Ola** — TEL131 PUCP 2026-1.
 Esta aplicación permite controlar, gestionar y optimizar el flujo de materiales desde un solo lugar.
